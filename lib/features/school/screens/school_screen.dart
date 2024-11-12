@@ -8,103 +8,100 @@ class SchoolScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.7),
-                  width: 2,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'School Overview',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  Text(
-                    'Manage your academic activities',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 16,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Stats Row
-            Row(
-              children: [
-                StatCard(
-                  title: 'Current GPA',
-                  value: '3.8',
-                  icon: PhosphorIcons.chartLineUp(PhosphorIconsStyle.bold),
-                  iconColor: Colors.green,
-                ),
-                const SizedBox(width: 16),
-                StatCard(
-                  title: 'Assignments Due',
-                  value: '4',
-                  icon: PhosphorIcons.fileText(PhosphorIconsStyle.bold),
-                  iconColor: Colors.orange,
-                ),
-                const SizedBox(width: 16),
-                StatCard(
-                  title: 'Study Hours',
-                  value: '12.5',
-                  icon: PhosphorIcons.clock(PhosphorIconsStyle.bold),
-                  iconColor: Colors.blue,
-                ),
-                const SizedBox(width: 16),
-                StatCard(
-                  title: 'Courses',
-                  value: '6',
-                  icon: PhosphorIcons.books(PhosphorIconsStyle.bold),
-                  iconColor: Colors.purple,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Schedule and Activity Row
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      child: Container(
+        color: Theme.of(context).cardColor,
+        child: Padding(
+          padding: const EdgeInsets.only(
+            top: 8,
+            right: 8,
+            bottom: 8,
+            left: 2,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: Colors.white.withOpacity(0.7),
                     width: 2,
                   ),
                 ),
-                child: const Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
+                    Text(
+                      'School Overview',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      'Manage your academic activities',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: 14,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Stats Row
+              Row(
+                children: [
+                  StatCard(
+                    title: 'Current GPA',
+                    value: '3.8',
+                    icon: PhosphorIcons.chartLineUp(PhosphorIconsStyle.bold),
+                    iconColor: Colors.green,
+                  ),
+                  const SizedBox(width: 12),
+                  StatCard(
+                    title: 'Assignments Due',
+                    value: '4',
+                    icon: PhosphorIcons.fileText(PhosphorIconsStyle.bold),
+                    iconColor: Colors.orange,
+                  ),
+                  const SizedBox(width: 12),
+                  StatCard(
+                    title: 'Study Hours',
+                    value: '12.5',
+                    icon: PhosphorIcons.clock(PhosphorIconsStyle.bold),
+                    iconColor: Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  StatCard(
+                    title: 'Courses',
+                    value: '6',
+                    icon: PhosphorIcons.books(PhosphorIconsStyle.bold),
+                    iconColor: Colors.purple,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Schedule and Activity Row
+              SizedBox(
+                height: 400,
+                child: Row(
+                  children: [
+                    const Expanded(
                       flex: 2,
                       child: ScheduleView(),
                     ),
-                    SizedBox(width: 24),
-                    Expanded(
+                    const SizedBox(width: 16),
+                    const Expanded(
                       child: _ExamsList(),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

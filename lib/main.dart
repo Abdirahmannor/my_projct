@@ -13,19 +13,21 @@ void main() async {
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(1200, 800),
-      minimumSize: Size(1200, 800),
+      size: Size(1200, 700),
+      minimumSize: Size(1012, 604),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       title: '',
       titleBarStyle: TitleBarStyle.normal,
+      windowButtonVisibility: true,
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
       await windowManager.setTitle('');
+      await windowManager.setResizable(true);
     });
   }
 

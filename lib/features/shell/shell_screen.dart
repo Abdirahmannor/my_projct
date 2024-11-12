@@ -31,48 +31,46 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      body: Container(
-        constraints: const BoxConstraints(
-          minWidth: 1200,
-          minHeight: 800,
-        ),
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CollapsibleSidebar(
-                isCollapsed: _isCollapsed,
-                onToggle: (isCollapsed) {
-                  setState(() {
-                    _isCollapsed = isCollapsed;
-                  });
-                },
-                selectedIndex: _selectedIndex,
-                onItemSelected: (index) {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                },
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: _screens[_selectedIndex],
-                  ),
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Row(
+          children: [
+            CollapsibleSidebar(
+              isCollapsed: _isCollapsed,
+              onToggle: (isCollapsed) {
+                setState(() {
+                  _isCollapsed = isCollapsed;
+                });
+              },
+              selectedIndex: _selectedIndex,
+              onItemSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(
+                  top: 8,
+                  right: 8,
+                  bottom: 8,
+                  left: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _screens[_selectedIndex],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -11,7 +11,12 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.only(
+        top: 8,
+        right: 8,
+        bottom: 8,
+        left: 2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -19,7 +24,7 @@ class DashboardScreen extends StatelessWidget {
             'Welcome Back!',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -27,10 +32,10 @@ class DashboardScreen extends StatelessWidget {
             'Here\'s your overview for today',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: 16,
+              fontSize: 14,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // Stats Row
           Row(
             children: [
@@ -40,21 +45,21 @@ class DashboardScreen extends StatelessWidget {
                 icon: PhosphorIcons.checkSquare(PhosphorIconsStyle.bold),
                 iconColor: Colors.blue,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               StatCard(
                 title: 'Upcoming Exams',
                 value: '2',
                 icon: PhosphorIcons.graduationCap(PhosphorIconsStyle.bold),
                 iconColor: Colors.orange,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               StatCard(
                 title: 'Active Projects',
                 value: '3',
                 icon: PhosphorIcons.briefcase(PhosphorIconsStyle.bold),
                 iconColor: Colors.green,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               StatCard(
                 title: 'Study Hours',
                 value: '12.5',
@@ -63,7 +68,7 @@ class DashboardScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // Activity and Events Row
           Expanded(
             child: Row(
@@ -72,7 +77,7 @@ class DashboardScreen extends StatelessWidget {
                   flex: 2,
                   child: WeeklyActivityChart(),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: 16),
                 const Expanded(
                   child: UpcomingEvents(),
                 ),

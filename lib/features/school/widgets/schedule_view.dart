@@ -8,10 +8,10 @@ class ScheduleView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.white.withOpacity(0.7),
           width: 2,
@@ -25,18 +25,20 @@ class ScheduleView extends StatelessWidget {
             children: [
               Text(
                 'Schedule',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: 16,
+                    ),
               ),
               Row(
                 children: [
                   _buildFilterChip(context, 'School', true),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   _buildFilterChip(context, 'Work', true),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           Expanded(
             child: SingleChildScrollView(
               child: _buildWeekView(context),
@@ -48,17 +50,23 @@ class ScheduleView extends StatelessWidget {
   }
 
   Widget _buildFilterChip(BuildContext context, String label, bool isActive) {
-    return FilterChip(
-      selected: isActive,
-      label: Text(label),
-      onSelected: (bool value) {},
-      backgroundColor: Colors.transparent,
-      selectedColor: AppColors.accent.withOpacity(0.1),
-      labelStyle: TextStyle(
-        color: isActive ? AppColors.accent : Colors.grey,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color:
+            isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? AppColors.accent : Colors.grey,
+          width: 1,
+        ),
       ),
-      side: BorderSide(
-        color: isActive ? AppColors.accent : Colors.grey,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: isActive ? AppColors.accent : Colors.grey,
+        ),
       ),
     );
   }
@@ -68,26 +76,26 @@ class ScheduleView extends StatelessWidget {
       children: [
         Row(
           children: const [
-            SizedBox(width: 60),
+            SizedBox(width: 40),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text('Mon'),
-                  Text('Tue'),
-                  Text('Wed'),
-                  Text('Thu'),
-                  Text('Fri'),
+                  Text('Mon', style: TextStyle(fontSize: 12)),
+                  Text('Tue', style: TextStyle(fontSize: 12)),
+                  Text('Wed', style: TextStyle(fontSize: 12)),
+                  Text('Thu', style: TextStyle(fontSize: 12)),
+                  Text('Fri', style: TextStyle(fontSize: 12)),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 300,
+          height: 200,
           child: ListView.builder(
-            itemCount: 12, // 8:00 - 20:00
+            itemCount: 12,
             itemBuilder: (context, index) {
               final hour = index + 8;
               return _buildTimeSlot(context, hour);
@@ -102,15 +110,17 @@ class ScheduleView extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 60,
+          width: 40,
           child: Text(
             '$hour:00',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                ),
           ),
         ),
         Expanded(
           child: Container(
-            height: 60,
+            height: 40,
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
