@@ -38,25 +38,26 @@ class _ShellScreenState extends State<ShellScreen> {
           minHeight: 800,
         ),
         color: const Color(0xFF1A1B1E),
-        child: Row(
-          children: [
-            CollapsibleSidebar(
-              isCollapsed: _isCollapsed,
-              onToggle: (isCollapsed) {
-                setState(() {
-                  _isCollapsed = isCollapsed;
-                });
-              },
-              selectedIndex: _selectedIndex,
-              onItemSelected: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CollapsibleSidebar(
+                isCollapsed: _isCollapsed,
+                onToggle: (isCollapsed) {
+                  setState(() {
+                    _isCollapsed = isCollapsed;
+                  });
+                },
+                selectedIndex: _selectedIndex,
+                onItemSelected: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+              ),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E1F23),
@@ -68,8 +69,8 @@ class _ShellScreenState extends State<ShellScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

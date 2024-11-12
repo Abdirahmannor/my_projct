@@ -10,7 +10,6 @@ import 'dart:io';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set minimum window size for desktop
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
 
@@ -18,12 +17,16 @@ void main() async {
       size: Size(1200, 800),
       minimumSize: Size(1200, 800),
       center: true,
-      title: 'School Task Manager',
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      title: '',
+      titleBarStyle: TitleBarStyle.normal,
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
+      await windowManager.setTitle('');
     });
   }
 
@@ -44,7 +47,6 @@ class SchoolTaskManager extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'School Task Manager',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

@@ -71,6 +71,8 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
       ),
       child: Column(
         children: [
+          const SizedBox(height: 16),
+          _buildProfileSection(),
           _buildHeader(),
           const Divider(color: Colors.white24),
           Expanded(
@@ -86,7 +88,53 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
           ),
           const Divider(color: Colors.white24),
           _buildThemeToggle(),
+          _buildLogoutButton(),
+          const Divider(color: Colors.white24),
           _buildFooter(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: widget.isCollapsed ? 16 : 24,
+            backgroundColor: Colors.blue.withOpacity(0.2),
+            child: Icon(
+              PhosphorIcons.user(PhosphorIconsStyle.bold),
+              color: Colors.blue,
+              size: widget.isCollapsed ? 20 : 28,
+            ),
+          ),
+          if (!widget.isCollapsed) ...[
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'John Doe',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    'Student',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -278,6 +326,87 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () => _showLogoutDialog(context),
+        child: Row(
+          children: [
+            Icon(
+              PhosphorIcons.signOut(PhosphorIconsStyle.bold),
+              color: Colors.red.withOpacity(0.9),
+              size: 24,
+            ),
+            if (!widget.isCollapsed) ...[
+              const SizedBox(width: 16),
+              const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF272935),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Implement actual logout logic
+                Navigator.of(context).pop();
+                // Navigate to login screen or clear session
+              },
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
