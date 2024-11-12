@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors
-  static const primaryDark = Color(0xFF2A2D4E);
-  static const primaryLight = Color(0xFF8B80F9);
+  // Dark Theme Colors
+  static const primaryDark = Color(0xFF1E1F23);
+  static const backgroundDark = Color(0xFF1A1B1E);
+  static const cardDark = Color(0xFF272935);
+  static const textDark = Color(0xFFF5F5F5);
+  static const textSecondaryDark = Color(0xBBF5F5F5);
 
-  // Accent Colors
-  static const accent = Color(0xFF5D5FEF);
-  static const accentLight = Color(0xFF6E70FF);
-
-  // Background Colors
-  static const backgroundDark = Color(0xFF1A1C2E);
-  static const backgroundLight = Color(0xFFF5F5F9);
-
-  // Card Colors
-  static const cardDark = Color(0xFF252849);
+  // Light Theme Colors
+  static const primaryLight = Color(0xFFFFFFFF);
+  static const backgroundLight = Color(0xFFF8F9FA);
   static const cardLight = Color(0xFFFFFFFF);
+  static const textLight = Color(0xFF2C2E33);
+  static const textSecondaryLight = Color(0xFF6B7280);
 
-  // Text Colors
-  static const textDark = Color(0xFFFFFFFF);
-  static const textLight = Color(0xFF1A1C2E);
+  // Accent Colors (Softer shades)
+  static const accent = Color(0xFF60A5FA);
+  static const accentLight = Color(0xFF93C5FD);
+  static const accentDark = Color(0xFF3B82F6);
 
-  // Status Colors
-  static const success = Color(0xFF4CAF50);
-  static const error = Color(0xFFE53935);
-  static const warning = Color(0xFFFFB74D);
-  static const info = Color(0xFF2196F3);
+  // Status Colors (Softer)
+  static const success = Color(0xFF34D399);
+  static const warning = Color(0xFFFBBF24);
+  static const error = Color(0xFFF87171);
+  static const info = Color(0xFF60A5FA);
 }

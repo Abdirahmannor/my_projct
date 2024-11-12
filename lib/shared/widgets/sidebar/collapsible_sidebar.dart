@@ -3,6 +3,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import 'sidebar_item.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class CollapsibleSidebar extends StatefulWidget {
   final bool isCollapsed;
@@ -23,8 +25,6 @@ class CollapsibleSidebar extends StatefulWidget {
 }
 
 class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
-  bool isDarkMode = true;
-
   final List<SidebarItem> items = [
     SidebarItem(
       icon: PhosphorIcons.houseLine(PhosphorIconsStyle.bold),
@@ -63,7 +63,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
       curve: Curves.easeInOutCubic,
       width: widget.isCollapsed ? 65 : 250,
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
+        color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(
           topRight: Radius.circular(16),
           bottomRight: Radius.circular(16),
@@ -116,9 +116,9 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'John Doe',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -278,54 +278,51 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   }
 
   Widget _buildThemeToggle() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        onTap: widget.isCollapsed
-            ? () {
-                setState(() {
-                  isDarkMode = !isDarkMode;
-                });
-                // TODO: Connect to theme provider
-              }
-            : null,
-        child: Row(
-          mainAxisAlignment: widget.isCollapsed
-              ? MainAxisAlignment.center
-              : MainAxisAlignment.start,
-          children: [
-            Icon(
-              isDarkMode
-                  ? PhosphorIcons.moon(PhosphorIconsStyle.bold)
-                  : PhosphorIcons.sun(PhosphorIconsStyle.bold),
-              color: Colors.white,
-              size: 24,
-            ),
-            if (!widget.isCollapsed) ...[
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  isDarkMode ? 'Dark Mode' : 'Light Mode',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: InkWell(
+            onTap:
+                widget.isCollapsed ? () => themeProvider.toggleTheme() : null,
+            child: Row(
+              mainAxisAlignment: widget.isCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                Icon(
+                  isDarkMode
+                      ? PhosphorIcons.moon(PhosphorIconsStyle.bold)
+                      : PhosphorIcons.sun(PhosphorIconsStyle.bold),
+                  color: Colors.white,
+                  size: 24,
                 ),
-              ),
-              CupertinoSwitch(
-                value: isDarkMode,
-                activeColor: Colors.blue,
-                onChanged: (value) {
-                  setState(() {
-                    isDarkMode = value;
-                  });
-                  // TODO: Connect to theme provider
-                },
-              ),
-            ],
-          ],
-        ),
-      ),
+                if (!widget.isCollapsed) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      isDarkMode ? 'Dark Mode' : 'Light Mode',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  CupertinoSwitch(
+                    value: isDarkMode,
+                    activeColor: Colors.blue,
+                    onChanged: (value) {
+                      themeProvider.toggleTheme();
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

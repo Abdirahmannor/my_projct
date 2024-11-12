@@ -7,33 +7,42 @@ class ScheduleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Schedule',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Row(
-                  children: [
-                    _buildFilterChip(context, 'School', true),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Work', true),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildWeekView(context),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.7),
+          width: 2,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Schedule',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Row(
+                children: [
+                  _buildFilterChip(context, 'School', true),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Work', true),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              child: _buildWeekView(context),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -76,7 +85,7 @@ class ScheduleView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 400,
+          height: 300,
           child: ListView.builder(
             itemCount: 12, // 8:00 - 20:00
             itemBuilder: (context, index) {

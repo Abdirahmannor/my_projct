@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/providers/theme_provider.dart';
-import 'core/constants/app_theme.dart';
 import 'features/shell/shell_screen.dart';
 import 'features/school/providers/exam_provider.dart';
 import 'dart:io';
@@ -48,8 +47,38 @@ class SchoolTaskManager extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color.fromARGB(255, 107, 83, 2),
+        cardColor: const Color.fromARGB(255, 80, 53, 7),
+        primaryColor: const Color.fromARGB(255, 56, 40, 4),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          bodyMedium: TextStyle(
+            color: Colors.white70,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF111827),
+        cardColor: const Color(0xFF1F2937),
+        primaryColor: const Color(0xFF1F2937),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w500,
+          ),
+          bodyMedium: TextStyle(
+            color: Color(0xFFD1D5DB),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
       themeMode: context.watch<ThemeProvider>().themeMode,
       home: const ShellScreen(),
     );

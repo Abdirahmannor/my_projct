@@ -9,19 +9,22 @@ class WeeklyActivityChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF272935),
+        color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.7),
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Weekly Activity',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 20),
           Expanded(
@@ -51,10 +54,12 @@ class WeeklyActivityChart extends StatelessWidget {
                         if (value >= 0 && value < days.length) {
                           return Text(
                             days[value.toInt()],
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontSize: 12,
+                                ),
                           );
                         }
                         return const Text('');

@@ -31,13 +31,15 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         constraints: const BoxConstraints(
           minWidth: 1200,
           minHeight: 800,
         ),
-        color: const Color(0xFF1A1B1E),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -60,7 +62,7 @@ class _ShellScreenState extends State<ShellScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1F23),
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: ClipRRect(
