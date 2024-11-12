@@ -60,7 +60,8 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      width: widget.isCollapsed ? 70 : 250,
+      curve: Curves.easeInOutCubic,
+      width: widget.isCollapsed ? 65 : 250,
       decoration: BoxDecoration(
         color: AppColors.primaryDark,
         borderRadius: const BorderRadius.only(
@@ -73,9 +74,14 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
           _buildHeader(),
           const Divider(color: Colors.white24),
           Expanded(
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) => _buildMenuItem(index),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                children: List.generate(
+                  items.length,
+                  (index) => _buildMenuItem(index),
+                ),
+              ),
             ),
           ),
           const Divider(color: Colors.white24),
@@ -116,36 +122,77 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
     final item = items[index];
     final isSelected = widget.selectedIndex == index;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => widget.onItemSelected(index),
-        child: Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? Colors.white.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                item.icon,
-                color: Colors.white,
-                size: 24,
-              ),
-              if (!widget.isCollapsed) ...[
-                const SizedBox(width: 16),
-                Text(
-                  item.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOutCubic,
+        margin: EdgeInsets.symmetric(
+          horizontal: widget.isCollapsed ? 4 : 8,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? Colors.white.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: isSelected && !widget.isCollapsed
+              ? Border.all(color: Colors.white.withOpacity(0.3), width: 1)
+              : null,
+        ),
+        child: Tooltip(
+          message: widget.isCollapsed ? item.label : '',
+          preferBelow: false,
+          verticalOffset: 12,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => widget.onItemSelected(index),
+              child: Container(
+                height: 45,
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.isCollapsed ? 12 : 16,
                 ),
-              ],
-            ],
+                child: Row(
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
+                      size: isSelected ? 24 : 22,
+                    ),
+                    if (!widget.isCollapsed) ...[
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.7),
+                            fontSize: 15,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (widget.isCollapsed && isSelected)
+                      Container(
+                        width: 3,
+                        height: 3,
+                        margin: const EdgeInsets.only(left: 6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

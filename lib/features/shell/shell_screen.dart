@@ -32,29 +32,45 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          CollapsibleSidebar(
-            isCollapsed: _isCollapsed,
-            onToggle: (isCollapsed) {
-              setState(() {
-                _isCollapsed = isCollapsed;
-              });
-            },
-            selectedIndex: _selectedIndex,
-            onItemSelected: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-          ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _screens[_selectedIndex],
+      body: Container(
+        constraints: const BoxConstraints(
+          minWidth: 1200,
+          minHeight: 800,
+        ),
+        color: const Color(0xFF1A1B1E),
+        child: Row(
+          children: [
+            CollapsibleSidebar(
+              isCollapsed: _isCollapsed,
+              onToggle: (isCollapsed) {
+                setState(() {
+                  _isCollapsed = isCollapsed;
+                });
+              },
+              selectedIndex: _selectedIndex,
+              onItemSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1F23),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: _screens[_selectedIndex],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
