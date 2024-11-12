@@ -232,36 +232,51 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   Widget _buildThemeToggle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            PhosphorIcons.moon(PhosphorIconsStyle.bold),
-            color: Colors.white,
-            size: 24,
-          ),
-          if (!widget.isCollapsed) ...[
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                'Dark Mode',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+      child: InkWell(
+        onTap: widget.isCollapsed
+            ? () {
+                setState(() {
+                  isDarkMode = !isDarkMode;
+                });
+                // TODO: Connect to theme provider
+              }
+            : null,
+        child: Row(
+          mainAxisAlignment: widget.isCollapsed
+              ? MainAxisAlignment.center
+              : MainAxisAlignment.start,
+          children: [
+            Icon(
+              isDarkMode
+                  ? PhosphorIcons.moon(PhosphorIconsStyle.bold)
+                  : PhosphorIcons.sun(PhosphorIconsStyle.bold),
+              color: Colors.white,
+              size: 24,
+            ),
+            if (!widget.isCollapsed) ...[
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  isDarkMode ? 'Dark Mode' : 'Light Mode',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
               ),
-            ),
-            CupertinoSwitch(
-              value: isDarkMode,
-              activeColor: Colors.blue,
-              onChanged: (value) {
-                setState(() {
-                  isDarkMode = value;
-                });
-                // TODO: Implement theme switching logic
-              },
-            ),
+              CupertinoSwitch(
+                value: isDarkMode,
+                activeColor: Colors.blue,
+                onChanged: (value) {
+                  setState(() {
+                    isDarkMode = value;
+                  });
+                  // TODO: Connect to theme provider
+                },
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
