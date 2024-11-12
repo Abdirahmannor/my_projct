@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../core/constants/app_colors.dart';
 
 class CalendarOverview extends StatelessWidget {
   const CalendarOverview({super.key});

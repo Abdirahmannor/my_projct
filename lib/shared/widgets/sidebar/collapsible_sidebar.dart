@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import 'sidebar_item.dart';
+import 'package:flutter/cupertino.dart';
 
 class CollapsibleSidebar extends StatefulWidget {
   final bool isCollapsed;
@@ -22,6 +23,8 @@ class CollapsibleSidebar extends StatefulWidget {
 }
 
 class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
+  bool isDarkMode = true;
+
   final List<SidebarItem> items = [
     SidebarItem(
       icon: PhosphorIcons.houseLine(PhosphorIconsStyle.bold),
@@ -46,6 +49,10 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
     SidebarItem(
       icon: PhosphorIcons.folder(PhosphorIconsStyle.bold),
       label: 'Resources',
+    ),
+    SidebarItem(
+      icon: PhosphorIcons.gear(PhosphorIconsStyle.bold),
+      label: 'Settings',
     ),
   ];
 
@@ -72,6 +79,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
             ),
           ),
           const Divider(color: Colors.white24),
+          _buildThemeToggle(),
           _buildFooter(),
         ],
       ),
@@ -170,6 +178,43 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeToggle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            PhosphorIcons.moon(PhosphorIconsStyle.bold),
+            color: Colors.white,
+            size: 24,
+          ),
+          if (!widget.isCollapsed) ...[
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'Dark Mode',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            CupertinoSwitch(
+              value: isDarkMode,
+              activeColor: Colors.blue,
+              onChanged: (value) {
+                setState(() {
+                  isDarkMode = value;
+                });
+                // TODO: Implement theme switching logic
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
