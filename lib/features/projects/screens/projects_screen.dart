@@ -19,6 +19,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int? hoveredIndex;
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
+  List<Map<String, dynamic>> projects = [];
 
   String getPriorityText(String? priority) {
     if (priority == null) return 'All Priority';
@@ -32,27 +33,18 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   bool _filterProject(int index) {
     if (searchQuery.isNotEmpty) {
-      String projectName = 'Project ${index + 1}'.toLowerCase();
+      String projectName = projects[index]['name'].toLowerCase();
       if (!projectName.contains(searchQuery.toLowerCase())) return false;
     }
 
     if (showAllProjects) {
       if (selectedStatus != null) {
-        String projectStatus = checkedProjects[index]
-            ? 'completed'
-            : index % 3 == 1
-                ? 'in progress'
-                : 'delayed';
+        String projectStatus = projects[index]['status'];
         if (projectStatus != selectedStatus) return false;
       }
       if (selectedPriority == null) return true;
 
-      String priority = index % 3 == 0
-          ? 'high'
-          : index % 3 == 1
-              ? 'medium'
-              : 'low';
-
+      String priority = projects[index]['priority'];
       return priority == selectedPriority;
     }
 
@@ -99,11 +91,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         ),
                       ),
                       FilledButton.icon(
-                        onPressed: () {
-                          showDialog(
+                        onPressed: () async {
+                          final result = await showDialog(
                             context: context,
                             builder: (context) => const AddProjectDialog(),
                           );
+
+                          if (result != null) {
+                            setState(() {
+                              projects.add(result);
+                              checkedProjects =
+                                  List.generate(projects.length, (_) => false);
+                            });
+                          }
                         },
                         icon: Icon(PhosphorIcons.plus(), size: 18),
                         label: const Text('Add Project'),
@@ -122,267 +122,291 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   const SizedBox(height: 24),
                   // Filter bar row
-                  Row(
-                    children: [
-                      // All project button (separate)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: showAllProjects
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              showAllProjects = true;
-                              showArchived = false;
-                            });
-                          },
-                          icon: Icon(
-                            PhosphorIcons.folder(),
-                            size: 18,
-                            color: showAllProjects ? Colors.white : null,
-                          ),
-                          label: Text(
-                            'All Projects',
-                            style: TextStyle(
-                              color: showAllProjects ? Colors.white : null,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      // Archived button (separate)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: showArchived
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              showArchived = true;
-                              showAllProjects = false;
-                            });
-                          },
-                          icon: Icon(
-                            PhosphorIcons.archive(),
-                            size: 18,
-                            color: showArchived ? Colors.white : null,
-                          ),
-                          label: Text(
-                            'Archived',
-                            style: TextStyle(
-                              color: showArchived ? Colors.white : null,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // Sort dropdown
-                      PopupMenuButton<String>(
-                        offset: const Offset(0, 40),
-                        child: Container(
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        // All project button (separate)
+                        Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: showAllProjects
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                showAllProjects = true;
+                                showArchived = false;
+                              });
+                            },
+                            icon: Icon(
+                              PhosphorIcons.folder(),
+                              size: 18,
+                              color: showAllProjects ? Colors.white : null,
+                            ),
+                            label: Text(
+                              'All Projects',
+                              style: TextStyle(
+                                color: showAllProjects ? Colors.white : null,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // Archived button (separate)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: showArchived
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                showArchived = true;
+                                showAllProjects = false;
+                              });
+                            },
+                            icon: Icon(
+                              PhosphorIcons.archive(),
+                              size: 18,
+                              color: showArchived ? Colors.white : null,
+                            ),
+                            label: Text(
+                              'Archived',
+                              style: TextStyle(
+                                color: showArchived ? Colors.white : null,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        // Priority filter
+                        PopupMenuButton<String>(
+                          offset: const Offset(0, 40),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: selectedPriority != null
+                                  ? Border.all(
+                                      color: selectedPriority == 'high'
+                                          ? Colors.red[400]!
+                                          : selectedPriority == 'medium'
+                                              ? Colors.orange[400]!
+                                              : Colors.green[400]!,
+                                      width: 1,
+                                    )
+                                  : null,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(PhosphorIcons.funnel(), size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  getPriorityText(selectedPriority),
+                                  style: TextStyle(
+                                    color: selectedPriority != null
+                                        ? selectedPriority == 'high'
+                                            ? Colors.red[400]
+                                            : selectedPriority == 'medium'
+                                                ? Colors.orange[400]
+                                                : Colors.green[400]
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Icon(PhosphorIcons.caretDown(), size: 18),
+                              ],
+                            ),
+                          ),
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'all',
+                              child: Text('All Priority'),
+                            ),
+                            const PopupMenuDivider(),
+                            PopupMenuItem<String>(
+                              value: 'high',
+                              child: Text(
+                                'High',
+                                style: TextStyle(color: Colors.red[400]),
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'medium',
+                              child: Text(
+                                'Medium',
+                                style: TextStyle(color: Colors.orange[400]),
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'low',
+                              child: Text(
+                                'Low',
+                                style: TextStyle(color: Colors.green[400]),
+                              ),
+                            ),
+                          ],
+                          onSelected: (String value) {
+                            setState(() {
+                              selectedPriority = value == 'all' ? null : value;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        // Search bar
+                        Container(
+                          width: 240,
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(PhosphorIcons.funnel(), size: 18),
-                              const SizedBox(width: 8),
-                              Text(getPriorityText(selectedPriority)),
-                              const SizedBox(width: 12),
-                              Icon(PhosphorIcons.caretDown(), size: 18),
-                            ],
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: (value) {
+                              setState(() {
+                                searchQuery = value;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search projects...',
+                              prefixIcon: Icon(PhosphorIcons.magnifyingGlass(),
+                                  size: 18),
+                              suffixIcon: searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(PhosphorIcons.x(), size: 16),
+                                      onPressed: () {
+                                        setState(() {
+                                          searchQuery = '';
+                                          searchController.clear();
+                                        });
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 8),
+                            ),
                           ),
                         ),
-                        itemBuilder: (BuildContext context) =>
-                            <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'all',
-                            child: Text('All Priority'),
-                          ),
-                          const PopupMenuDivider(),
-                          PopupMenuItem<String>(
-                            value: 'high',
-                            child: Text(
-                              'High',
-                              style: TextStyle(color: Colors.red[400]),
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'medium',
-                            child: Text(
-                              'Medium',
-                              style: TextStyle(color: Colors.orange[400]),
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'low',
-                            child: Text(
-                              'Low',
-                              style: TextStyle(color: Colors.green[400]),
-                            ),
-                          ),
-                        ],
-                        onSelected: (String value) {
-                          setState(() {
-                            selectedPriority = value == 'all' ? null : value;
-                          });
-                        },
-                      ),
 
-                      const SizedBox(width: 16),
+                        const SizedBox(width: 16),
 
-                      // Search bar
-                      Container(
-                        width: 240,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: (value) {
-                            setState(() {
-                              searchQuery = value;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Search projects...',
-                            prefixIcon:
-                                Icon(PhosphorIcons.magnifyingGlass(), size: 18),
-                            suffixIcon: searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(PhosphorIcons.x(), size: 16),
-                                    onPressed: () {
-                                      setState(() {
-                                        searchQuery = '';
-                                        searchController.clear();
-                                      });
-                                    },
-                                  )
-                                : null,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      // List view icon
-                      Tooltip(
-                        message: 'List View',
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          onEnter: (_) => setState(() => hoveredIndex = -1),
-                          onExit: (_) => setState(() => hoveredIndex = null),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isListView
-                                  ? Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.1)
-                                  : Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
+                        // List view icon
+                        Tooltip(
+                          message: 'List View',
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            onEnter: (_) => setState(() => hoveredIndex = -1),
+                            onExit: (_) => setState(() => hoveredIndex = null),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
                                 color: isListView
-                                    ? Theme.of(context).primaryColor
-                                    : hoveredIndex == -1
-                                        ? Colors.white.withOpacity(0.1)
-                                        : Colors.transparent,
-                                width: 1,
+                                    ? Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.1)
+                                    : Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isListView
+                                      ? Theme.of(context).primaryColor
+                                      : hoveredIndex == -1
+                                          ? Colors.white.withOpacity(0.1)
+                                          : Colors.transparent,
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  isListView = true;
-                                });
-                              },
-                              icon: Icon(
-                                PhosphorIcons.list(),
-                                size: 18,
-                                color: isListView
-                                    ? Theme.of(context).primaryColor
-                                    : null,
+                              child: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    isListView = true;
+                                  });
+                                },
+                                icon: Icon(
+                                  PhosphorIcons.list(),
+                                  size: 18,
+                                  color: isListView
+                                      ? Theme.of(context).primaryColor
+                                      : null,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
                             ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 8),
 
-                      // Grid view icon
-                      Tooltip(
-                        message: 'Grid View',
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          onEnter: (_) => setState(() => hoveredIndex = -2),
-                          onExit: (_) => setState(() => hoveredIndex = null),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: !isListView
-                                  ? Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.1)
-                                  : Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
+                        // Grid view icon
+                        Tooltip(
+                          message: 'Grid View',
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            onEnter: (_) => setState(() => hoveredIndex = -2),
+                            onExit: (_) => setState(() => hoveredIndex = null),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
                                 color: !isListView
-                                    ? Theme.of(context).primaryColor
-                                    : hoveredIndex == -2
-                                        ? Colors.white.withOpacity(0.1)
-                                        : Colors.transparent,
-                                width: 1,
+                                    ? Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.1)
+                                    : Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: !isListView
+                                      ? Theme.of(context).primaryColor
+                                      : hoveredIndex == -2
+                                          ? Colors.white.withOpacity(0.1)
+                                          : Colors.transparent,
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  isListView = false;
-                                });
-                              },
-                              icon: Icon(
-                                PhosphorIcons.squaresFour(),
-                                size: 18,
-                                color: !isListView
-                                    ? Theme.of(context).primaryColor
-                                    : null,
+                              child: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    isListView = false;
+                                  });
+                                },
+                                icon: Icon(
+                                  PhosphorIcons.squaresFour(),
+                                  size: 18,
+                                  color: !isListView
+                                      ? Theme.of(context).primaryColor
+                                      : null,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -456,10 +480,50 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               children: [
                                 Text(
                                   'Status',
-                                  style: Theme.of(context).textTheme.titleSmall,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        decoration: selectedStatus != null
+                                            ? TextDecoration.underline
+                                            : null,
+                                        decorationColor: selectedStatus != null
+                                            ? selectedStatus == 'completed'
+                                                ? Colors.green[400]
+                                                : selectedStatus ==
+                                                        'in progress'
+                                                    ? Colors.blue[400]
+                                                    : selectedStatus ==
+                                                            'on hold'
+                                                        ? Colors.orange[400]
+                                                        : selectedStatus ==
+                                                                'not started'
+                                                            ? Colors.grey[400]
+                                                            : null
+                                            : null,
+                                        decorationThickness: 3,
+                                        height: 1.5,
+                                        decorationStyle:
+                                            TextDecorationStyle.solid,
+                                      ),
                                 ),
-                                const SizedBox(width: 4),
-                                Icon(PhosphorIcons.caretDown(), size: 14),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  PhosphorIcons.caretDown(),
+                                  size: 14,
+                                  color: selectedStatus != null
+                                      ? selectedStatus == 'completed'
+                                          ? Colors.green[400]
+                                          : selectedStatus == 'in progress'
+                                              ? Colors.blue[400]
+                                              : selectedStatus == 'on hold'
+                                                  ? Colors.orange[400]
+                                                  : selectedStatus ==
+                                                          'not started'
+                                                      ? Colors.grey[400]
+                                                      : null
+                                      : null,
+                                ),
                               ],
                             ),
                             itemBuilder: (BuildContext context) =>
@@ -470,10 +534,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               ),
                               const PopupMenuDivider(),
                               PopupMenuItem<String>(
-                                value: 'completed',
+                                value: 'not started',
                                 child: Text(
-                                  'Completed',
-                                  style: TextStyle(color: Colors.green[400]),
+                                  'Not Started',
+                                  style: TextStyle(color: Colors.grey[400]),
                                 ),
                               ),
                               PopupMenuItem<String>(
@@ -484,10 +548,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 ),
                               ),
                               PopupMenuItem<String>(
-                                value: 'delayed',
+                                value: 'on hold',
                                 child: Text(
-                                  'Delayed',
-                                  style: TextStyle(color: Colors.red[400]),
+                                  'On Hold',
+                                  style: TextStyle(color: Colors.orange[400]),
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'completed',
+                                child: Text(
+                                  'Completed',
+                                  style: TextStyle(color: Colors.green[400]),
                                 ),
                               ),
                             ],
@@ -514,10 +585,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   Expanded(
                     child: isListView
                         ? ListView.builder(
-                            itemCount: 5,
+                            itemCount: projects.length,
                             itemBuilder: (context, index) {
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
+                              final project = projects[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
@@ -579,7 +651,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                       Expanded(
                                         flex: 3,
                                         child: Text(
-                                          'Project ${index + 1}',
+                                          project['name'],
                                           style: TextStyle(
                                             fontSize: 14,
                                             decoration: checkedProjects[index]
@@ -677,26 +749,42 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: checkedProjects[index]
+                                            color: project['status'] ==
+                                                    'completed'
                                                 ? const Color(0xFF243524)
-                                                : index % 3 == 1
+                                                : project['status'] ==
+                                                        'in progress'
                                                     ? const Color(0xFF252D3D)
-                                                    : const Color(0xFF442926),
+                                                    : project['status'] ==
+                                                            'on hold'
+                                                        ? const Color(
+                                                            0xFF3D3425)
+                                                        : const Color(
+                                                            0xFF442926),
                                             borderRadius:
                                                 BorderRadius.circular(4),
                                           ),
                                           child: Text(
-                                            checkedProjects[index]
+                                            project['status'] == 'completed'
                                                 ? 'Completed'
-                                                : index % 3 == 1
+                                                : project['status'] ==
+                                                        'in progress'
                                                     ? 'In Progress'
-                                                    : 'Delayed',
+                                                    : project['status'] ==
+                                                            'on hold'
+                                                        ? 'On Hold'
+                                                        : 'Not Started',
                                             style: TextStyle(
-                                              color: checkedProjects[index]
+                                              color: project['status'] ==
+                                                      'completed'
                                                   ? Colors.green[400]
-                                                  : index % 3 == 1
+                                                  : project['status'] ==
+                                                          'in progress'
                                                       ? Colors.blue[400]
-                                                      : Colors.red[400],
+                                                      : project['status'] ==
+                                                              'on hold'
+                                                          ? Colors.orange[400]
+                                                          : Colors.grey[400],
                                               fontSize: 12,
                                             ),
                                             textAlign: TextAlign.center,
@@ -754,10 +842,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               childAspectRatio:
                                   1.5, // Width:Height ratio of each grid item
                             ),
-                            itemCount: 5,
+                            itemCount: projects.length,
                             itemBuilder: (context, index) {
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
+                              final project = projects[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
@@ -812,7 +901,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                           ),
                                           Expanded(
                                             child: Text(
-                                              'Project ${index + 1}',
+                                              project['name'],
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w500,
@@ -865,20 +954,40 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: checkedProjects[index]
+                                          color: project['status'] ==
+                                                  'completed'
                                               ? const Color(0xFF243524)
-                                              : const Color(0xFF252D3D),
+                                              : project['status'] ==
+                                                      'in progress'
+                                                  ? const Color(0xFF252D3D)
+                                                  : project['status'] ==
+                                                          'on hold'
+                                                      ? const Color(0xFF3D3425)
+                                                      : const Color(0xFF442926),
                                           borderRadius:
                                               BorderRadius.circular(4),
                                         ),
                                         child: Text(
-                                          checkedProjects[index]
+                                          project['status'] == 'completed'
                                               ? 'Completed'
-                                              : 'In Progress',
+                                              : project['status'] ==
+                                                      'in progress'
+                                                  ? 'In Progress'
+                                                  : project['status'] ==
+                                                          'on hold'
+                                                      ? 'On Hold'
+                                                      : 'Not Started',
                                           style: TextStyle(
-                                            color: checkedProjects[index]
-                                                ? Colors.green[400]
-                                                : Colors.blue[400],
+                                            color:
+                                                project['status'] == 'completed'
+                                                    ? Colors.green[400]
+                                                    : project['status'] ==
+                                                            'in progress'
+                                                        ? Colors.blue[400]
+                                                        : project['status'] ==
+                                                                'on hold'
+                                                            ? Colors.orange[400]
+                                                            : Colors.grey[400],
                                             fontSize: 12,
                                           ),
                                         ),
