@@ -53,7 +53,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -74,12 +74,12 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         ? PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill)
                         : PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
                     color: Colors.white,
-                    size: 24,
+                    size: 20,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Text(
                     widget.isEditing ? 'Edit Project' : 'Add New Project',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -90,6 +90,12 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                     icon: Icon(
                       PhosphorIcons.x(PhosphorIconsStyle.bold),
                       color: Colors.white,
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
                     ),
                   ),
                 ],

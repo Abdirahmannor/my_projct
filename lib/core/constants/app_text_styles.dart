@@ -5,22 +5,22 @@ import 'app_colors.dart';
 class AppTextStyles {
   static final TextTheme lightTextTheme = TextTheme(
     displayLarge: GoogleFonts.poppins(
-      color: AppColors.textLight,
+      color: AppColors.lightTextPrimary,
       fontSize: 32,
       fontWeight: FontWeight.bold,
     ),
     displayMedium: GoogleFonts.poppins(
-      color: AppColors.textLight,
+      color: AppColors.lightTextPrimary,
       fontSize: 24,
       fontWeight: FontWeight.w600,
     ),
     bodyLarge: GoogleFonts.inter(
-      color: AppColors.textLight,
+      color: AppColors.lightTextPrimary,
       fontSize: 16,
       fontWeight: FontWeight.normal,
     ),
     bodyMedium: GoogleFonts.inter(
-      color: AppColors.textLight,
+      color: AppColors.lightTextSecondary,
       fontSize: 14,
       fontWeight: FontWeight.normal,
     ),
@@ -28,22 +28,22 @@ class AppTextStyles {
 
   static final TextTheme darkTextTheme = TextTheme(
     displayLarge: GoogleFonts.poppins(
-      color: AppColors.textDark,
+      color: AppColors.darkTextPrimary,
       fontSize: 32,
       fontWeight: FontWeight.bold,
     ),
     displayMedium: GoogleFonts.poppins(
-      color: AppColors.textDark,
+      color: AppColors.darkTextPrimary,
       fontSize: 24,
       fontWeight: FontWeight.w600,
     ),
     bodyLarge: GoogleFonts.inter(
-      color: AppColors.textDark,
+      color: AppColors.darkTextPrimary,
       fontSize: 16,
       fontWeight: FontWeight.normal,
     ),
     bodyMedium: GoogleFonts.inter(
-      color: AppColors.textDark,
+      color: AppColors.darkTextSecondary,
       fontSize: 14,
       fontWeight: FontWeight.normal,
     ),

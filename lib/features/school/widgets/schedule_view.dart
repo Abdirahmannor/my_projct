@@ -14,9 +14,7 @@ class ScheduleView extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Theme.of(context).brightness == Brightness.light
-                ? AppColors.borderLight
-                : AppColors.borderDark,
+            color: Theme.of(context).dividerColor,
           ),
         ),
         padding: const EdgeInsets.all(12),
@@ -61,7 +59,7 @@ class ScheduleView extends StatelessWidget {
             isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive ? AppColors.accent : Colors.grey,
+          color: isActive ? AppColors.accent : Theme.of(context).dividerColor,
           width: 1,
         ),
       ),
@@ -69,7 +67,7 @@ class ScheduleView extends StatelessWidget {
         label,
         style: TextStyle(
           fontSize: 11,
-          color: isActive ? AppColors.accent : Colors.grey,
+          color: isActive ? AppColors.accent : Theme.of(context).hintColor,
         ),
       ),
     );
@@ -79,17 +77,37 @@ class ScheduleView extends StatelessWidget {
     return Column(
       children: [
         Row(
-          children: const [
-            SizedBox(width: 40),
+          children: [
+            const SizedBox(width: 40),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text('Mon', style: TextStyle(fontSize: 12)),
-                  Text('Tue', style: TextStyle(fontSize: 12)),
-                  Text('Wed', style: TextStyle(fontSize: 12)),
-                  Text('Thu', style: TextStyle(fontSize: 12)),
-                  Text('Fri', style: TextStyle(fontSize: 12)),
+                  Text('Mon',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 12)),
+                  Text('Tue',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 12)),
+                  Text('Wed',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 12)),
+                  Text('Thu',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 12)),
+                  Text('Fri',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 12)),
                 ],
               ),
             ),
@@ -128,7 +146,7 @@ class ScheduleView extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
                 ),
               ),
             ),
@@ -140,7 +158,8 @@ class ScheduleView extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border(
                         left: BorderSide(
-                          color: Colors.grey.withOpacity(0.2),
+                          color:
+                              Theme.of(context).dividerColor.withOpacity(0.2),
                         ),
                       ),
                     ),

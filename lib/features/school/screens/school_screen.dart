@@ -139,14 +139,10 @@ class _ExamsList extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.cardLight
-            : AppColors.cardDark,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.light
-              ? AppColors.borderLight
-              : AppColors.borderDark,
+          color: Theme.of(context).dividerColor,
         ),
       ),
       child: Column(
