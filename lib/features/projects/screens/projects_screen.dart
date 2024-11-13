@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../widgets/add_project_dialog.dart';
 import '../widgets/project_list_item.dart';
+import '../../../core/utils/string_extensions.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -30,6 +31,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       'startDate': '15 Sep, 2024',
       'dueDate': '15 Oct, 2024',
       'tasks': 5,
+      'completedTasks': 3,
       'priority': 'high',
       'status': 'in progress',
     },
@@ -39,6 +41,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       'startDate': '1 Oct, 2024',
       'dueDate': '30 Nov, 2024',
       'tasks': 8,
+      'completedTasks': 5,
       'priority': 'medium',
       'status': 'not started',
     },
@@ -48,6 +51,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       'startDate': '20 Sep, 2024',
       'dueDate': '20 Dec, 2024',
       'tasks': 12,
+      'completedTasks': 7,
       'priority': 'high',
       'status': 'on hold',
     },
@@ -57,6 +61,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       'startDate': '5 Oct, 2024',
       'dueDate': '5 Nov, 2024',
       'tasks': 6,
+      'completedTasks': 4,
       'priority': 'low',
       'status': 'completed',
     },
@@ -203,18 +208,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
           // Content section
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
+            child: Container(
+              margin: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
+                ),
+              ),
               child: Column(
                 children: [
                   // Table Header
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
                         SizedBox(
@@ -230,7 +238,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           flex: 3,
                           child: Text(
                             'Project Name',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
                         Expanded(
@@ -276,25 +289,30 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const Divider(height: 1),
                   // Project List
                   Expanded(
                     child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
                       itemCount: projects.length,
                       itemBuilder: (context, index) {
                         if (!_filterProject(index))
                           return const SizedBox.shrink();
-                        return ProjectListItem(
-                          project: projects[index],
-                          isChecked: checkedProjects[index],
-                          onCheckChanged: (value) {
-                            setState(() {
-                              checkedProjects[index] = value ?? false;
-                            });
-                          },
-                          onEdit: () => _handleEdit(index),
-                          onDelete: () => _handleDelete(index),
-                          isHovered: hoveredIndex == index,
+                        return MouseRegion(
+                          onEnter: (_) => setState(() => hoveredIndex = index),
+                          onExit: (_) => setState(() => hoveredIndex = null),
+                          child: ProjectListItem(
+                            project: projects[index],
+                            isChecked: checkedProjects[index],
+                            onCheckChanged: (value) {
+                              setState(() {
+                                checkedProjects[index] = value ?? false;
+                              });
+                            },
+                            onEdit: () => _handleEdit(index),
+                            onDelete: () => _handleDelete(index),
+                            isHovered: hoveredIndex == index,
+                          ),
                         );
                       },
                     ),
@@ -474,11 +492,5 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         constraints: const BoxConstraints(),
       ),
     );
-  }
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

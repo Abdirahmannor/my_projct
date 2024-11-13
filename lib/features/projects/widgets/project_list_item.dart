@@ -1,334 +1,300 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/string_extensions.dart';
 
-class ProjectListItem extends StatefulWidget {
+class ProjectListItem extends StatelessWidget {
   final Map<String, dynamic> project;
   final bool isChecked;
+  final bool isHovered;
   final Function(bool?) onCheckChanged;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final bool isHovered;
 
   const ProjectListItem({
     super.key,
     required this.project,
     required this.isChecked,
+    required this.isHovered,
     required this.onCheckChanged,
     required this.onEdit,
     required this.onDelete,
-    required this.isHovered,
   });
-
-  @override
-  State<ProjectListItem> createState() => _ProjectListItemState();
-}
-
-class _ProjectListItemState extends State<ProjectListItem> {
-  bool showDeleteConfirm = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: widget.isHovered
-            ? Theme.of(context).cardColor.withOpacity(0.8)
-            : Theme.of(context).cardColor.withOpacity(0.5),
+        color: isHovered
+            ? Theme.of(context).hoverColor
+            : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _getPriorityColor(widget.project['priority']).withOpacity(0.3),
-          width: 2,
+          color: Theme.of(context).dividerColor,
+          width: 1,
         ),
-        boxShadow: widget.isHovered
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [],
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            child: Checkbox(
-              value: widget.isChecked,
-              onChanged: widget.onCheckChanged,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        boxShadow: [
+          if (isHovered)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.project['name'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    decoration: widget.isChecked
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              child: Checkbox(
+                value: isChecked,
+                onChanged: onCheckChanged,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    project['name'],
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
-                ),
-                if (widget.project['description'] != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    widget.project['description'],
+                    project['description'],
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color
-                              ?.withOpacity(0.7),
+                          color: Theme.of(context).hintColor,
                         ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.calendar(PhosphorIconsStyle.bold),
-                  size: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.project['startDate'] ?? '15 Sep, 2024',
-                  style: TextStyle(
-                    fontSize: 14,
-                    decoration: widget.isChecked
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.clockCountdown(PhosphorIconsStyle.bold),
-                  size: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.project['dueDate'] ?? '15 Oct, 2024',
-                  style: TextStyle(
-                    fontSize: 14,
-                    decoration: widget.isChecked
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.listChecks(PhosphorIconsStyle.bold),
-                  size: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${widget.project['tasks'] ?? 5}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    decoration: widget.isChecked
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
               ),
-              decoration: BoxDecoration(
-                color: _getPriorityBackgroundColor(widget.project['priority']),
-                borderRadius: BorderRadius.circular(4),
-              ),
+            ),
+            Expanded(
+              flex: 2,
               child: Text(
-                _getPriorityText(widget.project['priority']),
-                style: TextStyle(
-                  color: _getPriorityColor(widget.project['priority']),
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
+                project['startDate'],
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: _getStatusBackgroundColor(widget.project['status']),
-                borderRadius: BorderRadius.circular(4),
-              ),
+            Expanded(
+              flex: 2,
               child: Text(
-                _getStatusText(widget.project['status']),
-                style: TextStyle(
-                  color: _getStatusColor(widget.project['status']),
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
+                project['dueDate'],
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
-          ),
-          SizedBox(
-            width: 100,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    // View project details
-                  },
-                  icon: Icon(
-                    PhosphorIcons.eye(PhosphorIconsStyle.bold),
-                    size: 16,
-                    color: widget.isHovered ? AppColors.accent : null,
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 1,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        CircularProgressIndicator(
+                          value: project['completedTasks'] / project['tasks'],
+                          backgroundColor:
+                              Theme.of(context).dividerColor.withOpacity(0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.accent.withOpacity(0.9),
+                          ),
+                          strokeWidth: 4,
+                        ),
+                        Center(
+                          child: Text(
+                            '${project['completedTasks']}/${project['tasks']}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  tooltip: 'View Details',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: widget.onEdit,
-                  icon: Icon(
-                    PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                    size: 16,
-                    color: widget.isHovered ? AppColors.warning : null,
-                  ),
-                  tooltip: 'Edit Project',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {
-                    if (!showDeleteConfirm) {
-                      setState(() => showDeleteConfirm = true);
-                      Future.delayed(const Duration(seconds: 3), () {
-                        if (mounted) {
-                          setState(() => showDeleteConfirm = false);
-                        }
-                      });
-                    } else {
-                      widget.onDelete();
-                    }
-                  },
-                  icon: Icon(
-                    showDeleteConfirm
-                        ? PhosphorIcons.check(PhosphorIconsStyle.bold)
-                        : PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                    size: 16,
-                    color: showDeleteConfirm ? AppColors.error : null,
-                  ),
-                  tooltip:
-                      showDeleteConfirm ? 'Confirm Delete' : 'Delete Project',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: _buildPriorityBadge(context, project['priority']),
+            ),
+            Expanded(
+              child: _buildStatusBadge(context, project['status']),
+            ),
+            SizedBox(
+              width: 100,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: onEdit,
+                    icon: Icon(
+                      PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
+                      size: 18,
+                      color: Theme.of(context).hintColor,
+                    ),
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: Icon(
+                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                      size: 18,
+                      color: Colors.red,
+                    ),
+                    tooltip: 'Delete',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return AppColors.error;
-      case 'medium':
-        return AppColors.warning;
-      case 'low':
-        return AppColors.success;
-      default:
-        return AppColors.info;
+  Widget _buildPriorityBadge(BuildContext context, String priority) {
+    final colors = {
+      'high': Colors.red.shade400,
+      'medium': Colors.orange.shade400,
+      'low': Colors.green.shade400,
+    };
+
+    final priorityValues = {
+      'high': 1.0,
+      'medium': 0.66,
+      'low': 0.33,
+    };
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: colors[priority]?.withOpacity(0.3) ??
+                  Colors.grey.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Stack(
+            children: [
+              CircularProgressIndicator(
+                value: priorityValues[priority] ?? 0,
+                backgroundColor: colors[priority]?.withOpacity(0.1) ??
+                    Colors.grey.withOpacity(0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  colors[priority] ?? Colors.grey,
+                ),
+                strokeWidth: 4,
+              ),
+              Center(
+                child: Icon(
+                  PhosphorIcons.warning(PhosphorIconsStyle.fill),
+                  size: 16,
+                  color: colors[priority]?.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBadge(BuildContext context, String status) {
+    final colors = {
+      'not started': Colors.grey.shade400,
+      'in progress': Colors.blue.shade400,
+      'on hold': Colors.orange.shade400,
+      'completed': Colors.green.shade400,
+    };
+
+    final statusValues = {
+      'not started': 0.0,
+      'in progress': 0.5,
+      'on hold': 0.75,
+      'completed': 1.0,
+    };
+
+    IconData getStatusIcon() {
+      switch (status) {
+        case 'not started':
+          return PhosphorIcons.pause(PhosphorIconsStyle.fill);
+        case 'in progress':
+          return PhosphorIcons.play(PhosphorIconsStyle.fill);
+        case 'on hold':
+          return PhosphorIcons.clock(PhosphorIconsStyle.fill);
+        case 'completed':
+          return PhosphorIcons.check(PhosphorIconsStyle.fill);
+        default:
+          return PhosphorIcons.circle(PhosphorIconsStyle.fill);
+      }
     }
-  }
 
-  Color _getPriorityBackgroundColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return const Color(0xFF442926);
-      case 'medium':
-        return const Color(0xFF3D3425);
-      case 'low':
-        return const Color(0xFF2A3524);
-      default:
-        return const Color(0xFF252D3D);
-    }
-  }
-
-  String _getPriorityText(String priority) {
-    return priority[0].toUpperCase() + priority.substring(1).toLowerCase();
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return AppColors.success;
-      case 'in progress':
-        return AppColors.accent;
-      case 'on hold':
-        return AppColors.warning;
-      default:
-        return AppColors.error;
-    }
-  }
-
-  Color _getStatusBackgroundColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return const Color(0xFF243524);
-      case 'in progress':
-        return const Color(0xFF252D3D);
-      case 'on hold':
-        return const Color(0xFF3D3425);
-      default:
-        return const Color(0xFF442926);
-    }
-  }
-
-  String _getStatusText(String status) {
-    return status
-        .split(' ')
-        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: colors[status]?.withOpacity(0.3) ??
+                  Colors.grey.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Stack(
+            children: [
+              CircularProgressIndicator(
+                value: statusValues[status] ?? 0,
+                backgroundColor: colors[status]?.withOpacity(0.1) ??
+                    Colors.grey.withOpacity(0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  colors[status] ?? Colors.grey,
+                ),
+                strokeWidth: 4,
+              ),
+              Center(
+                child: Icon(
+                  getStatusIcon(),
+                  size: 16,
+                  color: colors[status]?.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
