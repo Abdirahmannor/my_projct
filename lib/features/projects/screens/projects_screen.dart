@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/constants/app_colors.dart';
 import '../widgets/add_project_dialog.dart';
+import '../widgets/project_list_item.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -19,16 +21,56 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int? hoveredIndex;
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  List<Map<String, dynamic>> projects = [];
 
-  String getPriorityText(String? priority) {
-    if (priority == null) return 'All Priority';
-    return priority[0].toUpperCase() + priority.substring(1);
+  // Sample projects data
+  List<Map<String, dynamic>> projects = [
+    {
+      'name': 'School Management System',
+      'description': 'A comprehensive system for managing school operations',
+      'startDate': '15 Sep, 2024',
+      'dueDate': '15 Oct, 2024',
+      'tasks': 5,
+      'priority': 'high',
+      'status': 'in progress',
+    },
+    {
+      'name': 'E-commerce Platform',
+      'description': 'Online shopping platform with modern features',
+      'startDate': '1 Oct, 2024',
+      'dueDate': '30 Nov, 2024',
+      'tasks': 8,
+      'priority': 'medium',
+      'status': 'not started',
+    },
+    {
+      'name': 'Mobile Banking App',
+      'description': 'Secure and user-friendly banking application',
+      'startDate': '20 Sep, 2024',
+      'dueDate': '20 Dec, 2024',
+      'tasks': 12,
+      'priority': 'high',
+      'status': 'on hold',
+    },
+    {
+      'name': 'Social Media Dashboard',
+      'description': 'Analytics and management dashboard for social media',
+      'startDate': '5 Oct, 2024',
+      'dueDate': '5 Nov, 2024',
+      'tasks': 6,
+      'priority': 'low',
+      'status': 'completed',
+    },
+  ];
+
+  void _handleEdit(int index) {
+    // TODO: Implement edit functionality
   }
 
-  String getStatusText(String? status) {
-    if (status == null) return 'All Status';
-    return status[0].toUpperCase() + status.substring(1);
+  void _handleDelete(int index) {
+    setState(() {
+      projects.removeAt(index);
+      checkedProjects = List.generate(projects.length, (_) => false);
+    });
   }
 
   bool _filterProject(int index) {
@@ -37,40 +79,40 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       if (!projectName.contains(searchQuery.toLowerCase())) return false;
     }
 
-    if (showAllProjects) {
-      if (selectedStatus != null) {
-        String projectStatus = projects[index]['status'];
-        if (projectStatus != selectedStatus) return false;
-      }
-      if (selectedPriority == null) return true;
-
-      String priority = projects[index]['priority'];
-      return priority == selectedPriority;
+    if (selectedPriority != null && selectedPriority != 'all') {
+      if (projects[index]['priority'] != selectedPriority) return false;
     }
 
+    if (selectedStatus != null && selectedStatus != 'all') {
+      if (projects[index]['status'] != selectedStatus) return false;
+    }
+
+    if (!showAllProjects && !showArchived) return false;
     if (showArchived && !checkedProjects[index]) return false;
+
     return true;
   }
 
   void _toggleAllProjects(bool? value) {
     setState(() {
-      checkedProjects = List.generate(5, (_) => value ?? false);
+      checkedProjects = List.generate(projects.length, (_) => value ?? false);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
         children: [
-          // Header section with different background
+          // Header section
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withOpacity(0.5),
+              color: Theme.of(context).cardColor,
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Theme.of(context).dividerColor,
                   width: 1,
                 ),
               ),
@@ -83,12 +125,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Projects',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       FilledButton.icon(
                         onPressed: () async {
@@ -105,306 +149,50 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             });
                           }
                         },
-                        icon: Icon(PhosphorIcons.plus(), size: 18),
+                        icon: Icon(PhosphorIcons.plus(PhosphorIconsStyle.bold),
+                            size: 18),
                         label: const Text('Add Project'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5722),
+                          backgroundColor: AppColors.accent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  // Filter bar row
+                  // Filter bar
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        // All project button (separate)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: showAllProjects
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                showAllProjects = true;
-                                showArchived = false;
-                              });
-                            },
-                            icon: Icon(
-                              PhosphorIcons.folder(),
-                              size: 18,
-                              color: showAllProjects ? Colors.white : null,
-                            ),
-                            label: Text(
-                              'All Projects',
-                              style: TextStyle(
-                                color: showAllProjects ? Colors.white : null,
-                              ),
-                            ),
-                          ),
+                        _buildFilterButton(
+                          'All Projects',
+                          PhosphorIcons.folder(PhosphorIconsStyle.bold),
+                          showAllProjects,
+                          () => setState(() {
+                            showAllProjects = true;
+                            showArchived = false;
+                          }),
                         ),
-
                         const SizedBox(width: 8),
-
-                        // Archived button (separate)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: showArchived
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                showArchived = true;
-                                showAllProjects = false;
-                              });
-                            },
-                            icon: Icon(
-                              PhosphorIcons.archive(),
-                              size: 18,
-                              color: showArchived ? Colors.white : null,
-                            ),
-                            label: Text(
-                              'Archived',
-                              style: TextStyle(
-                                color: showArchived ? Colors.white : null,
-                              ),
-                            ),
-                          ),
+                        _buildFilterButton(
+                          'Archived',
+                          PhosphorIcons.archive(PhosphorIconsStyle.bold),
+                          showArchived,
+                          () => setState(() {
+                            showArchived = true;
+                            showAllProjects = false;
+                          }),
                         ),
-
                         const SizedBox(width: 16),
-
-                        // Priority filter
-                        PopupMenuButton<String>(
-                          offset: const Offset(0, 40),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: selectedPriority != null
-                                  ? Border.all(
-                                      color: selectedPriority == 'high'
-                                          ? Colors.red[400]!
-                                          : selectedPriority == 'medium'
-                                              ? Colors.orange[400]!
-                                              : Colors.green[400]!,
-                                      width: 1,
-                                    )
-                                  : null,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(PhosphorIcons.funnel(), size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  getPriorityText(selectedPriority),
-                                  style: TextStyle(
-                                    color: selectedPriority != null
-                                        ? selectedPriority == 'high'
-                                            ? Colors.red[400]
-                                            : selectedPriority == 'medium'
-                                                ? Colors.orange[400]
-                                                : Colors.green[400]
-                                        : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Icon(PhosphorIcons.caretDown(), size: 18),
-                              ],
-                            ),
-                          ),
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
-                              value: 'all',
-                              child: Text('All Priority'),
-                            ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem<String>(
-                              value: 'high',
-                              child: Text(
-                                'High',
-                                style: TextStyle(color: Colors.red[400]),
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'medium',
-                              child: Text(
-                                'Medium',
-                                style: TextStyle(color: Colors.orange[400]),
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'low',
-                              child: Text(
-                                'Low',
-                                style: TextStyle(color: Colors.green[400]),
-                              ),
-                            ),
-                          ],
-                          onSelected: (String value) {
-                            setState(() {
-                              selectedPriority = value == 'all' ? null : value;
-                            });
-                          },
-                        ),
-
+                        _buildPriorityFilter(),
                         const SizedBox(width: 16),
-
-                        // Search bar
-                        Container(
-                          width: 240,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: (value) {
-                              setState(() {
-                                searchQuery = value;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Search projects...',
-                              prefixIcon: Icon(PhosphorIcons.magnifyingGlass(),
-                                  size: 18),
-                              suffixIcon: searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(PhosphorIcons.x(), size: 16),
-                                      onPressed: () {
-                                        setState(() {
-                                          searchQuery = '';
-                                          searchController.clear();
-                                        });
-                                      },
-                                    )
-                                  : null,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 8),
-                            ),
-                          ),
-                        ),
-
+                        _buildSearchBar(),
                         const SizedBox(width: 16),
-
-                        // List view icon
-                        Tooltip(
-                          message: 'List View',
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (_) => setState(() => hoveredIndex = -1),
-                            onExit: (_) => setState(() => hoveredIndex = null),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isListView
-                                    ? Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.1)
-                                    : Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isListView
-                                      ? Theme.of(context).primaryColor
-                                      : hoveredIndex == -1
-                                          ? Colors.white.withOpacity(0.1)
-                                          : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              child: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    isListView = true;
-                                  });
-                                },
-                                icon: Icon(
-                                  PhosphorIcons.list(),
-                                  size: 18,
-                                  color: isListView
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        // Grid view icon
-                        Tooltip(
-                          message: 'Grid View',
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (_) => setState(() => hoveredIndex = -2),
-                            onExit: (_) => setState(() => hoveredIndex = null),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: !isListView
-                                    ? Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.1)
-                                    : Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: !isListView
-                                      ? Theme.of(context).primaryColor
-                                      : hoveredIndex == -2
-                                          ? Colors.white.withOpacity(0.1)
-                                          : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              child: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    isListView = false;
-                                  });
-                                },
-                                icon: Icon(
-                                  PhosphorIcons.squaresFour(),
-                                  size: 18,
-                                  color: !isListView
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ),
-                          ),
-                        ),
+                        _buildViewToggle(),
                       ],
                     ),
                   ),
@@ -435,8 +223,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             value: checkedProjects.every((checked) => checked),
                             onChanged: _toggleAllProjects,
                             tristate: true,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -474,601 +260,44 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           ),
                         ),
                         Expanded(
-                          child: PopupMenuButton<String>(
-                            offset: const Offset(0, 40),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Status',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        decoration: selectedStatus != null
-                                            ? TextDecoration.underline
-                                            : null,
-                                        decorationColor: selectedStatus != null
-                                            ? selectedStatus == 'completed'
-                                                ? Colors.green[400]
-                                                : selectedStatus ==
-                                                        'in progress'
-                                                    ? Colors.blue[400]
-                                                    : selectedStatus ==
-                                                            'on hold'
-                                                        ? Colors.orange[400]
-                                                        : selectedStatus ==
-                                                                'not started'
-                                                            ? Colors.grey[400]
-                                                            : null
-                                            : null,
-                                        decorationThickness: 3,
-                                        height: 1.5,
-                                        decorationStyle:
-                                            TextDecorationStyle.solid,
-                                      ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  PhosphorIcons.caretDown(),
-                                  size: 14,
-                                  color: selectedStatus != null
-                                      ? selectedStatus == 'completed'
-                                          ? Colors.green[400]
-                                          : selectedStatus == 'in progress'
-                                              ? Colors.blue[400]
-                                              : selectedStatus == 'on hold'
-                                                  ? Colors.orange[400]
-                                                  : selectedStatus ==
-                                                          'not started'
-                                                      ? Colors.grey[400]
-                                                      : null
-                                      : null,
-                                ),
-                              ],
-                            ),
-                            itemBuilder: (BuildContext context) =>
-                                <PopupMenuEntry<String>>[
-                              const PopupMenuItem<String>(
-                                value: 'all',
-                                child: Text('All Status'),
-                              ),
-                              const PopupMenuDivider(),
-                              PopupMenuItem<String>(
-                                value: 'not started',
-                                child: Text(
-                                  'Not Started',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'in progress',
-                                child: Text(
-                                  'In Progress',
-                                  style: TextStyle(color: Colors.blue[400]),
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'on hold',
-                                child: Text(
-                                  'On Hold',
-                                  style: TextStyle(color: Colors.orange[400]),
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'completed',
-                                child: Text(
-                                  'Completed',
-                                  style: TextStyle(color: Colors.green[400]),
-                                ),
-                              ),
-                            ],
-                            onSelected: (String value) {
-                              setState(() {
-                                selectedStatus = value == 'all' ? null : value;
-                              });
-                            },
+                          child: Text(
+                            'Status',
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
-                        Expanded(
+                        const SizedBox(
+                          width: 100,
                           child: Text(
                             'Actions',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: TextStyle(fontSize: 12),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // Project List Items
+                  // Project List
                   Expanded(
-                    child: isListView
-                        ? ListView.builder(
-                            itemCount: projects.length,
-                            itemBuilder: (context, index) {
-                              if (!_filterProject(index))
-                                return const SizedBox.shrink();
-                              final project = projects[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: hoveredIndex == index
-                                        ? Theme.of(context)
-                                            .cardColor
-                                            .withOpacity(0.8)
-                                        : Theme.of(context)
-                                            .cardColor
-                                            .withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: index % 3 == 0
-                                          ? Colors.red[400]!.withOpacity(0.3)
-                                          : index % 3 == 1
-                                              ? Colors.orange[400]!
-                                                  .withOpacity(0.3)
-                                              : Colors.green[400]!
-                                                  .withOpacity(0.3),
-                                      width: 2,
-                                    ),
-                                    boxShadow: hoveredIndex == index
-                                        ? [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ]
-                                        : [],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 24,
-                                        child: Checkbox(
-                                          value: checkedProjects[index],
-                                          onChanged: (value) {
-                                            setState(() {
-                                              checkedProjects[index] =
-                                                  value ?? false;
-                                            });
-                                          },
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(
-                                          project['name'],
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            decoration: checkedProjects[index]
-                                                ? TextDecoration.lineThrough
-                                                : TextDecoration.none,
-                                            decorationColor:
-                                                Colors.white54, // Line color
-                                            decorationThickness:
-                                                2, // Line thickness
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '15 Sep, 2024',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            decoration: checkedProjects[index]
-                                                ? TextDecoration.lineThrough
-                                                : TextDecoration.none,
-                                            decorationColor: Colors.white54,
-                                            decorationThickness: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '15 Oct, 2024',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            decoration: checkedProjects[index]
-                                                ? TextDecoration.lineThrough
-                                                : TextDecoration.none,
-                                            decorationColor: Colors.white54,
-                                            decorationThickness: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          '5',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            decoration: checkedProjects[index]
-                                                ? TextDecoration.lineThrough
-                                                : TextDecoration.none,
-                                            decorationColor: Colors.white54,
-                                            decorationThickness: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(right: 8),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: index % 3 == 0
-                                                ? const Color(0xFF442926)
-                                                : index % 3 == 1
-                                                    ? const Color(0xFF3D3425)
-                                                    : const Color(0xFF2A3524),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            index % 3 == 0
-                                                ? 'High'
-                                                : index % 3 == 1
-                                                    ? 'Medium'
-                                                    : 'Low',
-                                            style: TextStyle(
-                                              color: index % 3 == 0
-                                                  ? Colors.red[400]
-                                                  : index % 3 == 1
-                                                      ? Colors.orange[400]
-                                                      : Colors.green[400],
-                                              fontSize: 12,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(left: 8),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: project['status'] ==
-                                                    'completed'
-                                                ? const Color(0xFF243524)
-                                                : project['status'] ==
-                                                        'in progress'
-                                                    ? const Color(0xFF252D3D)
-                                                    : project['status'] ==
-                                                            'on hold'
-                                                        ? const Color(
-                                                            0xFF3D3425)
-                                                        : const Color(
-                                                            0xFF442926),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            project['status'] == 'completed'
-                                                ? 'Completed'
-                                                : project['status'] ==
-                                                        'in progress'
-                                                    ? 'In Progress'
-                                                    : project['status'] ==
-                                                            'on hold'
-                                                        ? 'On Hold'
-                                                        : 'Not Started',
-                                            style: TextStyle(
-                                              color: project['status'] ==
-                                                      'completed'
-                                                  ? Colors.green[400]
-                                                  : project['status'] ==
-                                                          'in progress'
-                                                      ? Colors.blue[400]
-                                                      : project['status'] ==
-                                                              'on hold'
-                                                          ? Colors.orange[400]
-                                                          : Colors.grey[400],
-                                              fontSize: 12,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 100,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: Icon(PhosphorIcons.eye(),
-                                                  size: 16),
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: Icon(
-                                                  PhosphorIcons.pencilSimple(),
-                                                  size: 16),
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: Icon(PhosphorIcons.trash(),
-                                                  size: 16),
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3, // Show 3 items per row
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio:
-                                  1.5, // Width:Height ratio of each grid item
-                            ),
-                            itemCount: projects.length,
-                            itemBuilder: (context, index) {
-                              if (!_filterProject(index))
-                                return const SizedBox.shrink();
-                              final project = projects[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: hoveredIndex == index
-                                        ? Theme.of(context)
-                                            .cardColor
-                                            .withOpacity(0.8)
-                                        : Theme.of(context)
-                                            .cardColor
-                                            .withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: index % 3 == 0
-                                          ? Colors.red[400]!.withOpacity(0.3)
-                                          : index % 3 == 1
-                                              ? Colors.orange[400]!
-                                                  .withOpacity(0.3)
-                                              : Colors.green[400]!
-                                                  .withOpacity(0.3),
-                                      width: 2,
-                                    ),
-                                    boxShadow: hoveredIndex == index
-                                        ? [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ]
-                                        : [],
-                                  ),
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Checkbox(
-                                            value: checkedProjects[index],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                checkedProjects[index] =
-                                                    value ?? false;
-                                              });
-                                            },
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              project['name'],
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                                decoration:
-                                                    checkedProjects[index]
-                                                        ? TextDecoration
-                                                            .lineThrough
-                                                        : TextDecoration.none,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Add dates and tasks info
-                                      Row(
-                                        children: [
-                                          Icon(PhosphorIcons.calendar(),
-                                              size: 14),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '15 Oct, 2024',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              decoration: checkedProjects[index]
-                                                  ? TextDecoration.lineThrough
-                                                  : TextDecoration.none,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Icon(PhosphorIcons.listChecks(),
-                                              size: 14),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '5 Tasks',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              decoration: checkedProjects[index]
-                                                  ? TextDecoration.lineThrough
-                                                  : TextDecoration.none,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      // Status badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: project['status'] ==
-                                                  'completed'
-                                              ? const Color(0xFF243524)
-                                              : project['status'] ==
-                                                      'in progress'
-                                                  ? const Color(0xFF252D3D)
-                                                  : project['status'] ==
-                                                          'on hold'
-                                                      ? const Color(0xFF3D3425)
-                                                      : const Color(0xFF442926),
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          project['status'] == 'completed'
-                                              ? 'Completed'
-                                              : project['status'] ==
-                                                      'in progress'
-                                                  ? 'In Progress'
-                                                  : project['status'] ==
-                                                          'on hold'
-                                                      ? 'On Hold'
-                                                      : 'Not Started',
-                                          style: TextStyle(
-                                            color:
-                                                project['status'] == 'completed'
-                                                    ? Colors.green[400]
-                                                    : project['status'] ==
-                                                            'in progress'
-                                                        ? Colors.blue[400]
-                                                        : project['status'] ==
-                                                                'on hold'
-                                                            ? Colors.orange[400]
-                                                            : Colors.grey[400],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      // Existing bottom row with priority and actions
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: index % 3 == 0
-                                                  ? const Color(0xFF442926)
-                                                  : index % 3 == 1
-                                                      ? const Color(0xFF3D3425)
-                                                      : const Color(0xFF2A3524),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              index % 3 == 0
-                                                  ? 'High'
-                                                  : index % 3 == 1
-                                                      ? 'Medium'
-                                                      : 'Low',
-                                              style: TextStyle(
-                                                color: index % 3 == 0
-                                                    ? Colors.red[400]
-                                                    : index % 3 == 1
-                                                        ? Colors.orange[400]
-                                                        : Colors.green[400],
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                          Row(
-                                            children: [
-                                              IconButton(
-                                                onPressed: () {},
-                                                icon: Icon(PhosphorIcons.eye(),
-                                                    size: 16),
-                                                padding: EdgeInsets.zero,
-                                                constraints:
-                                                    const BoxConstraints(),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              IconButton(
-                                                onPressed: () {},
-                                                icon: Icon(
-                                                    PhosphorIcons
-                                                        .pencilSimple(),
-                                                    size: 16),
-                                                padding: EdgeInsets.zero,
-                                                constraints:
-                                                    const BoxConstraints(),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              IconButton(
-                                                onPressed: () {},
-                                                icon: Icon(
-                                                    PhosphorIcons.trash(),
-                                                    size: 16),
-                                                padding: EdgeInsets.zero,
-                                                constraints:
-                                                    const BoxConstraints(),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                    child: ListView.builder(
+                      itemCount: projects.length,
+                      itemBuilder: (context, index) {
+                        if (!_filterProject(index))
+                          return const SizedBox.shrink();
+                        return ProjectListItem(
+                          project: projects[index],
+                          isChecked: checkedProjects[index],
+                          onCheckChanged: (value) {
+                            setState(() {
+                              checkedProjects[index] = value ?? false;
+                            });
+                          },
+                          onEdit: () => _handleEdit(index),
+                          onDelete: () => _handleDelete(index),
+                          isHovered: hoveredIndex == index,
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -1079,9 +308,177 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
+  Widget _buildFilterButton(
+      String label, IconData icon, bool isActive, VoidCallback onPressed) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppColors.accent.withOpacity(0.1)
+            : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive ? AppColors.accent : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isActive ? AppColors.accent : null,
+        ),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? AppColors.accent : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityFilter() {
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 40),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selectedPriority != null
+                ? AppColors.accent
+                : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(PhosphorIcons.funnel(PhosphorIconsStyle.bold), size: 18),
+            const SizedBox(width: 8),
+            Text(selectedPriority?.capitalize() ?? 'All Priority'),
+            const SizedBox(width: 8),
+            Icon(PhosphorIcons.caretDown(PhosphorIconsStyle.bold), size: 18),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'all',
+          child: Text('All Priority'),
+        ),
+        const PopupMenuDivider(),
+        ...['high', 'medium', 'low'].map(
+          (priority) => PopupMenuItem(
+            value: priority,
+            child: Text(priority.capitalize()),
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        setState(() {
+          selectedPriority = value == 'all' ? null : value;
+        });
+      },
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      width: 240,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        controller: searchController,
+        onChanged: (value) {
+          setState(() {
+            searchQuery = value;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: 'Search projects...',
+          prefixIcon: Icon(
+              PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.bold),
+              size: 18),
+          suffixIcon: searchQuery.isNotEmpty
+              ? IconButton(
+                  icon:
+                      Icon(PhosphorIcons.x(PhosphorIconsStyle.bold), size: 16),
+                  onPressed: () {
+                    setState(() {
+                      searchQuery = '';
+                      searchController.clear();
+                    });
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          _buildViewToggleButton(
+            icon: PhosphorIcons.list(PhosphorIconsStyle.bold),
+            isActive: isListView,
+            onPressed: () => setState(() => isListView = true),
+          ),
+          _buildViewToggleButton(
+            icon: PhosphorIcons.squaresFour(PhosphorIconsStyle.bold),
+            isActive: !isListView,
+            onPressed: () => setState(() => isListView = false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color:
+            isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isActive ? AppColors.accent : null,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
+    );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/constants/app_colors.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -17,44 +18,30 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).cardColor,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.white.withOpacity(0.7),
-            width: 2,
+            color: Theme.of(context).brightness == Brightness.light
+                ? AppColors.borderLight
+                : AppColors.borderDark,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 14,
-                      ),
-                ),
-                Icon(
-                  icon,
-                  color: iconColor,
-                  size: 20,
-                ),
-              ],
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               value,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
           ],
         ),

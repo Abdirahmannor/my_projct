@@ -2,106 +2,98 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../widgets/schedule_view.dart';
 import '../../dashboard/widgets/stat_card.dart';
+import '../../../core/constants/app_colors.dart';
 
 class SchoolScreen extends StatelessWidget {
   const SchoolScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        color: Theme.of(context).cardColor,
-        child: Padding(
-          padding: const EdgeInsets.only(
-            top: 8,
-            right: 8,
-            bottom: 8,
-            left: 2,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.7),
-                    width: 2,
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: StatCard(
+                    title: 'Average Grade',
+                    value: '2.3',
+                    icon: PhosphorIcons.student(PhosphorIconsStyle.bold),
+                    iconColor: AppColors.success,
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'School Overview',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Manage your academic activities',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontSize: 14,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Stats Row
-              Row(
-                children: [
-                  StatCard(
-                    title: 'Current GPA',
-                    value: '3.8',
-                    icon: PhosphorIcons.chartLineUp(PhosphorIconsStyle.bold),
-                    iconColor: Colors.green,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: StatCard(
+                    title: 'Upcoming Exams',
+                    value: '3',
+                    icon: PhosphorIcons.exam(PhosphorIconsStyle.bold),
+                    iconColor: AppColors.warning,
                   ),
-                  const SizedBox(width: 12),
-                  StatCard(
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: StatCard(
                     title: 'Assignments Due',
-                    value: '4',
-                    icon: PhosphorIcons.fileText(PhosphorIconsStyle.bold),
-                    iconColor: Colors.orange,
+                    value: '5',
+                    icon: PhosphorIcons.notepad(PhosphorIconsStyle.bold),
+                    iconColor: AppColors.error,
                   ),
-                  const SizedBox(width: 12),
-                  StatCard(
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: StatCard(
                     title: 'Study Hours',
                     value: '12.5',
                     icon: PhosphorIcons.clock(PhosphorIconsStyle.bold),
-                    iconColor: Colors.blue,
+                    iconColor: AppColors.info,
                   ),
-                  const SizedBox(width: 12),
-                  StatCard(
-                    title: 'Courses',
-                    value: '6',
-                    icon: PhosphorIcons.books(PhosphorIconsStyle.bold),
-                    iconColor: Colors.purple,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(
+                    flex: 2,
+                    child: ScheduleView(),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Card(
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upcoming Exams',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontSize: 16,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: _ExamsList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // Schedule and Activity Row
-              SizedBox(
-                height: 400,
-                child: Row(
-                  children: [
-                    const Expanded(
-                      flex: 2,
-                      child: ScheduleView(),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: _ExamsList(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -113,44 +105,27 @@ class _ExamsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Upcoming Exams',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildExamItem(
-                  context,
-                  subject: 'Mathematics',
-                  date: 'Tomorrow, 9:00 AM',
-                  topic: 'Calculus II',
-                ),
-                _buildExamItem(
-                  context,
-                  subject: 'Physics',
-                  date: 'Friday, 11:00 AM',
-                  topic: 'Quantum Mechanics',
-                ),
-                // Add more exam items
-              ],
-            ),
-          ),
-        ],
-      ),
+    return ListView(
+      children: [
+        _buildExamItem(
+          context,
+          subject: 'Mathematics',
+          date: 'Tomorrow, 9:00 AM',
+          topic: 'Calculus II',
+        ),
+        _buildExamItem(
+          context,
+          subject: 'Physics',
+          date: 'Friday, 11:00 AM',
+          topic: 'Quantum Mechanics',
+        ),
+        _buildExamItem(
+          context,
+          subject: 'Computer Science',
+          date: 'Next Monday, 2:00 PM',
+          topic: 'Data Structures',
+        ),
+      ],
     );
   }
 
@@ -164,8 +139,15 @@ class _ExamsList extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).brightness == Brightness.light
+            ? AppColors.cardLight
+            : AppColors.cardDark,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.light
+              ? AppColors.borderLight
+              : AppColors.borderDark,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

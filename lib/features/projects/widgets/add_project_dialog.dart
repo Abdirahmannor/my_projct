@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:iconsax/iconsax.dart';
-import '../../../shared/widgets/pickers/custom_pickers.dart';
-import 'package:intl/intl.dart';
 
 class AddProjectDialog extends StatefulWidget {
   const AddProjectDialog({super.key});
@@ -14,433 +11,298 @@ class AddProjectDialog extends StatefulWidget {
 
 class _AddProjectDialogState extends State<AddProjectDialog> {
   final _formKey = GlobalKey<FormState>();
-  DateTime? startDate;
-  DateTime? dueDate;
-  String? selectedPriority;
-  String? selectedStatus;
-  String? selectedCategory;
-  TimeOfDay? selectedTime;
-  final _projectNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _notesController = TextEditingController();
+  String _priority = 'medium';
+  String _status = 'not started';
+  String _category = 'development';
+  TimeOfDay? _time;
 
   @override
   void dispose() {
-    _projectNameController.dispose();
+    _nameController.dispose();
     _descriptionController.dispose();
-    _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (picked != null) {
+      setState(() => _time = picked);
+    }
+  }
+
+  String _formatTime(TimeOfDay? time) {
+    if (time == null) return 'Select Time';
+    return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Container(
-        width: 600,
+        width: 400,
         padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Add New Project',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    IconButton(
-                      icon: Icon(PhosphorIcons.x()),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _projectNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Project Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Project name is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Description is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedPriority,
-                        decoration: InputDecoration(
-                          labelText: 'Priority',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(PhosphorIcons.flag(), size: 18),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Create New Project',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        icon: const SizedBox.shrink(),
-                        items: [
-                          DropdownMenuItem(
-                            value: 'high',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  PhosphorIcons.flag(),
-                                  size: 16,
-                                  color: Colors.red[400],
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('High'),
-                              ],
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: 'medium',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  PhosphorIcons.flag(),
-                                  size: 16,
-                                  color: Colors.orange[400],
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('Medium'),
-                              ],
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: 'low',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  PhosphorIcons.flag(),
-                                  size: 16,
-                                  color: Colors.green[400],
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('Low'),
-                              ],
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPriority = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Priority is required';
-                          }
-                          return null;
-                        },
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      PhosphorIcons.x(PhosphorIconsStyle.bold),
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Project Name
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Project Name',
+                  hintText: 'Enter project name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(
+                    PhosphorIcons.folder(PhosphorIconsStyle.bold),
+                    size: 20,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a project name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Description
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Enter project description',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(
+                    PhosphorIcons.textT(PhosphorIconsStyle.bold),
+                    size: 20,
+                  ),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              // Priority and Status
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _priority,
+                      decoration: InputDecoration(
+                        labelText: 'Priority',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: Icon(
+                          PhosphorIcons.flag(PhosphorIconsStyle.bold),
+                          size: 20,
+                          color: _getPriorityColor(_priority),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedStatus,
-                        decoration: InputDecoration(
-                          labelText: 'Status',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(
-                              PhosphorIcons.clockCounterClockwise(),
-                              size: 18),
-                        ),
-                        icon: const SizedBox.shrink(),
-                        items: [
-                          'Not Started',
-                          'In Progress',
-                          'On Hold',
-                        ]
-                            .map((e) => DropdownMenuItem(
-                                  value: e.toLowerCase(),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        e == 'Not Started'
-                                            ? PhosphorIcons.pause()
-                                            : e == 'In Progress'
-                                                ? PhosphorIcons.playCircle()
-                                                : PhosphorIcons.stopCircle(),
-                                        size: 16,
-                                        color: e == 'In Progress'
-                                            ? Colors.blue[400]
-                                            : e == 'On Hold'
-                                                ? Colors.orange[400]
-                                                : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(e),
-                                    ],
+                      items: ['low', 'medium', 'high']
+                          .map((priority) => DropdownMenuItem(
+                                value: priority,
+                                child: Text(
+                                  priority.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _getPriorityColor(priority),
                                   ),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedStatus = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Status is required';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: 'Start Date',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(PhosphorIcons.calendar(), size: 18),
-                        ),
-                        controller: TextEditingController(
-                          text: startDate != null
-                              ? DateFormat('MMM dd, yyyy').format(startDate!)
-                              : '',
-                        ),
-                        onTap: () async {
-                          final date = await showDialog<DateTime>(
-                            context: context,
-                            builder: (context) => CustomDateTimePicker(
-                              initialDate: startDate,
-                              onDateSelected: (date) {
-                                Navigator.pop(context, date);
-                              },
-                            ),
-                          );
-                          if (date != null) {
-                            setState(() {
-                              startDate = date;
-                            });
-                          }
-                        },
-                        validator: (value) {
-                          if (startDate == null) {
-                            return 'Start date is required';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: 'Due Date',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(PhosphorIcons.calendar(), size: 18),
-                        ),
-                        controller: TextEditingController(
-                          text: dueDate != null
-                              ? DateFormat('MMM dd, yyyy').format(dueDate!)
-                              : '',
-                        ),
-                        onTap: () async {
-                          final date = await showDialog<DateTime>(
-                            context: context,
-                            builder: (context) => CustomDateTimePicker(
-                              initialDate: dueDate,
-                              onDateSelected: (date) {
-                                Navigator.pop(context, date);
-                              },
-                            ),
-                          );
-                          if (date != null) {
-                            setState(() {
-                              dueDate = date;
-                            });
-                          }
-                        },
-                        validator: (value) {
-                          if (dueDate == null) {
-                            return 'Due date is required';
-                          }
-                          if (startDate != null &&
-                              dueDate!.isBefore(startDate!)) {
-                            return 'Due date must be after start date';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Estimated Hours',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(PhosphorIcons.clock(), size: 18),
-                        ),
-                        controller: TextEditingController(
-                          text: selectedTime != null
-                              ? '${selectedTime!.hour}:${selectedTime!.minute.toString().padLeft(2, '0')}'
-                              : '',
-                        ),
-                        readOnly: true,
-                        onTap: () async {
-                          final time = await showDialog<TimeOfDay>(
-                            context: context,
-                            builder: (context) => CustomDateTimePicker(
-                              isTimePicker: true,
-                              initialTime: selectedTime,
-                              onTimeSelected: (time) {
-                                Navigator.pop(context, time);
-                              },
-                              onDateSelected: (_) {},
-                            ),
-                          );
-                          if (time != null) {
-                            setState(() {
-                              selectedTime = time;
-                            });
-                          }
-                        },
-                        validator: (value) {
-                          if (selectedTime == null) {
-                            return 'Estimated hours is required';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedCategory,
-                        decoration: InputDecoration(
-                          labelText: 'Category',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(PhosphorIcons.folders(), size: 18),
-                        ),
-                        icon: const SizedBox.shrink(),
-                        items: ['Personal', 'School', 'Hobby']
-                            .map((e) => DropdownMenuItem(
-                                  value: e.toLowerCase(),
-                                  child: Text(e),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedCategory = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Category is required';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Notes (Optional)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => _priority = value);
+                      },
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 16),
-                    FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          final project = {
-                            'name': _projectNameController.text,
-                            'description': _descriptionController.text,
-                            'priority': selectedPriority,
-                            'status': selectedStatus,
-                            'startDate': startDate,
-                            'dueDate': dueDate,
-                            'estimatedHours': selectedTime,
-                            'category': selectedCategory,
-                            'notes': _notesController.text,
-                          };
-
-                          // Close dialog and return project data
-                          Navigator.pop(context, project);
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5722),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _status,
+                      decoration: InputDecoration(
+                        labelText: 'Status',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: Icon(
+                          PhosphorIcons.clockCountdown(PhosphorIconsStyle.bold),
+                          size: 20,
+                          color: _getStatusColor(_status),
                         ),
                       ),
-                      child: const Text('Create Project'),
+                      items:
+                          ['not started', 'in progress', 'on hold', 'completed']
+                              .map((status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Text(
+                                      status.toUpperCase(),
+                                      style: TextStyle(
+                                        color: _getStatusColor(status),
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => _status = value);
+                      },
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Time and Category
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        PhosphorIcons.clock(PhosphorIconsStyle.bold),
+                        size: 20,
+                      ),
+                      title: const Text('Time'),
+                      subtitle: Text(_formatTime(_time)),
+                      onTap: () => _selectTime(context),
+                    ),
+                  ),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _category,
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        prefixIcon: Icon(
+                          PhosphorIcons.tag(PhosphorIconsStyle.bold),
+                          size: 20,
+                        ),
+                      ),
+                      items: [
+                        'development',
+                        'design',
+                        'marketing',
+                        'research',
+                        'other'
+                      ]
+                          .map((category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category.toUpperCase()),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => _category = value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(PhosphorIcons.x(PhosphorIconsStyle.bold)),
+                    label: const Text('Cancel'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  FilledButton.icon(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        final newProject = {
+                          'name': _nameController.text,
+                          'description': _descriptionController.text,
+                          'category': _category,
+                          'time': _time != null ? _formatTime(_time) : '09:00',
+                          'tasks': 0,
+                          'priority': _priority,
+                          'status': _status,
+                        };
+                        Navigator.pop(context, newProject);
+                      }
+                    },
+                    icon: Icon(PhosphorIcons.check(PhosphorIconsStyle.bold)),
+                    label: const Text('Create Project'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return AppColors.error;
+      case 'medium':
+        return AppColors.warning;
+      case 'low':
+        return AppColors.success;
+      default:
+        return AppColors.info;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return AppColors.success;
+      case 'in progress':
+        return AppColors.accent;
+      case 'on hold':
+        return AppColors.warning;
+      default:
+        return AppColors.error;
+    }
   }
 }

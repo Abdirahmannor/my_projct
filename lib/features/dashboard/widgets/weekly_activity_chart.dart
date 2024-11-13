@@ -1,101 +1,100 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import '../../../core/constants/app_colors.dart';
 
 class WeeklyActivityChart extends StatelessWidget {
   const WeeklyActivityChart({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.7),
-          width: 2,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Weekly Activity',
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Weekly Activity',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = [
-                          'Mon',
-                          'Tue',
-                          'Wed',
-                          'Thu',
-                          'Fri',
-                          'Sat',
-                          'Sun'
-                        ];
-                        if (value >= 0 && value < days.length) {
-                          return Text(
-                            days[value.toInt()],
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontSize: 12,
-                                ),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3),
-                      FlSpot(1, 4),
-                      FlSpot(2, 3.5),
-                      FlSpot(3, 5),
-                      FlSpot(4, 3),
-                      FlSpot(5, 2),
-                      FlSpot(6, 3.5),
-                    ],
-                    isCurved: true,
-                    color: Colors.blue,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.blue.withOpacity(0.1),
-                    ),
-                  ),
-                ],
-                lineTouchData: LineTouchData(enabled: false),
-              ),
+        const SizedBox(height: 24),
+        Expanded(
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: ChartPainter(
+              lineColor: AppColors.accent,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            7,
+            (index) => Text(
+              _getDayLabel(index),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ),
+      ],
     );
   }
+
+  String _getDayLabel(int index) {
+    switch (index) {
+      case 0:
+        return 'Mon';
+      case 1:
+        return 'Tue';
+      case 2:
+        return 'Wed';
+      case 3:
+        return 'Thu';
+      case 4:
+        return 'Fri';
+      case 5:
+        return 'Sat';
+      case 6:
+        return 'Sun';
+      default:
+        return '';
+    }
+  }
+}
+
+class ChartPainter extends CustomPainter {
+  final Color lineColor;
+
+  ChartPainter({
+    required this.lineColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.8);
+    path.cubicTo(
+      size.width * 0.2,
+      size.height * 0.5,
+      size.width * 0.4,
+      size.height * 0.8,
+      size.width * 0.6,
+      size.height * 0.2,
+    );
+    path.cubicTo(
+      size.width * 0.8,
+      size.height * 0.1,
+      size.width * 0.9,
+      size.height * 0.9,
+      size.width,
+      size.height * 0.7,
+    );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

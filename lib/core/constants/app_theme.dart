@@ -2,55 +2,107 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    return ThemeData(
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.backgroundLight,
-      primaryColor: AppColors.primaryLight,
-      cardColor: AppColors.cardLight,
-      dividerColor: AppColors.textSecondaryLight.withOpacity(0.2),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(color: AppColors.textLight),
-        displayMedium: TextStyle(color: AppColors.textLight),
-        displaySmall: TextStyle(color: AppColors.textLight),
-        headlineMedium: TextStyle(color: AppColors.textLight),
-        headlineSmall: TextStyle(color: AppColors.textLight),
-        titleLarge: TextStyle(color: AppColors.textLight),
-        titleMedium: TextStyle(color: AppColors.textLight),
-        titleSmall: TextStyle(color: AppColors.textLight),
-        bodyLarge: TextStyle(color: AppColors.textLight),
-        bodyMedium: TextStyle(color: AppColors.textSecondaryLight),
-        bodySmall: TextStyle(color: AppColors.textSecondaryLight),
+  static ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: AppColors.backgroundLight,
+    cardColor: AppColors.cardLight,
+    primaryColor: AppColors.primary,
+    colorScheme: const ColorScheme.light().copyWith(
+      primary: AppColors.primary,
+      secondary: AppColors.accent,
+      background: AppColors.backgroundLight,
+      surface: AppColors.surfaceLight,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.surfaceLight,
+      foregroundColor: AppColors.textPrimaryLight,
+      elevation: 0,
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(
+        color: AppColors.textPrimaryLight,
+        fontWeight: FontWeight.w500,
       ),
-      iconTheme: const IconThemeData(
-        color: AppColors.textLight,
+      bodyMedium: TextStyle(
+        color: AppColors.textSecondaryLight,
+        fontWeight: FontWeight.w400,
       ),
-    );
-  }
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.buttonPrimaryLight,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.buttonDisabledLight,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary),
+      ),
+    ),
+    cardTheme: CardTheme(
+      color: AppColors.cardLight,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+    ),
+  );
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.backgroundDark,
-      primaryColor: AppColors.primaryDark,
-      cardColor: AppColors.cardDark,
-      dividerColor: AppColors.textSecondaryDark.withOpacity(0.2),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(color: AppColors.textDark),
-        displayMedium: TextStyle(color: AppColors.textDark),
-        displaySmall: TextStyle(color: AppColors.textDark),
-        headlineMedium: TextStyle(color: AppColors.textDark),
-        headlineSmall: TextStyle(color: AppColors.textDark),
-        titleLarge: TextStyle(color: AppColors.textDark),
-        titleMedium: TextStyle(color: AppColors.textDark),
-        titleSmall: TextStyle(color: AppColors.textDark),
-        bodyLarge: TextStyle(color: AppColors.textDark),
-        bodyMedium: TextStyle(color: AppColors.textSecondaryDark),
-        bodySmall: TextStyle(color: AppColors.textSecondaryDark),
+  static ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: AppColors.backgroundDark,
+    cardColor: AppColors.cardDark,
+    primaryColor: AppColors.primary,
+    colorScheme: const ColorScheme.dark().copyWith(
+      primary: AppColors.primary,
+      secondary: AppColors.accent,
+      background: AppColors.backgroundDark,
+      surface: AppColors.surfaceDark,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.surfaceDark,
+      foregroundColor: AppColors.textPrimaryDark,
+      elevation: 0,
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(
+        color: AppColors.textPrimaryDark,
+        fontWeight: FontWeight.w500,
       ),
-      iconTheme: const IconThemeData(
-        color: AppColors.textDark,
+      bodyMedium: TextStyle(
+        color: AppColors.textSecondaryDark,
+        fontWeight: FontWeight.w400,
       ),
-    );
-  }
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.buttonPrimaryDark,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.buttonDisabledDark,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary),
+      ),
+    ),
+    cardTheme: CardTheme(
+      color: AppColors.cardDark,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: AppColors.borderDark,
+          width: 1,
+        ),
+      ),
+    ),
+  );
 }

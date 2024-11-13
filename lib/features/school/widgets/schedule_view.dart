@@ -7,44 +7,48 @@ class ScheduleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.7),
-          width: 2,
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.light
+                ? AppColors.borderLight
+                : AppColors.borderDark,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Schedule',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 16,
-                    ),
-              ),
-              Row(
-                children: [
-                  _buildFilterChip(context, 'School', true),
-                  const SizedBox(width: 4),
-                  _buildFilterChip(context, 'Work', true),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              child: _buildWeekView(context),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Schedule',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 16,
+                      ),
+                ),
+                Row(
+                  children: [
+                    _buildFilterChip(context, 'School', true),
+                    const SizedBox(width: 4),
+                    _buildFilterChip(context, 'Work', true),
+                  ],
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildWeekView(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
