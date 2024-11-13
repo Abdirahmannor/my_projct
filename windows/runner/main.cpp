@@ -7,11 +7,8 @@
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  // Attach to console when present (e.g., 'flutter run') or create a
-  // new console when running with a debugger.
-  if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
-    CreateAndAttachConsole();
-  }
+  // Hide console window
+  ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
@@ -27,9 +24,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"my_project", origin, size)) {
+  if (!window.Create(L"school_task_manager", origin, size)) {
     return EXIT_FAILURE;
   }
+
+  // Remove window decorations
+  HWND hwnd = window.GetHandle();
+  LONG style = GetWindowLong(hwnd, GWL_STYLE);
+  style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+  SetWindowLong(hwnd, GWL_STYLE, style);
+
   window.SetQuitOnClose(true);
 
   ::MSG msg;

@@ -62,15 +62,34 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       width: widget.isCollapsed ? 65 : 240,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           // Left section (icons)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: 65,
-            color: context.watch<ThemeProvider>().isDarkMode
-                ? const Color(0xFF1F2937)
-                : const Color(0xFF1B2559),
+            decoration: BoxDecoration(
+              color: context.watch<ThemeProvider>().isDarkMode
+                  ? const Color(0xFF1F2937)
+                  : const Color(0xFF1B2559),
+              borderRadius: widget.isCollapsed
+                  ? const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    )
+                  : null,
+            ),
             child: Column(
               children: [
                 const SizedBox(height: 16),
@@ -211,9 +230,15 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
           if (!widget.isCollapsed)
             Expanded(
               child: Container(
-                color: context.watch<ThemeProvider>().isDarkMode
-                    ? const Color(0xFF272935)
-                    : const Color(0xFF2B3674),
+                decoration: BoxDecoration(
+                  color: context.watch<ThemeProvider>().isDarkMode
+                      ? const Color(0xFF272935)
+                      : const Color(0xFF2B3674),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

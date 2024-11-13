@@ -29,6 +29,7 @@ dependencies:
   intl: ^0.19.0  # Update this line
   uuid: ^4.2.1  # Add this line
   window_manager: ^0.4.3
+  bitsdojo_window: ^0.1.6
 
 dev_dependencies:
   flutter_test:
