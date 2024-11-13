@@ -76,10 +76,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleDelete(int index) {
+    final projectName = projects[index]['name'];
     setState(() {
       projects.removeAt(index);
       checkedProjects = List.generate(projects.length, (_) => false);
     });
+
+    _showSuccessMessage(
+      message: 'Project "$projectName" has been deleted successfully',
+      icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+    );
   }
 
   bool _filterProject(int index) {
@@ -139,6 +145,60 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             (projects[index]['tasks'] * 0.6).round(); // Example: restore to 60%
       }
     });
+  }
+
+  void _showSuccessMessage({
+    required String message,
+    required IconData icon,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.green.shade600,
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 4),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            IconButton(
+              constraints: const BoxConstraints(),
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -211,6 +271,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                   checkedProjects = List.generate(
                                       projects.length, (_) => false);
                                 });
+
+                                _showSuccessMessage(
+                                  message:
+                                      'Project "${result['name']}" has been created successfully',
+                                  icon: PhosphorIcons.folderPlus(
+                                      PhosphorIconsStyle.fill),
+                                );
                               }
                             },
                             borderRadius: BorderRadius.circular(12),

@@ -93,8 +93,11 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter a project name';
+                          }
+                          if (value.trim().length < 3) {
+                            return 'Project name must be at least 3 characters';
                           }
                           return null;
                         },
@@ -113,6 +116,15 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a project description';
+                          }
+                          if (value.trim().length < 10) {
+                            return 'Description must be at least 10 characters';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -211,6 +223,9 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     required IconData icon,
     required ValueChanged<DateTime?> onChanged,
   }) {
+    final bool hasError =
+        _formKey.currentState?.validate() == false && value == null;
+
     return InkWell(
       onTap: () async {
         final date = await showDatePicker(
@@ -227,12 +242,14 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).dividerColor),
+          border: Border.all(
+            color: hasError ? Colors.red : Theme.of(context).dividerColor,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20),
+            Icon(icon, size: 20, color: hasError ? Colors.red : null),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -240,14 +257,18 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 children: [
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: hasError ? Colors.red : null,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value == null
                         ? 'Select date'
                         : '${value.day} ${_getMonthName(value.month)}, ${value.year}',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: hasError ? Colors.red : null,
+                        ),
                   ),
                 ],
               ),
@@ -356,18 +377,25 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   }
 
   Widget _buildTasksCounter() {
+    final bool hasError =
+        _formKey.currentState?.validate() == false && _tasks <= 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Number of Tasks',
-          style: Theme.of(context).textTheme.titleSmall,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: hasError ? Colors.red : null,
+              ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
+            border: Border.all(
+              color: hasError ? Colors.red : Theme.of(context).dividerColor,
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -423,23 +451,82 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   }
 
   void _handleSubmit() {
-    if (_formKey.currentState!.validate() &&
-        _startDate != null &&
-        _dueDate != null) {
-      final project = {
-        'name': _nameController.text,
-        'description': _descriptionController.text,
-        'startDate':
-            '${_startDate!.day} ${_getMonthName(_startDate!.month)}, ${_startDate!.year}',
-        'dueDate':
-            '${_dueDate!.day} ${_getMonthName(_dueDate!.month)}, ${_dueDate!.year}',
-        'tasks': _tasks,
-        'completedTasks': 0,
-        'priority': _priority,
-        'status': _status,
-      };
+    if (!_validateForm()) return;
 
-      Navigator.pop(context, project);
+    final project = {
+      'name': _nameController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'startDate':
+          '${_startDate!.day} ${_getMonthName(_startDate!.month)}, ${_startDate!.year}',
+      'dueDate':
+          '${_dueDate!.day} ${_getMonthName(_dueDate!.month)}, ${_dueDate!.year}',
+      'tasks': _tasks,
+      'completedTasks': 0,
+      'priority': _priority,
+      'status': _status,
+    };
+
+    Navigator.pop(context, project);
+  }
+
+  bool _validateForm() {
+    if (!_formKey.currentState!.validate()) return false;
+
+    if (_startDate == null) {
+      _showError('Please select a start date');
+      return false;
     }
+
+    if (_dueDate == null) {
+      _showError('Please select a due date');
+      return false;
+    }
+
+    if (_dueDate!.isBefore(_startDate!)) {
+      _showError('Due date cannot be before start date');
+      return false;
+    }
+
+    if (_tasks <= 0) {
+      _showError('Project must have at least one task');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showError(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.warning(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            const Text('Error'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: AppColors.accent),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+        actionsPadding: const EdgeInsets.all(16),
+      ),
+    );
   }
 }
