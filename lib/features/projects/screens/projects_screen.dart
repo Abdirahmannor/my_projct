@@ -14,6 +14,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   List<bool> checkedProjects = List.generate(5, (_) => false);
   bool showArchived = false;
   bool showAllProjects = true;
+  bool isListView = true;
+  int? hoveredIndex;
 
   String getPriorityText(String? priority) {
     if (priority == null) return 'All Priority';
@@ -242,28 +244,94 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 const SizedBox(width: 16),
 
-                // List view icon (separate)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(8),
+                // List view icon
+                Tooltip(
+                  message: 'List View',
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => hoveredIndex = -1),
+                    onExit: (_) => setState(() => hoveredIndex = null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isListView
+                            ? Theme.of(context).primaryColor.withOpacity(0.1)
+                            : Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isListView
+                              ? Theme.of(context).primaryColor
+                              : hoveredIndex == -1
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            isListView = true;
+                          });
+                        },
+                        icon: Icon(
+                          PhosphorIcons.list(),
+                          size: 18,
+                          color: isListView
+                              ? Theme.of(context).primaryColor
+                              : null,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
                   ),
-                  child: Icon(PhosphorIcons.list(), size: 18),
                 ),
 
                 const SizedBox(width: 8),
 
-                // Grid view icon (separate)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(8),
+                // Grid view icon
+                Tooltip(
+                  message: 'Grid View',
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => hoveredIndex = -2),
+                    onExit: (_) => setState(() => hoveredIndex = null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !isListView
+                            ? Theme.of(context).primaryColor.withOpacity(0.1)
+                            : Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: !isListView
+                              ? Theme.of(context).primaryColor
+                              : hoveredIndex == -2
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            isListView = false;
+                          });
+                        },
+                        icon: Icon(
+                          PhosphorIcons.squaresFour(),
+                          size: 18,
+                          color: !isListView
+                              ? Theme.of(context).primaryColor
+                              : null,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
                   ),
-                  child: Icon(PhosphorIcons.squaresFour(), size: 18),
                 ),
               ],
             ),
@@ -385,199 +453,417 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
             // Project List Items
             Expanded(
-              child: ListView.builder(
-                itemCount: 5,
-                itemBuilder: (context, index) {
-                  if (!_filterProject(index)) return const SizedBox.shrink();
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 4),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: index % 3 == 0
-                            ? Colors.red[400]!.withOpacity(0.3)
-                            : index % 3 == 1
-                                ? Colors.orange[400]!.withOpacity(0.3)
-                                : Colors.green[400]!.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          child: Checkbox(
-                            value: checkedProjects[index],
-                            onChanged: (value) {
-                              setState(() {
-                                checkedProjects[index] = value ?? false;
-                              });
-                            },
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            'Project ${index + 1}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: checkedProjects[index]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              decorationColor: Colors.white54, // Line color
-                              decorationThickness: 2, // Line thickness
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            '15 Sep, 2024',
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: checkedProjects[index]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              decorationColor: Colors.white54,
-                              decorationThickness: 2,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            '15 Oct, 2024',
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: checkedProjects[index]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              decorationColor: Colors.white54,
-                              decorationThickness: 2,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '5',
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: checkedProjects[index]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              decorationColor: Colors.white54,
-                              decorationThickness: 2,
-                            ),
-                          ),
-                        ),
-                        Expanded(
+              child: isListView
+                  ? ListView.builder(
+                      itemCount: 5,
+                      itemBuilder: (context, index) {
+                        if (!_filterProject(index))
+                          return const SizedBox.shrink();
+                        return MouseRegion(
+                          onEnter: (_) => setState(() => hoveredIndex = index),
+                          onExit: (_) => setState(() => hoveredIndex = null),
                           child: Container(
-                            margin: const EdgeInsets.only(right: 8),
+                            margin: const EdgeInsets.only(bottom: 4),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                              horizontal: 16,
+                              vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: index % 3 == 0
-                                  ? const Color(0xFF442926)
-                                  : index % 3 == 1
-                                      ? const Color(0xFF3D3425)
-                                      : const Color(0xFF2A3524),
+                              color: hoveredIndex == index
+                                  ? Theme.of(context).cardColor.withOpacity(0.8)
+                                  : Theme.of(context)
+                                      .cardColor
+                                      .withOpacity(0.5),
                               borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              index % 3 == 0
-                                  ? 'High'
-                                  : index % 3 == 1
-                                      ? 'Medium'
-                                      : 'Low',
-                              style: TextStyle(
+                              border: Border.all(
                                 color: index % 3 == 0
-                                    ? Colors.red[400]
+                                    ? Colors.red[400]!.withOpacity(0.3)
                                     : index % 3 == 1
-                                        ? Colors.orange[400]
-                                        : Colors.green[400],
-                                fontSize: 12,
+                                        ? Colors.orange[400]!.withOpacity(0.3)
+                                        : Colors.green[400]!.withOpacity(0.3),
+                                width: 2,
                               ),
-                              textAlign: TextAlign.center,
+                              boxShadow: hoveredIndex == index
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  child: Checkbox(
+                                    value: checkedProjects[index],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        checkedProjects[index] = value ?? false;
+                                      });
+                                    },
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    'Project ${index + 1}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      decoration: checkedProjects[index]
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      decorationColor:
+                                          Colors.white54, // Line color
+                                      decorationThickness: 2, // Line thickness
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    '15 Sep, 2024',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      decoration: checkedProjects[index]
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      decorationColor: Colors.white54,
+                                      decorationThickness: 2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    '15 Oct, 2024',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      decoration: checkedProjects[index]
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      decorationColor: Colors.white54,
+                                      decorationThickness: 2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '5',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      decoration: checkedProjects[index]
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      decorationColor: Colors.white54,
+                                      decorationThickness: 2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: index % 3 == 0
+                                          ? const Color(0xFF442926)
+                                          : index % 3 == 1
+                                              ? const Color(0xFF3D3425)
+                                              : const Color(0xFF2A3524),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      index % 3 == 0
+                                          ? 'High'
+                                          : index % 3 == 1
+                                              ? 'Medium'
+                                              : 'Low',
+                                      style: TextStyle(
+                                        color: index % 3 == 0
+                                            ? Colors.red[400]
+                                            : index % 3 == 1
+                                                ? Colors.orange[400]
+                                                : Colors.green[400],
+                                        fontSize: 12,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(left: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: checkedProjects[index]
+                                          ? const Color(0xFF243524)
+                                          : index % 3 == 1
+                                              ? const Color(0xFF252D3D)
+                                              : const Color(0xFF442926),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      checkedProjects[index]
+                                          ? 'Completed'
+                                          : index % 3 == 1
+                                              ? 'In Progress'
+                                              : 'Delayed',
+                                      style: TextStyle(
+                                        color: checkedProjects[index]
+                                            ? Colors.green[400]
+                                            : index % 3 == 1
+                                                ? Colors.blue[400]
+                                                : Colors.red[400],
+                                        fontSize: 12,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 100,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon:
+                                            Icon(PhosphorIcons.eye(), size: 16),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon: Icon(PhosphorIcons.pencilSimple(),
+                                            size: 16),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon: Icon(PhosphorIcons.trash(),
+                                            size: 16),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        Expanded(
+                        );
+                      },
+                    )
+                  : GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3, // Show 3 items per row
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio:
+                            1.5, // Width:Height ratio of each grid item
+                      ),
+                      itemCount: 5,
+                      itemBuilder: (context, index) {
+                        if (!_filterProject(index))
+                          return const SizedBox.shrink();
+                        return MouseRegion(
+                          onEnter: (_) => setState(() => hoveredIndex = index),
+                          onExit: (_) => setState(() => hoveredIndex = null),
                           child: Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
                             decoration: BoxDecoration(
-                              color: checkedProjects[index]
-                                  ? const Color(0xFF243524)
-                                  : index % 3 == 1
-                                      ? const Color(0xFF252D3D)
-                                      : const Color(0xFF442926),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              checkedProjects[index]
-                                  ? 'Completed'
-                                  : index % 3 == 1
-                                      ? 'In Progress'
-                                      : 'Delayed',
-                              style: TextStyle(
-                                color: checkedProjects[index]
-                                    ? Colors.green[400]
+                              color: hoveredIndex == index
+                                  ? Theme.of(context).cardColor.withOpacity(0.8)
+                                  : Theme.of(context)
+                                      .cardColor
+                                      .withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: index % 3 == 0
+                                    ? Colors.red[400]!.withOpacity(0.3)
                                     : index % 3 == 1
-                                        ? Colors.blue[400]
-                                        : Colors.red[400],
-                                fontSize: 12,
+                                        ? Colors.orange[400]!.withOpacity(0.3)
+                                        : Colors.green[400]!.withOpacity(0.3),
+                                width: 2,
                               ),
-                              textAlign: TextAlign.center,
+                              boxShadow: hoveredIndex == index
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Checkbox(
+                                      value: checkedProjects[index],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          checkedProjects[index] =
+                                              value ?? false;
+                                        });
+                                      },
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        'Project ${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          decoration: checkedProjects[index]
+                                              ? TextDecoration.lineThrough
+                                              : TextDecoration.none,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                // Add dates and tasks info
+                                Row(
+                                  children: [
+                                    Icon(PhosphorIcons.calendar(), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '15 Oct, 2024',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        decoration: checkedProjects[index]
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(PhosphorIcons.listChecks(), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '5 Tasks',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        decoration: checkedProjects[index]
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                // Status badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: checkedProjects[index]
+                                        ? const Color(0xFF243524)
+                                        : const Color(0xFF252D3D),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    checkedProjects[index]
+                                        ? 'Completed'
+                                        : 'In Progress',
+                                    style: TextStyle(
+                                      color: checkedProjects[index]
+                                          ? Colors.green[400]
+                                          : Colors.blue[400],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                // Existing bottom row with priority and actions
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: index % 3 == 0
+                                            ? const Color(0xFF442926)
+                                            : index % 3 == 1
+                                                ? const Color(0xFF3D3425)
+                                                : const Color(0xFF2A3524),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        index % 3 == 0
+                                            ? 'High'
+                                            : index % 3 == 1
+                                                ? 'Medium'
+                                                : 'Low',
+                                        style: TextStyle(
+                                          color: index % 3 == 0
+                                              ? Colors.red[400]
+                                              : index % 3 == 1
+                                                  ? Colors.orange[400]
+                                                  : Colors.green[400],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(PhosphorIcons.eye(),
+                                              size: 16),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(
+                                              PhosphorIcons.pencilSimple(),
+                                              size: 16),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(PhosphorIcons.trash(),
+                                              size: 16),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 100,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(PhosphorIcons.eye(), size: 16),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(PhosphorIcons.pencilSimple(),
-                                    size: 16),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(PhosphorIcons.trash(), size: 16),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
