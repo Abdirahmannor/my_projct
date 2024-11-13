@@ -3,7 +3,14 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 
 class AddProjectDialog extends StatefulWidget {
-  const AddProjectDialog({super.key});
+  final bool isEditing;
+  final Map<String, dynamic>? project;
+
+  const AddProjectDialog({
+    super.key,
+    this.isEditing = false,
+    this.project,
+  });
 
   @override
   State<AddProjectDialog> createState() => _AddProjectDialogState();
@@ -18,6 +25,21 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   String _priority = 'medium';
   String _status = 'not started';
   int _tasks = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing && widget.project != null) {
+      // Initialize form with existing project data
+      _nameController.text = widget.project!['name'];
+      _descriptionController.text = widget.project!['description'];
+      _startDate = _parseDate(widget.project!['startDate']);
+      _dueDate = _parseDate(widget.project!['dueDate']);
+      _priority = widget.project!['priority'];
+      _status = widget.project!['status'];
+      _tasks = widget.project!['tasks'];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +70,15 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
               child: Row(
                 children: [
                   Icon(
-                    PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
+                    widget.isEditing
+                        ? PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill)
+                        : PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
                     color: Colors.white,
                     size: 24,
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'Add New Project',
+                    widget.isEditing ? 'Edit Project' : 'Add New Project',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -206,7 +230,8 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         vertical: 16,
                       ),
                     ),
-                    child: const Text('Create Project'),
+                    child: Text(
+                        widget.isEditing ? 'Update Project' : 'Create Project'),
                   ),
                 ],
               ),
@@ -528,5 +553,31 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
         actionsPadding: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  DateTime _parseDate(String date) {
+    final parts = date.split(' ');
+    final day = int.parse(parts[0]);
+    final month = _getMonth(parts[1].replaceAll(',', ''));
+    final year = int.parse(parts[2]);
+    return DateTime(year, month, day);
+  }
+
+  int _getMonth(String monthName) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return months.indexOf(monthName) + 1;
   }
 }
