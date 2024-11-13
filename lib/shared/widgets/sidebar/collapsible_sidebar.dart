@@ -58,17 +58,19 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: widget.isCollapsed ? 65 : 250,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      width: widget.isCollapsed ? 65 : 240,
       child: Row(
         children: [
           // Left section (icons)
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             width: 65,
-            color:
-                Provider.of<ThemeProvider>(context).themeMode == ThemeMode.dark
-                    ? const Color(0xFF1F2937)
-                    : const Color(0xFF1B2559),
+            color: context.watch<ThemeProvider>().isDarkMode
+                ? const Color(0xFF1F2937)
+                : const Color(0xFF1B2559),
             child: Column(
               children: [
                 const SizedBox(height: 16),
@@ -118,20 +120,14 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                               height: 45,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                gradient: isSelected
-                                    ? const LinearGradient(
-                                        colors: [
-                                          Color(0xFF4318FF),
-                                          Color(0xFF4928FF),
-                                        ],
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      )
-                                    : null,
+                                color: isSelected
+                                    ? Theme.of(context).scaffoldBackgroundColor
+                                    : Colors.transparent,
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: const Color(0xFF4318FF)
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor
                                               .withOpacity(0.3),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
@@ -155,8 +151,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                 // Bottom icons with InkWell
                 Tooltip(
                   message: widget.isCollapsed
-                      ? (Provider.of<ThemeProvider>(context).themeMode ==
-                              ThemeMode.dark
+                      ? (context.watch<ThemeProvider>().isDarkMode
                           ? 'Light Mode'
                           : 'Dark Mode')
                       : '',
@@ -165,15 +160,12 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () =>
-                          Provider.of<ThemeProvider>(context, listen: false)
-                              .toggleTheme(),
+                      onTap: () => context.read<ThemeProvider>().toggleTheme(),
                       child: Container(
                         height: 45,
                         alignment: Alignment.center,
                         child: Icon(
-                          Provider.of<ThemeProvider>(context).themeMode ==
-                                  ThemeMode.dark
+                          context.watch<ThemeProvider>().isDarkMode
                               ? PhosphorIcons.moon()
                               : PhosphorIcons.sun(),
                           color: Colors.white70,
@@ -206,17 +198,20 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
 
           // Subtle divider between sections
           if (!widget.isCollapsed)
-            Container(
-              width: 1,
-              color: Colors.white.withOpacity(0.1),
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: widget.isCollapsed ? 0.0 : 1.0,
+              child: Container(
+                width: 1,
+                color: Colors.white.withOpacity(0.1),
+              ),
             ),
 
           // Right section (labels)
           if (!widget.isCollapsed)
             Expanded(
               child: Container(
-                color: Provider.of<ThemeProvider>(context).themeMode ==
-                        ThemeMode.dark
+                color: context.watch<ThemeProvider>().isDarkMode
                     ? const Color(0xFF272935)
                     : const Color(0xFF2B3674),
                 child: Column(
@@ -276,20 +271,15 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                                     const EdgeInsets.symmetric(horizontal: 16),
                                 alignment: Alignment.centerLeft,
                                 decoration: BoxDecoration(
-                                  gradient: isSelected
-                                      ? const LinearGradient(
-                                          colors: [
-                                            Color(0xFF4318FF),
-                                            Color(0xFF4928FF),
-                                          ],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        )
-                                      : null,
+                                  color: isSelected
+                                      ? Theme.of(context)
+                                          .scaffoldBackgroundColor
+                                      : Colors.transparent,
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF4318FF)
+                                            color: Theme.of(context)
+                                                .scaffoldBackgroundColor
                                                 .withOpacity(0.3),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
@@ -320,16 +310,14 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () =>
-                            Provider.of<ThemeProvider>(context, listen: false)
-                                .toggleTheme(),
+                            context.read<ThemeProvider>().toggleTheme(),
                         child: Container(
                           height: 45,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
                               Text(
-                                Provider.of<ThemeProvider>(context).themeMode ==
-                                        ThemeMode.dark
+                                context.watch<ThemeProvider>().isDarkMode
                                     ? 'Dark Mode'
                                     : 'Light Mode',
                                 style: const TextStyle(
@@ -337,13 +325,10 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                               ),
                               const Spacer(),
                               CupertinoSwitch(
-                                value: Provider.of<ThemeProvider>(context)
-                                        .themeMode ==
-                                    ThemeMode.dark,
-                                onChanged: (_) => Provider.of<ThemeProvider>(
-                                        context,
-                                        listen: false)
-                                    .toggleTheme(),
+                                value:
+                                    context.watch<ThemeProvider>().isDarkMode,
+                                onChanged: (_) =>
+                                    context.read<ThemeProvider>().toggleTheme(),
                                 activeColor: Colors.blue,
                               ),
                             ],
