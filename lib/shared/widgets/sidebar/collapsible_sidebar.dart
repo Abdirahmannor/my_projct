@@ -63,33 +63,18 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
       curve: Curves.easeInOut,
       width: widget.isCollapsed ? 65 : 240,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        color: context.watch<ThemeProvider>().isDarkMode
+            ? const Color(0xFF1F2937)
+            : const Color(0xFF1B2559),
       ),
-      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           // Left section (icons)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Container(
             width: 65,
-            decoration: BoxDecoration(
-              color: context.watch<ThemeProvider>().isDarkMode
-                  ? const Color(0xFF1F2937)
-                  : const Color(0xFF1B2559),
-              borderRadius: widget.isCollapsed
-                  ? const BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    )
-                  : null,
-            ),
+            color: context.watch<ThemeProvider>().isDarkMode
+                ? const Color(0xFF1F2937)
+                : const Color(0xFF1B2559),
             child: Column(
               children: [
                 const SizedBox(height: 16),
@@ -131,34 +116,33 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                         message: widget.isCollapsed ? item.label : '',
                         preferBelow: false,
                         verticalOffset: 12,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => widget.onItemSelected(index),
-                            child: Container(
-                              height: 45,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Theme.of(context).scaffoldBackgroundColor
-                                    : Colors.transparent,
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: Theme.of(context)
-                                              .scaffoldBackgroundColor
-                                              .withOpacity(0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Icon(
-                                item.icon,
-                                color:
-                                    isSelected ? Colors.white : Colors.white70,
-                                size: 22,
+                        child: Container(
+                          height: 45,
+                          margin: const EdgeInsets.symmetric(vertical: 2),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => widget.onItemSelected(index),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Theme.of(context)
+                                          .scaffoldBackgroundColor
+                                          .withOpacity(0.9)
+                                      : Colors.transparent,
+                                  borderRadius: widget.isCollapsed
+                                      ? const BorderRadius.horizontal(
+                                          right: Radius.circular(10))
+                                      : BorderRadius.zero,
+                                ),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  item.icon,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white70,
+                                  size: 22,
+                                ),
                               ),
                             ),
                           ),
@@ -215,30 +199,13 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
             ),
           ),
 
-          // Subtle divider between sections
-          if (!widget.isCollapsed)
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: widget.isCollapsed ? 0.0 : 1.0,
-              child: Container(
-                width: 1,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-
           // Right section (labels)
           if (!widget.isCollapsed)
             Expanded(
               child: Container(
-                decoration: BoxDecoration(
-                  color: context.watch<ThemeProvider>().isDarkMode
-                      ? const Color(0xFF272935)
-                      : const Color(0xFF2B3674),
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                ),
+                color: context.watch<ThemeProvider>().isDarkMode
+                    ? const Color(0xFF272935)
+                    : const Color(0xFF2B3674),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -286,42 +253,37 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                         itemBuilder: (context, index) {
                           final item = items[index];
                           final isSelected = widget.selectedIndex == index;
-                          return Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => widget.onItemSelected(index),
-                              child: Container(
-                                height: 45,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                alignment: Alignment.centerLeft,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Theme.of(context)
-                                          .scaffoldBackgroundColor
-                                      : Colors.transparent,
-                                  boxShadow: isSelected
-                                      ? [
-                                          BoxShadow(
-                                            color: Theme.of(context)
-                                                .scaffoldBackgroundColor
-                                                .withOpacity(0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                                child: Text(
-                                  item.label,
-                                  style: TextStyle(
+                          return Container(
+                            height: 45,
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => widget.onItemSelected(index),
+                                child: Container(
+                                  decoration: BoxDecoration(
                                     color: isSelected
-                                        ? Colors.white
-                                        : Colors.white70,
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                                        ? Theme.of(context)
+                                            .scaffoldBackgroundColor
+                                            .withOpacity(0.9)
+                                        : Colors.transparent,
+                                    borderRadius: const BorderRadius.horizontal(
+                                        right: Radius.circular(10)),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    item.label,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white70,
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -385,6 +347,54 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    // Implement logout dialog functionality
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Implement actual logout logic
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red[400],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
