@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/constants/app_colors.dart';
 
 class AddProjectDialog extends StatefulWidget {
   const AddProjectDialog({super.key});
@@ -13,283 +13,171 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _notesController = TextEditingController();
-  final _estimatedHoursController = TextEditingController();
-  String _priority = 'medium';
-  String _status = 'not started';
-  String _category = 'development';
   DateTime? _startDate;
   DateTime? _dueDate;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _notesController.dispose();
-    _estimatedHoursController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildInputField(
-    String label,
-    TextEditingController controller, {
-    IconData? icon,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        prefixIcon: icon != null ? Icon(icon, size: 20) : null,
-      ),
-      validator: label == 'Project Name'
-          ? (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a project name';
-              }
-              return null;
-            }
-          : null,
-    );
-  }
-
-  Widget _buildPriorityDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _priority,
-      decoration: InputDecoration(
-        labelText: 'Priority',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        prefixIcon: Icon(
-          PhosphorIcons.flag(PhosphorIconsStyle.bold),
-          size: 20,
-          color: _getPriorityColor(_priority),
-        ),
-      ),
-      items: ['low', 'medium', 'high'].map((priority) {
-        return DropdownMenuItem(
-          value: priority,
-          child: Text(
-            priority.toUpperCase(),
-            style: TextStyle(color: _getPriorityColor(priority)),
-          ),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) setState(() => _priority = value);
-      },
-    );
-  }
-
-  Widget _buildStatusDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _status,
-      decoration: InputDecoration(
-        labelText: 'Status',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        prefixIcon: Icon(
-          PhosphorIcons.clockCountdown(PhosphorIconsStyle.bold),
-          size: 20,
-          color: _getStatusColor(_status),
-        ),
-      ),
-      items:
-          ['not started', 'in progress', 'on hold', 'completed'].map((status) {
-        return DropdownMenuItem(
-          value: status,
-          child: Text(
-            status.toUpperCase(),
-            style: TextStyle(color: _getStatusColor(status)),
-          ),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) setState(() => _status = value);
-      },
-    );
-  }
-
-  Widget _buildDateField(String label, DateTime? date) {
-    return InkWell(
-      onTap: () => _selectDate(context, label == 'Start Date'),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          prefixIcon: Icon(
-            PhosphorIcons.calendar(PhosphorIconsStyle.bold),
-            size: 20,
-          ),
-        ),
-        child: Text(
-          date != null
-              ? '${date.day}/${date.month}/${date.year}'
-              : 'Select Date',
-          style: const TextStyle(fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _category,
-      decoration: InputDecoration(
-        labelText: 'Category',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        prefixIcon: Icon(
-          PhosphorIcons.tag(PhosphorIconsStyle.bold),
-          size: 20,
-        ),
-      ),
-      items: ['development', 'design', 'marketing', 'research', 'other']
-          .map((category) {
-        return DropdownMenuItem(
-          value: category,
-          child: Text(category.toUpperCase()),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) setState(() => _category = value);
-      },
-    );
-  }
-
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2025),
-    );
-
-    if (picked != null) {
-      setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-        } else {
-          _dueDate = picked;
-        }
-      });
-    }
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return AppColors.error;
-      case 'medium':
-        return AppColors.warning;
-      case 'low':
-        return AppColors.success;
-      default:
-        return AppColors.info;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return AppColors.success;
-      case 'in progress':
-        return AppColors.accent;
-      case 'on hold':
-        return AppColors.warning;
-      default:
-        return AppColors.error;
-    }
-  }
+  String _priority = 'medium';
+  String _status = 'not started';
+  int _tasks = 0;
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 400,
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        width: 600,
+        constraints: const BoxConstraints(maxHeight: 700),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.accent,
+                    Color.lerp(AppColors.accent, Colors.purple, 0.6) ??
+                        AppColors.accent,
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
                 children: [
+                  Icon(
+                    PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 16),
                   Text(
                     'Add New Project',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
+                  const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(PhosphorIcons.x(PhosphorIconsStyle.bold)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildInputField(
-                'Project Name',
-                _nameController,
-                icon: PhosphorIcons.folder(PhosphorIconsStyle.bold),
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                'Description',
-                _descriptionController,
-                icon: PhosphorIcons.textT(PhosphorIconsStyle.bold),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _buildPriorityDropdown()),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatusDropdown()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _buildDateField('Start Date', _startDate)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildDateField('Due Date', _dueDate)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInputField(
-                      'Estimated Hours',
-                      _estimatedHoursController,
-                      icon: PhosphorIcons.clock(PhosphorIconsStyle.bold),
+                    icon: Icon(
+                      PhosphorIcons.x(PhosphorIconsStyle.bold),
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildCategoryDropdown()),
                 ],
               ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                'Notes',
-                _notesController,
-                icon: PhosphorIcons.notepad(PhosphorIconsStyle.bold),
-                maxLines: 3,
+            ),
+
+            // Form
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Project Name
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Project Name',
+                          prefixIcon: Icon(
+                              PhosphorIcons.textT(PhosphorIconsStyle.bold)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a project name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Description
+                      TextFormField(
+                        controller: _descriptionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          prefixIcon: Icon(
+                              PhosphorIcons.article(PhosphorIconsStyle.bold)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Dates Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDatePicker(
+                              label: 'Start Date',
+                              value: _startDate,
+                              icon: PhosphorIcons.calendarBlank(
+                                  PhosphorIconsStyle.bold),
+                              onChanged: (date) =>
+                                  setState(() => _startDate = date),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDatePicker(
+                              label: 'Due Date',
+                              value: _dueDate,
+                              icon: PhosphorIcons.calendarCheck(
+                                  PhosphorIconsStyle.bold),
+                              onChanged: (date) =>
+                                  setState(() => _dueDate = date),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Priority and Status Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildPrioritySelector(),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStatusSelector(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Tasks Counter
+                      _buildTasksCounter(),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 24),
-              Row(
+            ),
+
+            // Actions
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                  ),
+                ),
+              ),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
@@ -298,33 +186,260 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                   ),
                   const SizedBox(width: 16),
                   FilledButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        final newProject = {
-                          'name': _nameController.text,
-                          'description': _descriptionController.text,
-                          'priority': _priority,
-                          'status': _status,
-                          'startDate': '15 Sep, 2024',
-                          'dueDate': '15 Oct, 2024',
-                          'estimatedHours': _estimatedHoursController.text,
-                          'category': _category,
-                          'notes': _notesController.text,
-                        };
-                        Navigator.pop(context, newProject);
-                      }
-                    },
+                    onPressed: _handleSubmit,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF5722),
+                      backgroundColor: AppColors.accent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                     ),
                     child: const Text('Create Project'),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime? value,
+    required IconData icon,
+    required ValueChanged<DateTime?> onChanged,
+  }) {
+    return InkWell(
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: value ?? DateTime.now(),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (date != null) {
+          onChanged(date);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value == null
+                        ? 'Select date'
+                        : '${value.day} ${_getMonthName(value.month)}, ${value.year}',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrioritySelector() {
+    final colors = {
+      'high': Colors.red.shade400,
+      'medium': Colors.orange.shade400,
+      'low': Colors.green.shade400,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Priority',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: colors.entries.map((entry) {
+              return RadioListTile(
+                title: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: entry.value,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(entry.key.toUpperCase()),
+                  ],
+                ),
+                value: entry.key,
+                groupValue: _priority,
+                onChanged: (value) => setState(() => _priority = value!),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusSelector() {
+    final statuses = {
+      'not started': Colors.grey.shade400,
+      'in progress': Colors.blue.shade400,
+      'on hold': Colors.orange.shade400,
+      'completed': Colors.green.shade400,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Status',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: statuses.entries.map((entry) {
+              return RadioListTile(
+                title: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: entry.value,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(entry.key.toUpperCase()),
+                  ],
+                ),
+                value: entry.key,
+                groupValue: _status,
+                onChanged: (value) => setState(() => _status = value!),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTasksCounter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Number of Tasks',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  if (_tasks > 0) {
+                    setState(() => _tasks--);
+                  }
+                },
+                icon: Icon(PhosphorIcons.minus(PhosphorIconsStyle.bold)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _tasks.toString(),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                onPressed: () => setState(() => _tasks++),
+                icon: Icon(PhosphorIcons.plus(PhosphorIconsStyle.bold)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate() &&
+        _startDate != null &&
+        _dueDate != null) {
+      final project = {
+        'name': _nameController.text,
+        'description': _descriptionController.text,
+        'startDate':
+            '${_startDate!.day} ${_getMonthName(_startDate!.month)}, ${_startDate!.year}',
+        'dueDate':
+            '${_dueDate!.day} ${_getMonthName(_dueDate!.month)}, ${_dueDate!.year}',
+        'tasks': _tasks,
+        'completedTasks': 0,
+        'priority': _priority,
+        'status': _status,
+      };
+
+      Navigator.pop(context, project);
+    }
   }
 }

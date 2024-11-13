@@ -68,6 +68,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     },
   ];
 
+  // Add this map to store original status
+  final Map<int, String> originalStatuses = {};
+
   void _handleEdit(int index) {
     // TODO: Implement edit functionality
   }
@@ -102,6 +105,39 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   void _toggleAllProjects(bool? value) {
     setState(() {
       checkedProjects = List.generate(projects.length, (_) => value ?? false);
+      for (int i = 0; i < projects.length; i++) {
+        if (value == true) {
+          // Store original status and set to completed
+          originalStatuses[i] = projects[i]['status'];
+          projects[i]['status'] = 'completed';
+          projects[i]['completedTasks'] = projects[i]['tasks'];
+        } else {
+          // Restore original status
+          projects[i]['status'] = originalStatuses[i] ?? 'in progress';
+          // Restore original completedTasks count
+          projects[i]['completedTasks'] =
+              (projects[i]['tasks'] * 0.6).round(); // Example: restore to 60%
+        }
+      }
+    });
+  }
+
+  void _handleCheckboxChange(int index, bool? value) {
+    setState(() {
+      checkedProjects[index] = value ?? false;
+      if (value == true) {
+        // Store original status and set to completed
+        originalStatuses[index] = projects[index]['status'];
+        projects[index]['status'] = 'completed';
+        projects[index]['completedTasks'] = projects[index]['tasks'];
+      } else {
+        // Restore original status
+        projects[index]['status'] = originalStatuses[index] ?? 'in progress';
+        // You might want to restore the original completedTasks count as well
+        // This is optional, depending on your requirements
+        projects[index]['completedTasks'] =
+            (projects[index]['tasks'] * 0.6).round(); // Example: restore to 60%
+      }
     });
   }
 
@@ -140,29 +176,77 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      FilledButton.icon(
-                        onPressed: () async {
-                          final result = await showDialog(
-                            context: context,
-                            builder: (context) => const AddProjectDialog(),
-                          );
+                      Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.accent,
+                              Color.lerp(
+                                      AppColors.accent, Colors.purple, 0.6) ??
+                                  AppColors.accent,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.accent.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final result = await showDialog(
+                                context: context,
+                                builder: (context) => const AddProjectDialog(),
+                              );
 
-                          if (result != null) {
-                            setState(() {
-                              projects.add(result);
-                              checkedProjects =
-                                  List.generate(projects.length, (_) => false);
-                            });
-                          }
-                        },
-                        icon: Icon(PhosphorIcons.plus(PhosphorIconsStyle.bold),
-                            size: 18),
-                        label: const Text('Add Project'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
+                              if (result != null) {
+                                setState(() {
+                                  projects.add(result);
+                                  checkedProjects = List.generate(
+                                      projects.length, (_) => false);
+                                });
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      PhosphorIcons.plus(
+                                          PhosphorIconsStyle.bold),
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Add Project',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -315,11 +399,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 child: ProjectGridItem(
                                   project: projects[index],
                                   isChecked: checkedProjects[index],
-                                  onCheckChanged: (value) {
-                                    setState(() {
-                                      checkedProjects[index] = value ?? false;
-                                    });
-                                  },
+                                  onCheckChanged: (value) =>
+                                      _handleCheckboxChange(index, value),
                                   onEdit: () => _handleEdit(index),
                                   onDelete: () => _handleDelete(index),
                                   isHovered: hoveredIndex == index,
@@ -341,11 +422,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 child: ProjectListItem(
                                   project: projects[index],
                                   isChecked: checkedProjects[index],
-                                  onCheckChanged: (value) {
-                                    setState(() {
-                                      checkedProjects[index] = value ?? false;
-                                    });
-                                  },
+                                  onCheckChanged: (value) =>
+                                      _handleCheckboxChange(index, value),
                                   onEdit: () => _handleEdit(index),
                                   onDelete: () => _handleDelete(index),
                                   isHovered: hoveredIndex == index,
