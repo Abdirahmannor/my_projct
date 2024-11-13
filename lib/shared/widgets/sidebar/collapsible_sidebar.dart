@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/theme_provider.dart';
 
+const Duration _animationDuration = Duration(milliseconds: 200);
+
 class CollapsibleSidebar extends StatefulWidget {
   final bool isCollapsed;
   final Function(bool) onToggle;
@@ -25,7 +27,7 @@ class CollapsibleSidebar extends StatefulWidget {
 }
 
 class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
-  final List<SidebarItem> items = [
+  late final List<SidebarItem> items = [
     SidebarItem(
       icon: PhosphorIcons.houseLine(PhosphorIconsStyle.bold),
       label: 'Dashboard',
@@ -58,291 +60,205 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.select((ThemeProvider p) => p.isDarkMode);
+
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
+      duration: _animationDuration,
       width: widget.isCollapsed ? 65 : 240,
-      decoration: BoxDecoration(
-        color: context.watch<ThemeProvider>().isDarkMode
-            ? const Color(0xFF1F2937)
-            : const Color(0xFF1B2559),
-      ),
+      color: isDarkMode ? const Color(0xFF1F2937) : const Color(0xFF1B2559),
       child: Row(
         children: [
-          // Left section (icons)
-          Container(
-            width: 65,
-            color: context.watch<ThemeProvider>().isDarkMode
-                ? const Color(0xFF1F2937)
-                : const Color(0xFF1B2559),
-            child: Column(
+          _buildLeftSection(isDarkMode),
+          if (!widget.isCollapsed) _buildRightSection(isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeftSection(bool isDarkMode) {
+    return SizedBox(
+      width: 65,
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          _buildProfileIcon(),
+          const SizedBox(height: 24),
+          _buildCollapseArrow(),
+          const SizedBox(height: 24),
+          Expanded(
+            child: _buildMenuItems(true, isDarkMode),
+          ),
+          _buildBottomIcons(isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightSection(bool isDarkMode) {
+    return Expanded(
+      child: Container(
+        color: isDarkMode ? const Color(0xFF272935) : const Color(0xFF2B3674),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            _buildProfileInfo(),
+            const SizedBox(height: 24),
+            _buildCollapseButton(),
+            const SizedBox(height: 24),
+            Expanded(
+              child: _buildMenuItems(false, isDarkMode),
+            ),
+            _buildBottomButtons(isDarkMode),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItems(bool isIconSection, bool isDarkMode) {
+    return ListView.builder(
+      itemCount: items.length,
+      padding: EdgeInsets.zero,
+      itemBuilder: (context, index) {
+        final isSelected = widget.selectedIndex == index;
+        return _MenuItem(
+          item: items[index],
+          isSelected: isSelected,
+          isIconSection: isIconSection,
+          isCollapsed: widget.isCollapsed,
+          onTap: () => widget.onItemSelected(index),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileIcon() {
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: Colors.blue.withOpacity(0.2),
+      child: Icon(PhosphorIcons.user(), color: Colors.blue, size: 20),
+    );
+  }
+
+  Widget _buildCollapseArrow() {
+    return InkWell(
+      onTap: () => widget.onToggle(!widget.isCollapsed),
+      child: Icon(
+        widget.isCollapsed
+            ? PhosphorIcons.arrowRight()
+            : PhosphorIcons.arrowLeft(),
+        color: Colors.white70,
+        size: 22,
+      ),
+    );
+  }
+
+  Widget _buildBottomIcons(bool isDarkMode) {
+    return Column(
+      children: [
+        IconButton(
+          onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+          icon: Icon(
+            isDarkMode ? PhosphorIcons.moon() : PhosphorIcons.sun(),
+            color: Colors.white70,
+            size: 22,
+          ),
+        ),
+        IconButton(
+          onPressed: () => _showLogoutDialog(context),
+          icon: Icon(
+            PhosphorIcons.signOut(),
+            color: Colors.red[400],
+            size: 22,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileInfo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'John Doe',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            'Student',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapseButton() {
+    return InkWell(
+      onTap: () => widget.onToggle(!widget.isCollapsed),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: const Text(
+          'Collapse',
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons(bool isDarkMode) {
+    return Column(
+      children: [
+        // Dark mode toggle
+        InkWell(
+          onTap: () => context.read<ThemeProvider>().toggleTheme(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
-                const SizedBox(height: 16),
-                // Profile icon
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.blue.withOpacity(0.2),
-                  child:
-                      Icon(PhosphorIcons.user(), color: Colors.blue, size: 20),
+                Text(
+                  isDarkMode ? 'Dark Mode' : 'Light Mode',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
-                const SizedBox(height: 24),
-                // Collapse arrow icon
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => widget.onToggle(!widget.isCollapsed),
-                    child: Container(
-                      height: 45,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        widget.isCollapsed
-                            ? PhosphorIcons.arrowRight()
-                            : PhosphorIcons.arrowLeft(),
-                        color: Colors.white70,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Menu items icons
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final isSelected = widget.selectedIndex == index;
-                      return Tooltip(
-                        message: widget.isCollapsed ? item.label : '',
-                        preferBelow: false,
-                        verticalOffset: 12,
-                        child: Container(
-                          height: 45,
-                          margin: const EdgeInsets.symmetric(vertical: 2),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => widget.onItemSelected(index),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Theme.of(context)
-                                          .scaffoldBackgroundColor
-                                          .withOpacity(0.9)
-                                      : Colors.transparent,
-                                  borderRadius: widget.isCollapsed
-                                      ? const BorderRadius.horizontal(
-                                          right: Radius.circular(10))
-                                      : BorderRadius.zero,
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  item.icon,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white70,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Bottom icons with InkWell
-                Tooltip(
-                  message: widget.isCollapsed
-                      ? (context.watch<ThemeProvider>().isDarkMode
-                          ? 'Light Mode'
-                          : 'Dark Mode')
-                      : '',
-                  preferBelow: false,
-                  verticalOffset: 12,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => context.read<ThemeProvider>().toggleTheme(),
-                      child: Container(
-                        height: 45,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          context.watch<ThemeProvider>().isDarkMode
-                              ? PhosphorIcons.moon()
-                              : PhosphorIcons.sun(),
-                          color: Colors.white70,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Tooltip(
-                  message: widget.isCollapsed ? 'Logout' : '',
-                  preferBelow: false,
-                  verticalOffset: 12,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _showLogoutDialog(context),
-                      child: Container(
-                        height: 45,
-                        alignment: Alignment.center,
-                        child: Icon(PhosphorIcons.signOut(),
-                            color: Colors.red[400], size: 22),
-                      ),
-                    ),
-                  ),
+                const Spacer(),
+                CupertinoSwitch(
+                  value: isDarkMode,
+                  onChanged: (_) => context.read<ThemeProvider>().toggleTheme(),
+                  activeColor: Colors.blue,
                 ),
               ],
             ),
           ),
-
-          // Right section (labels)
-          if (!widget.isCollapsed)
-            Expanded(
-              child: Container(
-                color: context.watch<ThemeProvider>().isDarkMode
-                    ? const Color(0xFF272935)
-                    : const Color(0xFF2B3674),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    // Profile text
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('John Doe',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600)),
-                          Text('Student',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 13)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Collapse arrow text and icon
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => widget.onToggle(!widget.isCollapsed),
-                        child: Container(
-                          height: 45,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: const Text(
-                            'Collapse',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Menu items text
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          final isSelected = widget.selectedIndex == index;
-                          return Container(
-                            height: 45,
-                            margin: const EdgeInsets.symmetric(vertical: 2),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => widget.onItemSelected(index),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Theme.of(context)
-                                            .scaffoldBackgroundColor
-                                            .withOpacity(0.9)
-                                        : Colors.transparent,
-                                    borderRadius: const BorderRadius.horizontal(
-                                        right: Radius.circular(10)),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    item.label,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.white70,
-                                      fontSize: 14,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    // Bottom section with InkWell
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () =>
-                            context.read<ThemeProvider>().toggleTheme(),
-                        child: Container(
-                          height: 45,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Text(
-                                context.watch<ThemeProvider>().isDarkMode
-                                    ? 'Dark Mode'
-                                    : 'Light Mode',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
-                              ),
-                              const Spacer(),
-                              CupertinoSwitch(
-                                value:
-                                    context.watch<ThemeProvider>().isDarkMode,
-                                onChanged: (_) =>
-                                    context.read<ThemeProvider>().toggleTheme(),
-                                activeColor: Colors.blue,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showLogoutDialog(context),
-                        child: Container(
-                          height: 45,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Logout',
-                              style: TextStyle(
-                                  color: Colors.red[400], fontSize: 14)),
-                        ),
-                      ),
-                    ),
-                  ],
+        ),
+        // Logout button
+        InkWell(
+          onTap: () => _showLogoutDialog(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red[400], fontSize: 14),
                 ),
-              ),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -375,9 +291,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  color: Colors.white70,
-                ),
+                style: TextStyle(color: Colors.white70),
               ),
             ),
             TextButton(
@@ -387,14 +301,71 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
               },
               child: Text(
                 'Logout',
-                style: TextStyle(
-                  color: Colors.red[400],
-                ),
+                style: TextStyle(color: Colors.red[400]),
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  const _MenuItem({
+    required this.item,
+    required this.isSelected,
+    required this.isIconSection,
+    required this.isCollapsed,
+    required this.onTap,
+  });
+
+  final SidebarItem item;
+  final bool isSelected;
+  final bool isIconSection;
+  final bool isCollapsed;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 45,
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9)
+                : Colors.transparent,
+            borderRadius: BorderRadius.horizontal(
+              right: isCollapsed || !isIconSection
+                  ? const Radius.circular(10)
+                  : Radius.zero,
+            ),
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: isIconSection ? 0 : 16,
+          ),
+          alignment: isIconSection ? Alignment.center : Alignment.centerLeft,
+          child: isIconSection
+              ? Icon(
+                  item.icon,
+                  color: isSelected ? Colors.white : Colors.white70,
+                  size: 22,
+                )
+              : Text(
+                  item.label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontSize: 14,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

@@ -30,6 +30,9 @@ dependencies:
   uuid: ^4.2.1  # Add this line
   window_manager: ^0.4.3
   bitsdojo_window: ^0.1.6
+  flutter_time_picker_spinner: ^2.0.0
+  material_symbols_icons: ^4.2719.1
+  iconsax: ^0.0.8
 
 dev_dependencies:
   flutter_test:

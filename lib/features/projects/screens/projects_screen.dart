@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../widgets/add_project_dialog.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -98,7 +99,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         ),
                       ),
                       FilledButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => const AddProjectDialog(),
+                          );
+                        },
                         icon: Icon(PhosphorIcons.plus(), size: 18),
                         label: const Text('Add Project'),
                         style: FilledButton.styleFrom(
