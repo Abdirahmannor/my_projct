@@ -43,56 +43,112 @@ class ProjectsScreen extends StatelessWidget {
 
             Row(
               children: [
+                // All project button (separate)
                 Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor, // Active state
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {},
+                    icon: Icon(
+                      PhosphorIcons.folder(),
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'All project',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Archived button (separate)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {},
+                    icon: Icon(PhosphorIcons.archive(), size: 18),
+                    label: const Text('Archived'),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Sort dropdown
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      TextButton.icon(
-                        onPressed: () {},
-                        icon: Icon(PhosphorIcons.folder(), size: 18),
-                        label: const Text('All project'),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {},
-                        icon: Icon(PhosphorIcons.archive(), size: 18),
-                        label: const Text('Archived'),
-                      ),
+                      Icon(PhosphorIcons.funnel(), size: 18),
+                      const SizedBox(width: 8),
+                      const Text('Newest'),
+                      Icon(PhosphorIcons.caretDown(), size: 18),
                     ],
                   ),
                 ),
+
                 const SizedBox(width: 16),
-                Row(
-                  children: [
-                    Icon(PhosphorIcons.funnel(), size: 18),
-                    const SizedBox(width: 8),
-                    const Text('Newest'),
-                    Icon(PhosphorIcons.caretDown(), size: 18),
-                  ],
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 280,
+
+                // Search bar
+                Container(
+                  width: 240,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Search',
                       prefixIcon:
                           Icon(PhosphorIcons.magnifyingGlass(), size: 18),
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
                       ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 16),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(PhosphorIcons.squaresFour(), size: 18),
+
+                // List view icon (separate)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(PhosphorIcons.list(), size: 18),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Grid view icon (separate)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(PhosphorIcons.squaresFour(), size: 18),
                 ),
               ],
             ),
