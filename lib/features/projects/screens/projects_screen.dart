@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../widgets/add_project_dialog.dart';
 import '../widgets/project_list_item.dart';
 import '../../../core/utils/string_extensions.dart';
+import '../widgets/project_grid_item.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -292,30 +293,66 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   const Divider(height: 1),
                   // Project List
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: projects.length,
-                      itemBuilder: (context, index) {
-                        if (!_filterProject(index))
-                          return const SizedBox.shrink();
-                        return MouseRegion(
-                          onEnter: (_) => setState(() => hoveredIndex = index),
-                          onExit: (_) => setState(() => hoveredIndex = null),
-                          child: ProjectListItem(
-                            project: projects[index],
-                            isChecked: checkedProjects[index],
-                            onCheckChanged: (value) {
-                              setState(() {
-                                checkedProjects[index] = value ?? false;
-                              });
+                    child: !isListView
+                        ? GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            itemCount: projects.length,
+                            itemBuilder: (context, index) {
+                              if (!_filterProject(index))
+                                return const SizedBox.shrink();
+                              return MouseRegion(
+                                onEnter: (_) =>
+                                    setState(() => hoveredIndex = index),
+                                onExit: (_) =>
+                                    setState(() => hoveredIndex = null),
+                                child: ProjectGridItem(
+                                  project: projects[index],
+                                  isChecked: checkedProjects[index],
+                                  onCheckChanged: (value) {
+                                    setState(() {
+                                      checkedProjects[index] = value ?? false;
+                                    });
+                                  },
+                                  onEdit: () => _handleEdit(index),
+                                  onDelete: () => _handleDelete(index),
+                                  isHovered: hoveredIndex == index,
+                                ),
+                              );
                             },
-                            onEdit: () => _handleEdit(index),
-                            onDelete: () => _handleDelete(index),
-                            isHovered: hoveredIndex == index,
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: projects.length,
+                            itemBuilder: (context, index) {
+                              if (!_filterProject(index))
+                                return const SizedBox.shrink();
+                              return MouseRegion(
+                                onEnter: (_) =>
+                                    setState(() => hoveredIndex = index),
+                                onExit: (_) =>
+                                    setState(() => hoveredIndex = null),
+                                child: ProjectListItem(
+                                  project: projects[index],
+                                  isChecked: checkedProjects[index],
+                                  onCheckChanged: (value) {
+                                    setState(() {
+                                      checkedProjects[index] = value ?? false;
+                                    });
+                                  },
+                                  onEdit: () => _handleEdit(index),
+                                  onDelete: () => _handleDelete(index),
+                                  isHovered: hoveredIndex == index,
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

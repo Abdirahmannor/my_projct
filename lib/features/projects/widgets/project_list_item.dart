@@ -80,56 +80,68 @@ class ProjectListItem extends StatelessWidget {
             ),
             Expanded(
               flex: 2,
-              child: Text(
+              child: _buildDateInfo(
+                context,
+                'Start',
                 project['startDate'],
-                style: Theme.of(context).textTheme.bodyMedium,
+                PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
+                isStart: true,
               ),
             ),
             Expanded(
               flex: 2,
-              child: Text(
+              child: _buildDateInfo(
+                context,
+                'Due',
                 project['dueDate'],
-                style: Theme.of(context).textTheme.bodyMedium,
+                PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
+                isStart: false,
               ),
             ),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Theme.of(context).dividerColor,
-                        width: 1,
+                  Tooltip(
+                    message:
+                        '${project['completedTasks']} of ${project['tasks']} tasks completed',
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Stack(
-                      children: [
-                        CircularProgressIndicator(
-                          value: project['completedTasks'] / project['tasks'],
-                          backgroundColor:
-                              Theme.of(context).dividerColor.withOpacity(0.2),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.accent.withOpacity(0.9),
+                      child: Stack(
+                        children: [
+                          CircularProgressIndicator(
+                            value: project['completedTasks'] / project['tasks'],
+                            backgroundColor:
+                                Theme.of(context).dividerColor.withOpacity(0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.accent.withOpacity(0.9),
+                            ),
+                            strokeWidth: 4,
                           ),
-                          strokeWidth: 4,
-                        ),
-                        Center(
-                          child: Text(
-                            '${project['completedTasks']}/${project['tasks']}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 11,
-                                    ),
+                          Center(
+                            child: Text(
+                              '${project['completedTasks']}/${project['tasks']}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -180,6 +192,12 @@ class ProjectListItem extends StatelessWidget {
       'low': Colors.green.shade400,
     };
 
+    final priorityMessages = {
+      'high': 'High Priority - Urgent attention needed',
+      'medium': 'Medium Priority - Important but not urgent',
+      'low': 'Low Priority - Can be handled later',
+    };
+
     final priorityValues = {
       'high': 1.0,
       'medium': 0.66,
@@ -189,38 +207,41 @@ class ProjectListItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colors[priority]?.withOpacity(0.3) ??
-                  Colors.grey.withOpacity(0.3),
-              width: 1,
+        Tooltip(
+          message: priorityMessages[priority] ?? 'Unknown priority',
+          child: Container(
+            width: 40,
+            height: 40,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors[priority]?.withOpacity(0.3) ??
+                    Colors.grey.withOpacity(0.3),
+                width: 1,
+              ),
             ),
-          ),
-          child: Stack(
-            children: [
-              CircularProgressIndicator(
-                value: priorityValues[priority] ?? 0,
-                backgroundColor: colors[priority]?.withOpacity(0.1) ??
-                    Colors.grey.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colors[priority] ?? Colors.grey,
+            child: Stack(
+              children: [
+                CircularProgressIndicator(
+                  value: priorityValues[priority] ?? 0,
+                  backgroundColor: colors[priority]?.withOpacity(0.1) ??
+                      Colors.grey.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colors[priority] ?? Colors.grey,
+                  ),
+                  strokeWidth: 4,
                 ),
-                strokeWidth: 4,
-              ),
-              Center(
-                child: Icon(
-                  PhosphorIcons.warning(PhosphorIconsStyle.fill),
-                  size: 16,
-                  color: colors[priority]?.withOpacity(0.8),
+                Center(
+                  child: Icon(
+                    PhosphorIcons.warning(PhosphorIconsStyle.fill),
+                    size: 16,
+                    color: colors[priority]?.withOpacity(0.8),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -233,6 +254,13 @@ class ProjectListItem extends StatelessWidget {
       'in progress': Colors.blue.shade400,
       'on hold': Colors.orange.shade400,
       'completed': Colors.green.shade400,
+    };
+
+    final statusMessages = {
+      'not started': 'Project has not been started yet',
+      'in progress': 'Project is currently being worked on',
+      'on hold': 'Project is temporarily paused',
+      'completed': 'Project has been completed',
     };
 
     final statusValues = {
@@ -260,41 +288,134 @@ class ProjectListItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colors[status]?.withOpacity(0.3) ??
-                  Colors.grey.withOpacity(0.3),
-              width: 1,
+        Tooltip(
+          message: statusMessages[status] ?? 'Unknown status',
+          child: Container(
+            width: 40,
+            height: 40,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors[status]?.withOpacity(0.3) ??
+                    Colors.grey.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Stack(
+              children: [
+                CircularProgressIndicator(
+                  value: statusValues[status] ?? 0,
+                  backgroundColor: colors[status]?.withOpacity(0.1) ??
+                      Colors.grey.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colors[status] ?? Colors.grey,
+                  ),
+                  strokeWidth: 4,
+                ),
+                Center(
+                  child: Icon(
+                    getStatusIcon(),
+                    size: 16,
+                    color: colors[status]?.withOpacity(0.8),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Stack(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateInfo(
+    BuildContext context,
+    String label,
+    String date,
+    IconData icon, {
+    required bool isStart,
+  }) {
+    final DateTime now = DateTime.now();
+    final DateTime dateTime = _parseDate(date);
+    final int daysRemaining = dateTime.difference(now).inDays;
+
+    final bool isOverdue = !isStart && daysRemaining < 0;
+    final bool isUpcoming = isStart && daysRemaining > 0;
+
+    final Color dateColor = isOverdue
+        ? Colors.red.shade400
+        : isUpcoming
+            ? Colors.green.shade400
+            : Theme.of(context).hintColor;
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: dateColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: dateColor,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircularProgressIndicator(
-                value: statusValues[status] ?? 0,
-                backgroundColor: colors[status]?.withOpacity(0.1) ??
-                    Colors.grey.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colors[status] ?? Colors.grey,
-                ),
-                strokeWidth: 4,
+              Text(
+                date,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              Center(
-                child: Icon(
-                  getStatusIcon(),
-                  size: 16,
-                  color: colors[status]?.withOpacity(0.8),
+              if (!isStart) ...[
+                const SizedBox(height: 2),
+                Text(
+                  isOverdue
+                      ? '${daysRemaining.abs()} days overdue'
+                      : daysRemaining == 0
+                          ? 'Due today'
+                          : '$daysRemaining days remaining',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: dateColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ],
     );
+  }
+
+  DateTime _parseDate(String date) {
+    final parts = date.split(' ');
+    final day = int.parse(parts[0]);
+    final month = _getMonth(parts[1].replaceAll(',', ''));
+    final year = int.parse(parts[2]);
+    return DateTime(year, month, day);
+  }
+
+  int _getMonth(String month) {
+    const months = {
+      'Jan': 1,
+      'Feb': 2,
+      'Mar': 3,
+      'Apr': 4,
+      'May': 5,
+      'Jun': 6,
+      'Jul': 7,
+      'Aug': 8,
+      'Sep': 9,
+      'Oct': 10,
+      'Nov': 11,
+      'Dec': 12
+    };
+    return months[month] ?? 1;
   }
 }
