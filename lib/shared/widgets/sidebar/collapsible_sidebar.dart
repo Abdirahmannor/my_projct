@@ -65,7 +65,10 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
           // Left section (icons)
           Container(
             width: 65,
-            color: const Color(0xFF1B2559),
+            color:
+                Provider.of<ThemeProvider>(context).themeMode == ThemeMode.dark
+                    ? const Color(0xFF1F2937)
+                    : const Color(0xFF1B2559),
             child: Column(
               children: [
                 const SizedBox(height: 16),
@@ -103,19 +106,45 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       final isSelected = widget.selectedIndex == index;
-                      return Material(
-                        color: isSelected
-                            ? const Color(0xFF4318FF)
-                            : Colors.transparent,
-                        child: InkWell(
-                          onTap: () => widget.onItemSelected(index),
-                          child: Container(
-                            height: 45,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              item.icon,
-                              color: isSelected ? Colors.white : Colors.white70,
-                              size: 22,
+                      return Tooltip(
+                        message: widget.isCollapsed ? item.label : '',
+                        preferBelow: false,
+                        verticalOffset: 12,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => widget.onItemSelected(index),
+                            child: Container(
+                              height: 45,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: isSelected
+                                    ? const LinearGradient(
+                                        colors: [
+                                          Color(0xFF4318FF),
+                                          Color(0xFF4928FF),
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      )
+                                    : null,
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: const Color(0xFF4318FF)
+                                              .withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Icon(
+                                item.icon,
+                                color:
+                                    isSelected ? Colors.white : Colors.white70,
+                                size: 22,
+                              ),
                             ),
                           ),
                         ),
@@ -124,29 +153,50 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                   ),
                 ),
                 // Bottom icons with InkWell
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () =>
-                        Provider.of<ThemeProvider>(context, listen: false)
-                            .toggleTheme(),
-                    child: Container(
-                      height: 45,
-                      alignment: Alignment.center,
-                      child: Icon(PhosphorIcons.moon(),
-                          color: Colors.white70, size: 22),
+                Tooltip(
+                  message: widget.isCollapsed
+                      ? (Provider.of<ThemeProvider>(context).themeMode ==
+                              ThemeMode.dark
+                          ? 'Light Mode'
+                          : 'Dark Mode')
+                      : '',
+                  preferBelow: false,
+                  verticalOffset: 12,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () =>
+                          Provider.of<ThemeProvider>(context, listen: false)
+                              .toggleTheme(),
+                      child: Container(
+                        height: 45,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Provider.of<ThemeProvider>(context).themeMode ==
+                                  ThemeMode.dark
+                              ? PhosphorIcons.moon()
+                              : PhosphorIcons.sun(),
+                          color: Colors.white70,
+                          size: 22,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _showLogoutDialog(context),
-                    child: Container(
-                      height: 45,
-                      alignment: Alignment.center,
-                      child: Icon(PhosphorIcons.signOut(),
-                          color: Colors.red[400], size: 22),
+                Tooltip(
+                  message: widget.isCollapsed ? 'Logout' : '',
+                  preferBelow: false,
+                  verticalOffset: 12,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showLogoutDialog(context),
+                      child: Container(
+                        height: 45,
+                        alignment: Alignment.center,
+                        child: Icon(PhosphorIcons.signOut(),
+                            color: Colors.red[400], size: 22),
+                      ),
                     ),
                   ),
                 ),
@@ -154,11 +204,21 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
             ),
           ),
 
+          // Subtle divider between sections
+          if (!widget.isCollapsed)
+            Container(
+              width: 1,
+              color: Colors.white.withOpacity(0.1),
+            ),
+
           // Right section (labels)
           if (!widget.isCollapsed)
             Expanded(
               child: Container(
-                color: const Color(0xFF2B3674),
+                color: Provider.of<ThemeProvider>(context).themeMode ==
+                        ThemeMode.dark
+                    ? const Color(0xFF272935)
+                    : const Color(0xFF2B3674),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -207,9 +267,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                           final item = items[index];
                           final isSelected = widget.selectedIndex == index;
                           return Material(
-                            color: isSelected
-                                ? const Color(0xFF4318FF)
-                                : Colors.transparent,
+                            color: Colors.transparent,
                             child: InkWell(
                               onTap: () => widget.onItemSelected(index),
                               child: Container(
@@ -217,6 +275,28 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 16),
                                 alignment: Alignment.centerLeft,
+                                decoration: BoxDecoration(
+                                  gradient: isSelected
+                                      ? const LinearGradient(
+                                          colors: [
+                                            Color(0xFF4318FF),
+                                            Color(0xFF4928FF),
+                                          ],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        )
+                                      : null,
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF4318FF)
+                                                .withOpacity(0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
                                 child: Text(
                                   item.label,
                                   style: TextStyle(
@@ -247,9 +327,14 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
-                              const Text('Dark Mode',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 14)),
+                              Text(
+                                Provider.of<ThemeProvider>(context).themeMode ==
+                                        ThemeMode.dark
+                                    ? 'Dark Mode'
+                                    : 'Light Mode',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 14),
+                              ),
                               const Spacer(),
                               CupertinoSwitch(
                                 value: Provider.of<ThemeProvider>(context)

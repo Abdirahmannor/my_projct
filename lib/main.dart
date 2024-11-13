@@ -32,11 +32,8 @@ void main() async {
   }
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => ExamProvider()),
-      ],
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
       child: const SchoolTaskManager(),
     ),
   );
