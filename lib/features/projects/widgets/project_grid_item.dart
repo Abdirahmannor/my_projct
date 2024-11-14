@@ -197,7 +197,8 @@ class ProjectGridItem extends StatelessWidget {
                 value: completed / total,
                 backgroundColor:
                     Theme.of(context).dividerColor.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.accent),
                 minHeight: 8,
               ),
             ),

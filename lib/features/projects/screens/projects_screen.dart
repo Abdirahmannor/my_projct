@@ -26,9 +26,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int? hoveredIndex;
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String _selectedTimeframe = 'This Month';
-  List<String> _timeframes = [
+  final List<String> _timeframes = [
     'Today',
     'This Week',
     'This Month',
@@ -754,8 +754,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               ),
                               itemCount: projects.length,
                               itemBuilder: (context, index) {
-                                if (!_filterProject(index))
+                                if (!_filterProject(index)) {
                                   return const SizedBox.shrink();
+                                }
                                 return MouseRegion(
                                   onEnter: (_) =>
                                       setState(() => hoveredIndex = index),
@@ -785,8 +786,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               padding: const EdgeInsets.all(12),
                               itemCount: projects.length,
                               itemBuilder: (context, index) {
-                                if (!_filterProject(index))
+                                if (!_filterProject(index)) {
                                   return const SizedBox.shrink();
+                                }
                                 return MouseRegion(
                                   onEnter: (_) =>
                                       setState(() => hoveredIndex = index),
@@ -1227,8 +1229,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,

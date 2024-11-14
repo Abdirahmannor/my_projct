@@ -82,7 +82,7 @@ class SchoolScreen extends StatelessWidget {
                                   ),
                             ),
                             const SizedBox(height: 16),
-                            Expanded(
+                            const Expanded(
                               child: _ExamsList(),
                             ),
                           ],

@@ -91,31 +91,31 @@ class ActivityItem {
 }
 
 final List<ActivityItem> _demoActivities = [
-  ActivityItem(
+  const ActivityItem(
     title: 'Math homework completed',
     time: '2 hours ago',
     icon: PhosphorIcons.checkCircle,
     color: Colors.green,
   ),
-  ActivityItem(
+  const ActivityItem(
     title: 'New project assigned',
     time: '4 hours ago',
     icon: PhosphorIcons.briefcase,
     color: Colors.blue,
   ),
-  ActivityItem(
+  const ActivityItem(
     title: 'Physics exam scheduled',
     time: '5 hours ago',
     icon: PhosphorIcons.calendar,
     color: Colors.orange,
   ),
-  ActivityItem(
+  const ActivityItem(
     title: 'Study materials added',
     time: '1 day ago',
     icon: PhosphorIcons.books,
     color: Colors.purple,
   ),
-  ActivityItem(
+  const ActivityItem(
     title: 'Weekly report generated',
     time: '1 day ago',
     icon: PhosphorIcons.chartLine,

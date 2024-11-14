@@ -24,9 +24,21 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = ProjectProvider();
+            provider.addSampleProjects();
+            return provider;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = TaskProvider();
+            provider.addSampleTasks();
+            return provider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => ProjectProvider()),
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
       ],
       child: const SchoolTaskManager(),
     ),

@@ -562,7 +562,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                             Container(
                                               width: 8,
                                               height: 8,
-                                              decoration: BoxDecoration(
+                                              decoration: const BoxDecoration(
                                                 color: AppColors.accent,
                                                 shape: BoxShape.circle,
                                               ),
@@ -678,7 +678,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 80,
                               child: Text(
                                 'Actions',
@@ -1344,5 +1344,81 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
     );
+  }
+
+  void _handleRestore(int index) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final task = taskProvider.getDeletedTask(index);
+
+    if (task == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Task not found'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore Task'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore "${task['name']}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        taskProvider.restoreTask(index);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Task "${task['name']}" has been restored'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error restoring task'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

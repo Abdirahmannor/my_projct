@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
-import '../widgets/stat_card.dart';
 import '../widgets/weekly_activity_chart.dart';
 
 class DashboardScreen extends StatelessWidget {

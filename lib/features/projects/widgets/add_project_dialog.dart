@@ -481,7 +481,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 color: AppColors.accent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(
+              child: const Text(
                 'Required',
                 style: TextStyle(
                   fontSize: 10,
@@ -529,8 +529,8 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
           ),
         ),
         if (hasError)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
             child: Text(
               'At least one task is required',
               style: TextStyle(
@@ -648,7 +648,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
+            child: const Text(
               'OK',
               style: TextStyle(color: AppColors.accent),
             ),
