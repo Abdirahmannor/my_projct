@@ -32,8 +32,10 @@ class TaskGridItem extends StatelessWidget {
             : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: 1,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.3)
+              : Theme.of(context).dividerColor,
+          width: Theme.of(context).brightness == Brightness.dark ? 2.0 : 1,
         ),
         boxShadow: [
           if (isHovered)
@@ -53,19 +55,24 @@ class TaskGridItem extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: isChecked,
-                        onChanged: onCheckChanged,
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Transform.scale(
+                    scale: 0.8,
+                    child: Checkbox(
+                      value: isChecked,
+                      onChanged: onCheckChanged,
+                      side: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.3)
+                            : Theme.of(context).dividerColor,
+                        width: Theme.of(context).brightness == Brightness.dark
+                            ? 2.0
+                            : 1,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _buildPriorityBadge(context, task['priority']),
-                  ],
+                  ),
                 ),
                 Row(
                   children: [
@@ -90,6 +97,7 @@ class TaskGridItem extends StatelessWidget {
                         ),
                         tooltip: 'Edit',
                       ),
+                      const SizedBox(width: 12),
                       IconButton(
                         onPressed: onDelete,
                         icon: Icon(

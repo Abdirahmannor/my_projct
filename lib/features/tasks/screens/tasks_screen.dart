@@ -259,8 +259,14 @@ class _TasksScreenState extends State<TasksScreen> {
                             height: 40,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                                width: 1.5,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Theme.of(context).dividerColor,
+                                width: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 1.5
+                                    : 1,
                               ),
                               borderRadius: BorderRadius.circular(8),
                               color: Theme.of(context).cardColor,
@@ -330,7 +336,14 @@ class _TasksScreenState extends State<TasksScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Theme.of(context).dividerColor,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Theme.of(context).dividerColor,
+                                width: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 1.5
+                                    : 1,
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -395,7 +408,14 @@ class _TasksScreenState extends State<TasksScreen> {
                             height: 40,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Theme.of(context).dividerColor,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Theme.of(context).dividerColor,
+                                width: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 1.5
+                                    : 1,
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -439,7 +459,15 @@ class _TasksScreenState extends State<TasksScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                          .withOpacity(0.1) // More visible in dark mode
+                      : Theme.of(context).dividerColor,
+                  width: Theme.of(context).brightness == Brightness.dark
+                      ? 1.5
+                      : 1, // Slightly thicker in dark mode
+                ),
               ),
               child: Column(
                 children: [
@@ -582,7 +610,15 @@ class _TasksScreenState extends State<TasksScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                  color: Theme.of(context).dividerColor),
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Theme.of(context).dividerColor,
+                                width: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 1.5
+                                    : 1,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: PopupMenuButton<String>(
@@ -695,9 +731,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                           _handleCheckboxChange(index, value),
                                   onEdit: showCompleted
                                       ? () {}
-                                      : () {
-                                          // Add Task Edit functionality
-                                        },
+                                      : () => _handleEdit(index),
                                   onDelete: () =>
                                       _handleDelete(index, showCompleted),
                                   onRestore: showCompleted
@@ -732,9 +766,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                           _handleCheckboxChange(index, value),
                                   onEdit: showCompleted
                                       ? () {}
-                                      : () {
-                                          // Add Task Edit functionality
-                                        },
+                                      : () => _handleEdit(index),
                                   onDelete: () =>
                                       _handleDelete(index, showCompleted),
                                   onRestore: showCompleted
@@ -1215,6 +1247,44 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         );
       });
+    }
+  }
+
+  Future<void> _handleEdit(int index) async {
+    final result = await showDialog(
+      context: context,
+      builder: (context) => AddTaskDialog(
+        isEditing: true,
+        task: tasks[index],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        tasks[index] = result;
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
+                color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Text('Task "${result['name']}" has been updated'),
+            ],
+          ),
+          backgroundColor: Colors.blue.shade400,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
     }
   }
 

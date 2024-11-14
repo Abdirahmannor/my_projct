@@ -39,7 +39,6 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   void initState() {
     super.initState();
     if (widget.isEditing && widget.task != null) {
-      // Initialize form with existing task data
       _nameController.text = widget.task!['name'];
       _descriptionController.text = widget.task!['description'] ?? '';
       _dueDate = _parseDateTime(widget.task!['dueDate']);

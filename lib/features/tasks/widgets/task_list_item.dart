@@ -33,8 +33,10 @@ class TaskListItem extends StatelessWidget {
             : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: 1,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.3)
+              : Theme.of(context).dividerColor,
+          width: Theme.of(context).brightness == Brightness.dark ? 2.0 : 1,
         ),
         boxShadow: [
           if (isHovered)
@@ -57,6 +59,14 @@ class TaskListItem extends StatelessWidget {
                 child: Checkbox(
                   value: isChecked,
                   onChanged: onCheckChanged,
+                  side: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withOpacity(0.3)
+                        : Theme.of(context).dividerColor,
+                    width: Theme.of(context).brightness == Brightness.dark
+                        ? 2.0
+                        : 1,
+                  ),
                 ),
               ),
             ),
