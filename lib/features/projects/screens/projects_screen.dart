@@ -6,6 +6,8 @@ import '../widgets/project_list_item.dart';
 import '../../../core/utils/string_extensions.dart';
 import '../widgets/project_grid_item.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../models/project.dart';
+import '../services/project_database_service.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -37,69 +39,53 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool _isStatisticsExpanded = false;
   DateTimeRange? _selectedDateRange;
   bool _showChart = true;
-  List<Map<String, dynamic>> archivedProjects = [];
-
-  // Sample projects data
-  List<Map<String, dynamic>> projects = [
-    {
-      'name': 'Mathematics Research Project',
-      'description': 'Advanced calculus and linear algebra research paper',
-      'startDate': '15 Mar 2024',
-      'dueDate': '30 Apr 2024',
-      'completedTasks': 3,
-      'tasks': 8,
-      'priority': 'high',
-      'status': 'in progress',
-    },
-    {
-      'name': 'Physics Lab Experiments',
-      'description': 'Series of mechanics and thermodynamics experiments',
-      'startDate': '1 Mar 2024',
-      'dueDate': '15 May 2024',
-      'completedTasks': 2,
-      'tasks': 6,
-      'priority': 'medium',
-      'status': 'in progress',
-    },
-    {
-      'name': 'Literature Review',
-      'description': 'Analysis of 20th century American literature',
-      'startDate': '10 Mar 2024',
-      'dueDate': '20 Mar 2024',
-      'completedTasks': 0,
-      'tasks': 4,
-      'priority': 'high',
-      'status': 'not started',
-    },
-    {
-      'name': 'Biology Research Paper',
-      'description': 'Study on local ecosystem biodiversity',
-      'startDate': '1 Feb 2024',
-      'dueDate': '1 Apr 2024',
-      'completedTasks': 5,
-      'tasks': 5,
-      'priority': 'medium',
-      'status': 'completed',
-    },
-    {
-      'name': 'Chemistry Lab Report',
-      'description': 'Documentation of organic chemistry experiments',
-      'startDate': '5 Mar 2024',
-      'dueDate': '25 Mar 2024',
-      'completedTasks': 2,
-      'tasks': 7,
-      'priority': 'low',
-      'status': 'on hold',
-    },
-  ];
-
-  // Add this map to store original status
+  List<Project> archivedProjects = [];
+  final _projectDatabaseService = ProjectDatabaseService();
+  List<Project> projects = [];
   final Map<int, String> originalStatuses = {};
 
   @override
   void initState() {
     super.initState();
-    checkedProjects = List.generate(projects.length, (_) => false);
+    // Load projects when screen initializes
+    _loadProjects();
+  }
+
+  // Add this method to load projects from database
+  Future<void> _loadProjects() async {
+    try {
+      final loadedProjects = await _projectDatabaseService.getAllProjects();
+      setState(() {
+        projects = loadedProjects;
+        checkedProjects = List.generate(projects.length, (_) => false);
+      });
+    } catch (e) {
+      print('Error loading projects: $e');
+      // Optionally show error message to user
+    }
+  }
+
+  void _handleAddProject() async {
+    final result = await showDialog(
+      context: context,
+      builder: (context) => const AddProjectDialog(),
+    );
+
+    if (result != null && result is Project) {
+      try {
+        // Only save to database, don't add to local state
+        await _projectDatabaseService.addProject(result);
+        // Reload all projects from database
+        await _loadProjects();
+
+        _showSuccessMessage(
+          message: 'Project "${result.name}" has been created successfully',
+          icon: PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to save project: $e');
+      }
+    }
   }
 
   void _handleEdit(int index) async {
@@ -111,20 +97,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       ),
     );
 
-    if (result != null) {
+    if (result != null && result is Project) {
       setState(() {
         projects[index] = result;
       });
 
       _showSuccessMessage(
-        message: 'Project "${result['name']}" has been updated successfully',
+        message: 'Project "${result.name}" has been updated successfully',
         icon: PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
       );
     }
   }
 
   void _handleDelete(int index) async {
-    final projectName = projects[index]['name'];
+    final projectName = projects[index].name;
+    final projectId = projects[index].id;
 
     // Show confirmation dialog
     final bool? confirm = await showDialog(
@@ -187,53 +174,57 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     // If user confirmed, delete the project
     if (confirm == true) {
-      setState(() {
-        projects.removeAt(index);
-        checkedProjects = List.generate(projects.length, (_) => false);
-      });
+      try {
+        if (projectId != null) {
+          // Delete from database first
+          await _projectDatabaseService.deleteProject(projectId);
+        }
 
-      _showSuccessMessage(
-        message: 'Project "$projectName" has been deleted successfully',
-        icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
-      );
+        // Then update local state
+        setState(() {
+          projects.removeAt(index);
+          checkedProjects = List.generate(projects.length, (_) => false);
+        });
+
+        _showSuccessMessage(
+          message: 'Project "$projectName" has been deleted successfully',
+          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to delete project: $e');
+      }
     }
   }
 
   bool _filterProject(int index) {
+    // First check if the index is valid for the current list
+    if (showArchived && index >= archivedProjects.length) return false;
+    if (!showArchived && index >= projects.length) return false;
+
     final project = showArchived ? archivedProjects[index] : projects[index];
 
     // Date range filter
     if (_selectedDateRange != null) {
-      final startDate = _parseDate(project['startDate']);
-      final dueDate = _parseDate(project['dueDate']);
-
-      if (!startDate.isAfter(_selectedDateRange!.start) &&
-          !dueDate.isBefore(_selectedDateRange!.end)) {
+      if (!project.startDate.isAfter(_selectedDateRange!.start) &&
+          !project.dueDate.isBefore(_selectedDateRange!.end)) {
         return false;
       }
     }
 
     if (searchQuery.isNotEmpty) {
-      String projectName = project['name'].toLowerCase();
+      String projectName = project.name.toLowerCase();
       if (!projectName.contains(searchQuery.toLowerCase())) return false;
     }
 
     if (selectedPriority != null && selectedPriority != 'all') {
-      if (project['priority'] != selectedPriority) return false;
+      if (project.priority != selectedPriority) return false;
     }
 
     if (selectedStatus != null && selectedStatus != 'all') {
-      if (project['status'] != selectedStatus) return false;
+      if (project.status != selectedStatus) return false;
     }
 
-    // Show projects based on the current view
-    if (showArchived) {
-      return true; // Show all archived projects
-    } else if (showAllProjects) {
-      return true; // Show all active projects
-    }
-
-    return false;
+    return true;
   }
 
   void _toggleAllProjects(bool? value) {
@@ -241,16 +232,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       checkedProjects = List.generate(projects.length, (_) => value ?? false);
       for (int i = 0; i < projects.length; i++) {
         if (value == true) {
-          // Store original status and set to completed
-          originalStatuses[i] = projects[i]['status'];
-          projects[i]['status'] = 'completed';
-          projects[i]['completedTasks'] = projects[i]['tasks'];
+          // Store original status and create new project
+          originalStatuses[i] = projects[i].status;
+          projects[i] = Project(
+            id: projects[i].id,
+            name: projects[i].name,
+            description: projects[i].description,
+            startDate: projects[i].startDate,
+            dueDate: projects[i].dueDate,
+            tasks: projects[i].tasks,
+            completedTasks: projects[i].tasks, // Set to total tasks
+            priority: projects[i].priority,
+            status: 'completed',
+            category: projects[i].category,
+          );
         } else {
           // Restore original status
-          projects[i]['status'] = originalStatuses[i] ?? 'in progress';
-          // Restore original completedTasks count
-          projects[i]['completedTasks'] =
-              (projects[i]['tasks'] * 0.6).round(); // Example: restore to 60%
+          projects[i] = Project(
+            id: projects[i].id,
+            name: projects[i].name,
+            description: projects[i].description,
+            startDate: projects[i].startDate,
+            dueDate: projects[i].dueDate,
+            tasks: projects[i].tasks,
+            completedTasks: (projects[i].tasks * 0.6).round(),
+            priority: projects[i].priority,
+            status: originalStatuses[i] ?? 'in progress',
+            category: projects[i].category,
+          );
         }
       }
     });
@@ -275,7 +284,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to archive "${projects[index]['name']}"?',
+          'Are you sure you want to archive "${projects[index].name}"?',
         ),
         actions: [
           TextButton(
@@ -301,7 +310,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     if (confirmed == true) {
       setState(() {
         // Store original status
-        originalStatuses[index] = projects[index]['status'];
+        originalStatuses[index] = projects[index].status;
 
         // Move to archived list
         archivedProjects.add(projects[index]);
@@ -349,7 +358,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to restore "${archivedProjects[index]['name']}"?',
+          'Are you sure you want to restore "${archivedProjects[index].name}"?',
         ),
         actions: [
           TextButton(
@@ -374,16 +383,25 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirmed == true) {
       setState(() {
-        // Restore original status if available
-        if (originalStatuses.containsKey(index)) {
-          archivedProjects[index]['status'] = originalStatuses[index]!;
-          originalStatuses.remove(index);
-        }
+        // Create new project with restored status
+        final restoredProject = Project(
+          id: archivedProjects[index].id,
+          name: archivedProjects[index].name,
+          description: archivedProjects[index].description,
+          startDate: archivedProjects[index].startDate,
+          dueDate: archivedProjects[index].dueDate,
+          tasks: archivedProjects[index].tasks,
+          completedTasks: archivedProjects[index].completedTasks,
+          priority: archivedProjects[index].priority,
+          status: originalStatuses[index] ?? 'in progress',
+          category: archivedProjects[index].category,
+        );
 
         // Move back to projects list
-        projects.add(archivedProjects[index]);
+        projects.add(restoredProject);
         archivedProjects.removeAt(index);
         checkedProjects.add(false);
+        originalStatuses.remove(index);
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -440,6 +458,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -503,25 +531,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () async {
-                              final result = await showDialog(
-                                context: context,
-                                builder: (context) => const AddProjectDialog(),
-                              );
-
-                              if (result != null) {
-                                setState(() {
-                                  projects.add(result);
-                                  checkedProjects = List.generate(
-                                      projects.length, (_) => false);
-                                });
-
-                                _showSuccessMessage(
-                                  message:
-                                      'Project "${result['name']}" has been created successfully',
-                                  icon: PhosphorIcons.folderPlus(
-                                      PhosphorIconsStyle.fill),
-                                );
-                              }
+                              _handleAddProject();
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
@@ -891,7 +901,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               PhosphorIconsStyle.fill),
                           title: 'In Progress',
                           value: projects
-                              .where((p) => p['status'] == 'in progress')
+                              .where((p) => p.status == 'in progress')
                               .length
                               .toString(),
                           subtitle: 'Ongoing tasks',
@@ -905,7 +915,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               PhosphorIconsStyle.fill),
                           title: 'Completed',
                           value: projects
-                              .where((p) => p['status'] == 'completed')
+                              .where((p) => p.status == 'completed')
                               .length
                               .toString(),
                           subtitle: 'Finished projects',
@@ -918,7 +928,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           icon: PhosphorIcons.warning(PhosphorIconsStyle.fill),
                           title: 'On Hold',
                           value: projects
-                              .where((p) => p['status'] == 'on hold')
+                              .where((p) => p.status == 'on hold')
                               .length
                               .toString(),
                           subtitle: 'Paused projects',
@@ -947,8 +957,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                     const SizedBox(width: 8),
                                     _buildMiniStat(
                                       value: projects
-                                          .where((p) =>
-                                              p['status'] == 'in progress')
+                                          .where(
+                                              (p) => p.status == 'in progress')
                                           .length
                                           .toString(),
                                       label: 'Active',
@@ -957,8 +967,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                     const SizedBox(width: 8),
                                     _buildMiniStat(
                                       value: projects
-                                          .where(
-                                              (p) => p['status'] == 'completed')
+                                          .where((p) => p.status == 'completed')
                                           .length
                                           .toString(),
                                       label: 'Done',
@@ -1157,6 +1166,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 ? archivedProjects.length
                                 : projects.length,
                             itemBuilder: (context, index) {
+                              // Check if the list is empty
+                              if ((showArchived && archivedProjects.isEmpty) ||
+                                  (!showArchived && projects.isEmpty)) {
+                                return const Center(
+                                  child: Text('No projects found'),
+                                );
+                              }
+
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
                               final project = showArchived
@@ -1169,7 +1186,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                     setState(() => hoveredIndex = null),
                                 child: ProjectGridItem(
                                   project: project,
-                                  isChecked: checkedProjects[index],
+                                  isChecked: showArchived
+                                      ? true
+                                      : checkedProjects[index],
                                   onCheckChanged: (value) =>
                                       _handleCheckboxChange(index, value),
                                   onEdit: showArchived
@@ -1192,6 +1211,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 ? archivedProjects.length
                                 : projects.length,
                             itemBuilder: (context, index) {
+                              // Check if the list is empty
+                              if ((showArchived && archivedProjects.isEmpty) ||
+                                  (!showArchived && projects.isEmpty)) {
+                                return const Center(
+                                  child: Text('No projects found'),
+                                );
+                              }
+
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
                               final project = showArchived
@@ -1204,7 +1231,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                     setState(() => hoveredIndex = null),
                                 child: ProjectListItem(
                                   project: project,
-                                  isChecked: checkedProjects[index],
+                                  isChecked: showArchived
+                                      ? true
+                                      : checkedProjects[index],
                                   onCheckChanged: (value) =>
                                       _handleCheckboxChange(index, value),
                                   onEdit: showArchived
@@ -1477,7 +1506,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             Text(
               title,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withOpacity(0.7),
+                    fontSize: 11,
                   ),
             ),
             const SizedBox(height: 4),
@@ -1580,7 +1614,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             sections: [
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'completed')
+                    .where((p) => p.status == 'completed')
                     .length
                     .toDouble(),
                 color: Colors.green.shade400,
@@ -1589,7 +1623,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'in progress')
+                    .where((p) => p.status == 'in progress')
                     .length
                     .toDouble(),
                 color: Colors.blue.shade400,
@@ -1598,7 +1632,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'on hold')
+                    .where((p) => p.status == 'on hold')
                     .length
                     .toDouble(),
                 color: Colors.orange.shade400,
@@ -1607,7 +1641,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'not started')
+                    .where((p) => p.status == 'not started')
                     .length
                     .toDouble(),
                 color: Colors.grey.shade400,
@@ -1618,7 +1652,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ),
         ),
         Text(
-          '${((projects.where((p) => p['status'] == 'completed').length / projects.length) * 100).toStringAsFixed(0)}%',
+          '${((projects.where((p) => p.status == 'completed').length / projects.length) * 100).toStringAsFixed(0)}%',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -1671,7 +1705,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             barRods: [
               BarChartRodData(
                 toY: projects
-                    .where((p) => p['priority'] == 'high')
+                    .where((p) => p.priority == 'high')
                     .length
                     .toDouble(),
                 color: Colors.red.shade400,
@@ -1685,7 +1719,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             barRods: [
               BarChartRodData(
                 toY: projects
-                    .where((p) => p['priority'] == 'medium')
+                    .where((p) => p.priority == 'medium')
                     .length
                     .toDouble(),
                 color: Colors.orange.shade400,
@@ -1699,7 +1733,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             barRods: [
               BarChartRodData(
                 toY: projects
-                    .where((p) => p['priority'] == 'low')
+                    .where((p) => p.priority == 'low')
                     .length
                     .toDouble(),
                 color: Colors.green.shade400,
@@ -1760,7 +1794,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             sections: [
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'completed')
+                    .where((p) => p.status == 'completed')
                     .length
                     .toDouble(),
                 color: Colors.green.shade400,
@@ -1769,7 +1803,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'in progress')
+                    .where((p) => p.status == 'in progress')
                     .length
                     .toDouble(),
                 color: Colors.blue.shade400,
@@ -1778,7 +1812,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'on hold')
+                    .where((p) => p.status == 'on hold')
                     .length
                     .toDouble(),
                 color: Colors.orange.shade400,
@@ -1787,7 +1821,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               PieChartSectionData(
                 value: projects
-                    .where((p) => p['status'] == 'not started')
+                    .where((p) => p.status == 'not started')
                     .length
                     .toDouble(),
                 color: Colors.grey.shade400,
@@ -1798,7 +1832,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ),
         ),
         Text(
-          '${((projects.where((p) => p['status'] == 'completed').length / projects.length) * 100).toStringAsFixed(0)}%',
+          '${((projects.where((p) => p.status == 'completed').length / projects.length) * 100).toStringAsFixed(0)}%',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 fontSize: 10,

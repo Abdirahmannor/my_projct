@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:flutter/gestures.dart';
+import '../models/project.dart';
+import '../services/project_database_service.dart';
 
 class AddProjectDialog extends StatefulWidget {
   final bool isEditing;
-  final Map<String, dynamic>? project;
+  final Project? project;
 
   const AddProjectDialog({
     super.key,
@@ -27,20 +29,21 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   String _status = 'not started';
   int _tasks = 0;
   String _category = 'personal';
+  final _projectDatabaseService = ProjectDatabaseService();
 
   @override
   void initState() {
     super.initState();
     if (widget.isEditing && widget.project != null) {
       // Initialize form with existing project data
-      _nameController.text = widget.project!['name'];
-      _descriptionController.text = widget.project!['description'];
-      _startDate = _parseDate(widget.project!['startDate']);
-      _dueDate = _parseDate(widget.project!['dueDate']);
-      _priority = widget.project!['priority'];
-      _status = widget.project!['status'];
-      _tasks = widget.project!['tasks'];
-      _category = widget.project!['category'];
+      _nameController.text = widget.project!.name;
+      _descriptionController.text = widget.project!.description ?? '';
+      _startDate = widget.project!.startDate;
+      _dueDate = widget.project!.dueDate;
+      _priority = widget.project!.priority;
+      _status = widget.project!.status;
+      _tasks = widget.project!.tasks;
+      _category = widget.project!.category;
     } else {
       // Set default values for new projects
       _startDate = DateTime.now();
@@ -588,23 +591,22 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     return months[month - 1];
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (!_validateForm()) return;
 
-    final project = {
-      'name': _nameController.text.trim(),
-      'description': _descriptionController.text.trim(),
-      'startDate':
-          '${_startDate!.day} ${_getMonthName(_startDate!.month)}, ${_startDate!.year}',
-      'dueDate':
-          '${_dueDate!.day} ${_getMonthName(_dueDate!.month)}, ${_dueDate!.year}',
-      'tasks': _tasks,
-      'completedTasks': 0,
-      'priority': _priority,
-      'status': _status,
-      'category': _category,
-    };
+    final project = Project(
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      startDate: _startDate!,
+      dueDate: _dueDate!,
+      tasks: _tasks,
+      completedTasks: 0,
+      priority: _priority,
+      status: _status,
+      category: _category,
+    );
 
+    // Just return the project, let the screen handle database operations
     Navigator.pop(context, project);
   }
 

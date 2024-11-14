@@ -7,9 +7,15 @@ import 'features/school/providers/exam_provider.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'core/constants/app_theme.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'features/projects/models/project.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(ProjectAdapter());
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     doWhenWindowReady(() {

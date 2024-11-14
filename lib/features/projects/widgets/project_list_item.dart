@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/utils/string_extensions.dart';
+import '../models/project.dart';
 
 class ProjectListItem extends StatelessWidget {
-  final Map<String, dynamic> project;
+  final Project project;
   final bool isChecked;
   final bool isHovered;
   final Function(bool?) onCheckChanged;
@@ -63,7 +63,7 @@ class ProjectListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    project['name'],
+                    project.name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           decoration: onRestore != null
@@ -73,7 +73,7 @@ class ProjectListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    project['description'],
+                    project.description ?? '',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).hintColor,
                           decoration: onRestore != null
@@ -91,7 +91,7 @@ class ProjectListItem extends StatelessWidget {
               child: _buildDateInfo(
                 context,
                 'Start',
-                project['startDate'],
+                project.startDate,
                 PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
                 isStart: true,
               ),
@@ -101,7 +101,7 @@ class ProjectListItem extends StatelessWidget {
               child: _buildDateInfo(
                 context,
                 'Due',
-                project['dueDate'],
+                project.dueDate,
                 PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
                 isStart: false,
               ),
@@ -112,7 +112,7 @@ class ProjectListItem extends StatelessWidget {
                 children: [
                   Tooltip(
                     message:
-                        '${project['completedTasks']} of ${project['tasks']} tasks completed',
+                        '${project.completedTasks} of ${project.tasks} tasks completed',
                     child: Container(
                       width: 40,
                       height: 40,
@@ -128,7 +128,7 @@ class ProjectListItem extends StatelessWidget {
                       child: Stack(
                         children: [
                           CircularProgressIndicator(
-                            value: project['completedTasks'] / project['tasks'],
+                            value: project.completedTasks / project.tasks,
                             backgroundColor:
                                 Theme.of(context).dividerColor.withOpacity(0.2),
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -138,7 +138,7 @@ class ProjectListItem extends StatelessWidget {
                           ),
                           Center(
                             child: Text(
-                              '${project['completedTasks']}/${project['tasks']}',
+                              '${project.completedTasks}/${project.tasks}',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -156,10 +156,10 @@ class ProjectListItem extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: _buildPriorityBadge(context, project['priority']),
+              child: _buildPriorityBadge(context, project.priority),
             ),
             Expanded(
-              child: _buildStatusBadge(context, project['status']),
+              child: _buildStatusBadge(context, project.status),
             ),
             SizedBox(
               width: 100,
@@ -353,13 +353,12 @@ class ProjectListItem extends StatelessWidget {
   Widget _buildDateInfo(
     BuildContext context,
     String label,
-    String date,
+    DateTime date,
     IconData icon, {
     required bool isStart,
   }) {
     final DateTime now = DateTime.now();
-    final DateTime dateTime = _parseDate(date);
-    final int daysRemaining = dateTime.difference(now).inDays;
+    final int daysRemaining = date.difference(now).inDays;
 
     final bool isOverdue = !isStart && daysRemaining < 0;
     final bool isUpcoming = isStart && daysRemaining > 0;
@@ -390,7 +389,7 @@ class ProjectListItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                date,
+                _formatDate(date),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (!isStart) ...[
@@ -414,29 +413,21 @@ class ProjectListItem extends StatelessWidget {
     );
   }
 
-  DateTime _parseDate(String date) {
-    final parts = date.split(' ');
-    final day = int.parse(parts[0]);
-    final month = _getMonth(parts[1].replaceAll(',', ''));
-    final year = int.parse(parts[2]);
-    return DateTime(year, month, day);
-  }
-
-  int _getMonth(String month) {
-    const months = {
-      'Jan': 1,
-      'Feb': 2,
-      'Mar': 3,
-      'Apr': 4,
-      'May': 5,
-      'Jun': 6,
-      'Jul': 7,
-      'Aug': 8,
-      'Sep': 9,
-      'Oct': 10,
-      'Nov': 11,
-      'Dec': 12
-    };
-    return months[month] ?? 1;
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]}, ${date.year}';
   }
 }
