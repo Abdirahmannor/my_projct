@@ -191,61 +191,121 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
 
                       // Priority and Status Row
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _buildPrioritySelector(),
+                            child: Column(
+                              children: [
+                                _buildCompactSelector(
+                                  title: 'Priority',
+                                  options: {
+                                    'high': (Colors.red.shade400, null),
+                                    'medium': (Colors.orange.shade400, null),
+                                    'low': (Colors.green.shade400, null),
+                                  },
+                                  value: _priority,
+                                  onChanged: (value) =>
+                                      setState(() => _priority = value),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildCompactSelector(
+                                  title: 'Status',
+                                  options: {
+                                    'not started': (Colors.grey.shade400, null),
+                                    'in progress': (Colors.blue.shade400, null),
+                                    'on hold': (Colors.orange.shade400, null),
+                                    'completed': (Colors.green.shade400, null),
+                                  },
+                                  value: _status,
+                                  onChanged: (value) =>
+                                      setState(() => _status = value),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: _buildStatusSelector(),
+                            child: Column(
+                              children: [
+                                _buildCompactSelector(
+                                  title: 'Category',
+                                  options: {
+                                    'school': (
+                                      AppColors.accent,
+                                      PhosphorIcons.graduationCap(
+                                          PhosphorIconsStyle.regular)
+                                    ),
+                                    'personal': (
+                                      Colors.purple.shade400,
+                                      PhosphorIcons.user(
+                                          PhosphorIconsStyle.regular)
+                                    ),
+                                    'work': (
+                                      Colors.blue.shade400,
+                                      PhosphorIcons.suitcase(
+                                          PhosphorIconsStyle.regular)
+                                    ),
+                                    'online work': (
+                                      Colors.green.shade400,
+                                      PhosphorIcons.globe(
+                                          PhosphorIconsStyle.regular)
+                                    ),
+                                    'other': (
+                                      Colors.grey.shade400,
+                                      PhosphorIcons.folder(
+                                          PhosphorIconsStyle.regular)
+                                    ),
+                                  },
+                                  value: _category,
+                                  onChanged: (value) =>
+                                      setState(() => _category = value),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildCompactTaskCounter(),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
 
-                      // Category Selector
-                      _buildCategorySelector(),
-
-                      // Tasks Counter
-                      _buildTasksCounter(),
+                      // Actions
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          border: Border(
+                            top: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 16),
+                            FilledButton(
+                              onPressed: _handleSubmit,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                              ),
+                              child: Text(widget.isEditing
+                                  ? 'Update Project'
+                                  : 'Create Project'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ),
-
-            // Actions
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 16),
-                  FilledButton(
-                    onPressed: _handleSubmit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: Text(
-                        widget.isEditing ? 'Update Project' : 'Create Project'),
-                  ),
-                ],
               ),
             ),
           ],
@@ -321,18 +381,17 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     );
   }
 
-  Widget _buildPrioritySelector() {
-    final colors = {
-      'high': Colors.red.shade400,
-      'medium': Colors.orange.shade400,
-      'low': Colors.green.shade400,
-    };
-
+  Widget _buildCompactSelector({
+    required String title,
+    required Map<String, (Color, IconData?)> options,
+    required String value,
+    required ValueChanged<String> onChanged,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Priority',
+          title,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
@@ -342,74 +401,58 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
-            children: colors.entries.map((entry) {
-              return RadioListTile(
-                title: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: entry.value,
-                        shape: BoxShape.circle,
+            children: options.entries.map((entry) {
+              final isSelected = value == entry.key;
+              final (color, icon) = entry.value;
+
+              return InkWell(
+                onTap: () => onChanged(entry.key),
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? color.withOpacity(0.1) : null,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.5,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(entry.key.toUpperCase()),
-                  ],
-                ),
-                value: entry.key,
-                groupValue: _priority,
-                onChanged: (value) => setState(() => _priority = value!),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusSelector() {
-    final statuses = {
-      'not started': Colors.grey.shade400,
-      'in progress': Colors.blue.shade400,
-      'on hold': Colors.orange.shade400,
-      'completed': Colors.green.shade400,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Status',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: statuses.entries.map((entry) {
-              return RadioListTile(
-                title: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: entry.value,
-                        shape: BoxShape.circle,
+                  ),
+                  child: Row(
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 14, color: isSelected ? color : null),
+                        const SizedBox(width: 8),
+                      ] else ...[
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        entry.key.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isSelected ? color : null,
+                          fontWeight: isSelected ? FontWeight.w600 : null,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(entry.key.toUpperCase()),
-                  ],
+                      const Spacer(),
+                      if (isSelected)
+                        Icon(
+                          PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                          size: 14,
+                          color: color,
+                        ),
+                    ],
+                  ),
                 ),
-                value: entry.key,
-                groupValue: _status,
-                onChanged: (value) => setState(() => _status = value!),
               );
             }).toList(),
           ),
@@ -418,65 +461,40 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     );
   }
 
-  Widget _buildCategorySelector() {
-    final categories = {
-      'school': PhosphorIcons.graduationCap(PhosphorIconsStyle.regular),
-      'personal': PhosphorIcons.user(PhosphorIconsStyle.regular),
-      'work': PhosphorIcons.suitcase(PhosphorIconsStyle.regular),
-      'online work': PhosphorIcons.globe(PhosphorIconsStyle.regular),
-      'other': PhosphorIcons.folder(PhosphorIconsStyle.regular),
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Category',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: categories.entries.map((entry) {
-              return RadioListTile(
-                title: Row(
-                  children: [
-                    Icon(entry.value, size: 20),
-                    const SizedBox(width: 12),
-                    Text(entry.key.toUpperCase()),
-                  ],
-                ),
-                value: entry.key,
-                groupValue: _category,
-                onChanged: (value) => setState(() => _category = value!),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTasksCounter() {
+  Widget _buildCompactTaskCounter() {
     final bool hasError =
         _formKey.currentState?.validate() == false && _tasks <= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Number of Tasks',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: hasError ? Colors.red : null,
+        Row(
+          children: [
+            Text(
+              'Tasks',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
               ),
+              child: Text(
+                'Required',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.all(8),
+          height: 40,
           decoration: BoxDecoration(
             border: Border.all(
               color: hasError ? Colors.red : Theme.of(context).dividerColor,
@@ -484,36 +502,66 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
+              _buildCompactTaskButton(
+                icon: PhosphorIcons.minus(PhosphorIconsStyle.bold),
                 onPressed: () {
-                  if (_tasks > 0) {
-                    setState(() => _tasks--);
-                  }
+                  if (_tasks > 0) setState(() => _tasks--);
                 },
-                icon: Icon(PhosphorIcons.minus(PhosphorIconsStyle.bold)),
+                isEnabled: _tasks > 0,
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _tasks.toString(),
-                  style: Theme.of(context).textTheme.titleLarge,
+              Expanded(
+                child: Center(
+                  child: Text(
+                    _tasks.toString(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
               ),
-              IconButton(
+              _buildCompactTaskButton(
+                icon: PhosphorIcons.plus(PhosphorIconsStyle.bold),
                 onPressed: () => setState(() => _tasks++),
-                icon: Icon(PhosphorIcons.plus(PhosphorIconsStyle.bold)),
+                isEnabled: true,
               ),
             ],
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'At least one task is required',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 10,
+              ),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _buildCompactTaskButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required bool isEnabled,
+  }) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isEnabled ? onPressed : null,
+          child: Icon(
+            icon,
+            size: 16,
+            color: isEnabled ? null : Theme.of(context).disabledColor,
+          ),
+        ),
+      ),
     );
   }
 
