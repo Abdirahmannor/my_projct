@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/shell/shell_screen.dart';
-import 'features/school/providers/exam_provider.dart';
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'core/constants/app_theme.dart';
+import 'features/projects/providers/project_provider.dart';
+import 'features/tasks/providers/task_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,8 +22,12 @@ void main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProjectProvider()),
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+      ],
       child: const SchoolTaskManager(),
     ),
   );

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/string_extensions.dart';
+import 'package:provider/provider.dart';
+import '../providers/task_provider.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -18,772 +20,774 @@ class _TasksScreenState extends State<TasksScreen> {
   String? selectedPriority;
   String? selectedStatus;
   String? selectedProject;
-  List<bool> checkedTasks = [];
+  late List<bool> checkedTasks;
   bool isListView = true;
   int? hoveredIndex;
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  List<Map<String, dynamic>> completedTasks = [];
   bool showCompleted = false;
-  final Map<int, String> originalStatuses = {};
-
-  // Sample tasks data (empty for now)
-  List<Map<String, dynamic>> tasks = [
-    {
-      'name': 'Complete Math Assignment',
-      'description': 'Chapter 5 exercises on calculus',
-      'project': 'Mathematics',
-      'dueDate': '2024-03-20T14:30:00.000',
-      'priority': 'high',
-      'status': 'in progress',
-    },
-    {
-      'name': 'Study for Physics Test',
-      'description': 'Review chapters 3 and 4',
-      'project': 'Physics',
-      'dueDate': '2024-03-25T09:00:00.000',
-      'priority': 'high',
-      'status': 'to do',
-    },
-    {
-      'name': 'Write Essay',
-      'description': 'Research paper on renewable energy',
-      'project': 'English',
-      'dueDate': '2024-03-15T16:45:00.000',
-      'priority': 'medium',
-      'status': 'in progress',
-    },
-  ];
 
   @override
   void initState() {
     super.initState();
-    checkedTasks = List.generate(tasks.length, (_) => false);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final taskProvider = context.read<TaskProvider>();
+    checkedTasks = List.generate(taskProvider.tasks.length, (_) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Column(
-        children: [
-          // Header section
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
+    return Consumer<TaskProvider>(
+      builder: (context, taskProvider, child) {
+        final tasks = taskProvider.tasks;
+        final completedTasks = taskProvider.completedTasks;
+
+        return Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Column(
+            children: [
+              // Header section
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Tasks',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.accent,
-                              Color.lerp(
-                                      AppColors.accent, Colors.purple, 0.6) ??
-                                  AppColors.accent,
-                            ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tasks',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () async {
-                              final result = await showDialog(
-                                context: context,
-                                builder: (context) => const AddTaskDialog(),
-                              );
-
-                              if (result != null) {
-                                setState(() {
-                                  tasks.add(result);
-                                  checkedTasks.add(false);
-                                });
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: [
-                                        Icon(
-                                          PhosphorIcons.checkCircle(
-                                              PhosphorIconsStyle.fill),
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                            'Task "${result['name']}" has been created'),
-                                      ],
-                                    ),
-                                    backgroundColor: Colors.green.shade400,
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.all(16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      PhosphorIcons.plus(
-                                          PhosphorIconsStyle.bold),
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Add Task',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
+                          Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.accent,
+                                  Color.lerp(AppColors.accent, Colors.purple,
+                                          0.6) ??
+                                      AppColors.accent,
                                 ],
                               ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Filter bar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Left side filters
-                      Row(
-                        children: [
-                          _buildFilterButton(
-                            'All Tasks',
-                            PhosphorIcons.listChecks(PhosphorIconsStyle.bold),
-                            !showCompleted,
-                            () => setState(() {
-                              showCompleted = false;
-                            }),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterButton(
-                            'Completed',
-                            PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
-                            showCompleted,
-                            () => setState(() {
-                              showCompleted = true;
-                            }),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  final result = await showDialog(
+                                    context: context,
+                                    builder: (context) => const AddTaskDialog(),
+                                  );
+
+                                  if (result != null) {
+                                    context
+                                        .read<TaskProvider>()
+                                        .addTask(result);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            Icon(
+                                              PhosphorIcons.checkCircle(
+                                                  PhosphorIconsStyle.fill),
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                                'Task "${result['name']}" has been created'),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.green.shade400,
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.all(16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          PhosphorIcons.plus(
+                                              PhosphorIconsStyle.bold),
+                                          size: 18,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Add Task',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-
-                      // Right side controls
+                      const SizedBox(height: 24),
+                      // Filter bar
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (hasActiveFilters) ...[
-                            Container(
-                              height: 40,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.red.shade300,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
+                          // Left side filters
+                          Row(
+                            children: [
+                              _buildFilterButton(
+                                'All Tasks',
+                                PhosphorIcons.listChecks(
+                                    PhosphorIconsStyle.bold),
+                                !showCompleted,
+                                () => setState(() {
+                                  showCompleted = false;
+                                }),
                               ),
-                              child: TextButton.icon(
-                                onPressed: _clearAllFilters,
-                                icon: Icon(
-                                  PhosphorIcons.x(PhosphorIconsStyle.bold),
-                                  size: 18,
-                                  color: Colors.red.shade400,
-                                ),
-                                label: Text(
-                                  'Clear Filters',
-                                  style: TextStyle(
-                                    color: Colors.red.shade400,
-                                  ),
-                                ),
+                              const SizedBox(width: 8),
+                              _buildFilterButton(
+                                'Completed',
+                                PhosphorIcons.checkCircle(
+                                    PhosphorIconsStyle.bold),
+                                showCompleted,
+                                () => setState(() {
+                                  showCompleted = true;
+                                }),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          // Search
-                          Container(
-                            width: 240,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withOpacity(0.1)
-                                    : Theme.of(context).dividerColor,
-                                width: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? 1.5
-                                    : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              color: Theme.of(context).cardColor,
-                            ),
-                            child: Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 12),
-                                  child: Icon(
-                                    PhosphorIcons.magnifyingGlass(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: Theme.of(context).hintColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: searchController,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        searchQuery = value;
-                                      });
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: 'Search tasks...',
-                                      hintStyle: TextStyle(
-                                        color: Theme.of(context).hintColor,
-                                      ),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 8),
-                                      isDense: true,
+                            ],
+                          ),
+
+                          // Right side controls
+                          Row(
+                            children: [
+                              if (hasActiveFilters) ...[
+                                Container(
+                                  height: 40,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.red.shade300,
                                     ),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                ),
-                                if (searchQuery.isNotEmpty)
-                                  IconButton(
+                                  child: TextButton.icon(
+                                    onPressed: _clearAllFilters,
                                     icon: Icon(
                                       PhosphorIcons.x(PhosphorIconsStyle.bold),
                                       size: 18,
-                                      color: Theme.of(context).hintColor,
+                                      color: Colors.red.shade400,
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        searchQuery = '';
-                                        searchController.clear();
-                                      });
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
+                                    label: Text(
+                                      'Clear Filters',
+                                      style: TextStyle(
+                                        color: Colors.red.shade400,
+                                      ),
                                     ),
                                   ),
+                                ),
+                                const SizedBox(width: 8),
                               ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                              // Search
+                              Container(
+                                width: 240,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Theme.of(context).dividerColor,
+                                    width: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? 1.5
+                                        : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Theme.of(context).cardColor,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 12),
+                                      child: Icon(
+                                        PhosphorIcons.magnifyingGlass(
+                                            PhosphorIconsStyle.bold),
+                                        size: 18,
+                                        color: Theme.of(context).hintColor,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: searchController,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            searchQuery = value;
+                                          });
+                                        },
+                                        decoration: InputDecoration(
+                                          hintText: 'Search tasks...',
+                                          hintStyle: TextStyle(
+                                            color: Theme.of(context).hintColor,
+                                          ),
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  vertical: 8),
+                                          isDense: true,
+                                        ),
+                                      ),
+                                    ),
+                                    if (searchQuery.isNotEmpty)
+                                      IconButton(
+                                        icon: Icon(
+                                          PhosphorIcons.x(
+                                              PhosphorIconsStyle.bold),
+                                          size: 18,
+                                          color: Theme.of(context).hintColor,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            searchQuery = '';
+                                            searchController.clear();
+                                          });
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
 
-                          // Priority Filter
-                          Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withOpacity(0.1)
-                                    : Theme.of(context).dividerColor,
-                                width: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? 1.5
-                                    : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    PhosphorIcons.funnel(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: selectedPriority != null
-                                        ? AppColors.accent
-                                        : null,
+                              // Priority Filter
+                              Container(
+                                height: 40,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Theme.of(context).dividerColor,
+                                    width: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? 1.5
+                                        : 1,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    selectedPriority?.capitalize() ??
-                                        'All Priority',
-                                    style: TextStyle(
-                                      color: selectedPriority != null
-                                          ? AppColors.accent
-                                          : null,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: PopupMenuButton<String>(
+                                  offset: const Offset(0, 40),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        PhosphorIcons.funnel(
+                                            PhosphorIconsStyle.bold),
+                                        size: 18,
+                                        color: selectedPriority != null
+                                            ? AppColors.accent
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        selectedPriority?.capitalize() ??
+                                            'All Priority',
+                                        style: TextStyle(
+                                          color: selectedPriority != null
+                                              ? AppColors.accent
+                                              : null,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        PhosphorIcons.caretDown(
+                                            PhosphorIconsStyle.bold),
+                                        size: 18,
+                                        color: selectedPriority != null
+                                            ? AppColors.accent
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'all',
+                                      child: Text('All Priority'),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: selectedPriority != null
-                                        ? AppColors.accent
-                                        : null,
-                                  ),
-                                ],
+                                    const PopupMenuDivider(),
+                                    ...['critical', 'high', 'medium', 'low']
+                                        .map(
+                                      (priority) => PopupMenuItem(
+                                        value: priority,
+                                        child: Text(priority.capitalize()),
+                                      ),
+                                    ),
+                                  ],
+                                  onSelected: (value) {
+                                    setState(() {
+                                      selectedPriority =
+                                          value == 'all' ? null : value;
+                                    });
+                                  },
+                                ),
                               ),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'all',
-                                  child: Text('All Priority'),
-                                ),
-                                const PopupMenuDivider(),
-                                ...['critical', 'high', 'medium', 'low'].map(
-                                  (priority) => PopupMenuItem(
-                                    value: priority,
-                                    child: Text(priority.capitalize()),
-                                  ),
-                                ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedPriority =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                              const SizedBox(width: 8),
 
-                          // View Toggle
-                          Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withOpacity(0.1)
-                                    : Theme.of(context).dividerColor,
-                                width: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? 1.5
-                                    : 1,
+                              // View Toggle
+                              Container(
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Theme.of(context).dividerColor,
+                                    width: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? 1.5
+                                        : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _buildViewToggleButton(
+                                      icon: PhosphorIcons.list(
+                                          PhosphorIconsStyle.bold),
+                                      isActive: isListView,
+                                      onPressed: () =>
+                                          setState(() => isListView = true),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 20,
+                                      color: Theme.of(context).dividerColor,
+                                    ),
+                                    _buildViewToggleButton(
+                                      icon: PhosphorIcons.squaresFour(
+                                          PhosphorIconsStyle.bold),
+                                      isActive: !isListView,
+                                      onPressed: () =>
+                                          setState(() => isListView = false),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                _buildViewToggleButton(
-                                  icon: PhosphorIcons.list(
-                                      PhosphorIconsStyle.bold),
-                                  isActive: isListView,
-                                  onPressed: () =>
-                                      setState(() => isListView = true),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 20,
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                                _buildViewToggleButton(
-                                  icon: PhosphorIcons.squaresFour(
-                                      PhosphorIconsStyle.bold),
-                                  isActive: !isListView,
-                                  onPressed: () =>
-                                      setState(() => isListView = false),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Content section
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                          .withOpacity(0.1) // More visible in dark mode
-                      : Theme.of(context).dividerColor,
-                  width: Theme.of(context).brightness == Brightness.dark
-                      ? 1.5
-                      : 1, // Slightly thicker in dark mode
                 ),
               ),
-              child: Column(
-                children: [
-                  // Table Header
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          child: Tooltip(
-                            message: showCompleted
-                                ? 'Restore all completed tasks'
-                                : 'Complete all tasks',
-                            child: showCompleted
-                                ? IconButton(
-                                    onPressed: _handleRestoreAll,
-                                    icon: Icon(
-                                      PhosphorIcons.arrowCounterClockwise(
-                                          PhosphorIconsStyle.bold),
-                                      size: 18,
-                                      color: AppColors.accent,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
-                                  )
-                                : Checkbox(
-                                    value: tasks.isNotEmpty &&
-                                        checkedTasks
-                                            .every((checked) => checked),
-                                    onChanged: (value) => _handleCompleteAll(),
-                                    tristate: true,
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            'Task Name',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Project',
-                                    style: TextStyle(
-                                      color: selectedProject != null
-                                          ? AppColors.accent
-                                          : null,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 14,
-                                    color: selectedProject != null
-                                        ? AppColors.accent
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'all',
-                                  child: Text('All Projects'),
-                                ),
-                                const PopupMenuDivider(),
-                                ...{
-                                  // Get unique project names
-                                  ...tasks.map((t) => t['project']),
-                                  ...completedTasks.map((t) => t['project']),
-                                }.map(
-                                  (project) => PopupMenuItem(
-                                    value: project,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.accent,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(project),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedProject =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            'Due Date',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Priority',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withOpacity(0.1)
-                                    : Theme.of(context).dividerColor,
-                                width: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? 1.5
-                                    : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Status',
-                                    style: TextStyle(
-                                      color: selectedStatus != null
-                                          ? AppColors.accent
-                                          : null,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 14,
-                                    color: selectedStatus != null
-                                        ? AppColors.accent
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'all',
-                                  child: Text('All Status'),
-                                ),
-                                const PopupMenuDivider(),
-                                ...['to do', 'in progress', 'done'].map(
-                                  (status) => PopupMenuItem(
-                                    value: status,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: status == 'to do'
-                                                ? Colors.grey.shade400
-                                                : status == 'in progress'
-                                                    ? Colors.blue.shade400
-                                                    : Colors.green.shade400,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(status.toUpperCase()),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedStatus =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            'Actions',
-                            style: TextStyle(fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
+
+              // Content section
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                              .withOpacity(0.1) // More visible in dark mode
+                          : Theme.of(context).dividerColor,
+                      width: Theme.of(context).brightness == Brightness.dark
+                          ? 1.5
+                          : 1, // Slightly thicker in dark mode
                     ),
                   ),
-                  const Divider(height: 1),
-                  // Task list/grid
-                  Expanded(
-                    child: !isListView
-                        ? GridView.builder(
-                            padding: const EdgeInsets.all(12),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
+                  child: Column(
+                    children: [
+                      // Table Header
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              child: Tooltip(
+                                message: showCompleted
+                                    ? 'Restore all completed tasks'
+                                    : 'Complete all tasks',
+                                child: showCompleted
+                                    ? IconButton(
+                                        onPressed: _handleRestoreAll,
+                                        icon: Icon(
+                                          PhosphorIcons.arrowCounterClockwise(
+                                              PhosphorIconsStyle.bold),
+                                          size: 18,
+                                          color: AppColors.accent,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                      )
+                                    : Checkbox(
+                                        value: tasks.isNotEmpty &&
+                                            checkedTasks
+                                                .every((checked) => checked),
+                                        onChanged: (value) =>
+                                            _handleCompleteAll(),
+                                        tristate: true,
+                                      ),
+                              ),
                             ),
-                            itemCount: showCompleted
-                                ? completedTasks.where(_filterTask).length
-                                : tasks.where(_filterTask).length,
-                            itemBuilder: (context, index) {
-                              final filteredTasks = showCompleted
-                                  ? completedTasks.where(_filterTask).toList()
-                                  : tasks.where(_filterTask).toList();
-                              final task = filteredTasks[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: TaskGridItem(
-                                  task: task,
-                                  isChecked: task['status'] == 'done',
-                                  onCheckChanged: showCompleted
-                                      ? (_) {}
-                                      : (value) =>
-                                          _handleCheckboxChange(index, value),
-                                  onEdit: showCompleted
-                                      ? () {}
-                                      : () => _handleEdit(index),
-                                  onDelete: () =>
-                                      _handleDelete(index, showCompleted),
-                                  onRestore: showCompleted
-                                      ? () => _restoreTask(index)
-                                      : null,
-                                  isHovered: hoveredIndex == index,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Task Name',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 40,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Theme.of(context).dividerColor,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              );
-                            },
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: showCompleted
-                                ? completedTasks.where(_filterTask).length
-                                : tasks.where(_filterTask).length,
-                            itemBuilder: (context, index) {
-                              final filteredTasks = showCompleted
-                                  ? completedTasks.where(_filterTask).toList()
-                                  : tasks.where(_filterTask).toList();
-                              final task = filteredTasks[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: TaskListItem(
-                                  task: task,
-                                  isChecked: task['status'] == 'done',
-                                  onCheckChanged: showCompleted
-                                      ? (_) {}
-                                      : (value) =>
-                                          _handleCheckboxChange(index, value),
-                                  onEdit: showCompleted
-                                      ? () {}
-                                      : () => _handleEdit(index),
-                                  onDelete: () =>
-                                      _handleDelete(index, showCompleted),
-                                  onRestore: showCompleted
-                                      ? () => _restoreTask(index)
-                                      : null,
-                                  isHovered: hoveredIndex == index,
+                                child: PopupMenuButton<String>(
+                                  offset: const Offset(0, 40),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Project',
+                                        style: TextStyle(
+                                          color: selectedProject != null
+                                              ? AppColors.accent
+                                              : null,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Icon(
+                                        PhosphorIcons.caretDown(
+                                            PhosphorIconsStyle.bold),
+                                        size: 14,
+                                        color: selectedProject != null
+                                            ? AppColors.accent
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'all',
+                                      child: Text('All Projects'),
+                                    ),
+                                    const PopupMenuDivider(),
+                                    ...{
+                                      // Get unique project names
+                                      ...tasks.map((t) => t['project']),
+                                      ...completedTasks
+                                          .map((t) => t['project']),
+                                    }.map(
+                                      (project) => PopupMenuItem(
+                                        value: project,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.accent,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(project),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  onSelected: (value) {
+                                    setState(() {
+                                      selectedProject =
+                                          value == 'all' ? null : value;
+                                    });
+                                  },
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                'Due Date',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Priority',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 40,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Theme.of(context).dividerColor,
+                                    width: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? 1.5
+                                        : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: PopupMenuButton<String>(
+                                  offset: const Offset(0, 40),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Status',
+                                        style: TextStyle(
+                                          color: selectedStatus != null
+                                              ? AppColors.accent
+                                              : null,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Icon(
+                                        PhosphorIcons.caretDown(
+                                            PhosphorIconsStyle.bold),
+                                        size: 14,
+                                        color: selectedStatus != null
+                                            ? AppColors.accent
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'all',
+                                      child: Text('All Status'),
+                                    ),
+                                    const PopupMenuDivider(),
+                                    ...['to do', 'in progress', 'done'].map(
+                                      (status) => PopupMenuItem(
+                                        value: status,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: status == 'to do'
+                                                    ? Colors.grey.shade400
+                                                    : status == 'in progress'
+                                                        ? Colors.blue.shade400
+                                                        : Colors.green.shade400,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(status.toUpperCase()),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  onSelected: (value) {
+                                    setState(() {
+                                      selectedStatus =
+                                          value == 'all' ? null : value;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 80,
+                              child: Text(
+                                'Actions',
+                                style: TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      // Task list/grid
+                      Expanded(
+                        child: !isListView
+                            ? GridView.builder(
+                                padding: const EdgeInsets.all(12),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  childAspectRatio: 0.7,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemCount: showCompleted
+                                    ? completedTasks.where(_filterTask).length
+                                    : tasks.where(_filterTask).length,
+                                itemBuilder: (context, index) {
+                                  final filteredTasks = showCompleted
+                                      ? completedTasks
+                                          .where(_filterTask)
+                                          .toList()
+                                      : tasks.where(_filterTask).toList();
+                                  final task = filteredTasks[index];
+                                  return MouseRegion(
+                                    onEnter: (_) =>
+                                        setState(() => hoveredIndex = index),
+                                    onExit: (_) =>
+                                        setState(() => hoveredIndex = null),
+                                    child: TaskGridItem(
+                                      task: task,
+                                      isChecked: task['status'] == 'done',
+                                      onCheckChanged: showCompleted
+                                          ? (_) {}
+                                          : (value) => _handleCheckboxChange(
+                                              index, value),
+                                      onEdit: showCompleted
+                                          ? () {}
+                                          : () => _handleEdit(index),
+                                      onDelete: () =>
+                                          _handleDelete(index, showCompleted),
+                                      onRestore: showCompleted
+                                          ? () => _restoreTask(index)
+                                          : null,
+                                      isHovered: hoveredIndex == index,
+                                    ),
+                                  );
+                                },
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: showCompleted
+                                    ? completedTasks.where(_filterTask).length
+                                    : tasks.where(_filterTask).length,
+                                itemBuilder: (context, index) {
+                                  final filteredTasks = showCompleted
+                                      ? completedTasks
+                                          .where(_filterTask)
+                                          .toList()
+                                      : tasks.where(_filterTask).toList();
+                                  final task = filteredTasks[index];
+                                  return MouseRegion(
+                                    onEnter: (_) =>
+                                        setState(() => hoveredIndex = index),
+                                    onExit: (_) =>
+                                        setState(() => hoveredIndex = null),
+                                    child: TaskListItem(
+                                      name: task['name'],
+                                      description: task['description'],
+                                      project: task['project'],
+                                      dueDate: task['dueDate'],
+                                      priority: task['priority'],
+                                      status: task['status'],
+                                      isChecked: task['status'] == 'done',
+                                      isHovered: hoveredIndex == index,
+                                      onCheckChanged: showCompleted
+                                          ? (_) {}
+                                          : (value) => _handleCheckboxChange(
+                                              index, value),
+                                      onEdit: showCompleted
+                                          ? () {}
+                                          : () => _handleEdit(index),
+                                      onDelete: () =>
+                                          _handleDelete(index, showCompleted),
+                                      onRestore: showCompleted
+                                          ? () => _restoreTask(index)
+                                          : null,
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -856,6 +860,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _handleCheckboxChange(int index, bool? value) async {
     if (value == true) {
+      final taskProvider = context.read<TaskProvider>();
       // Show confirmation dialog
       final bool? confirmed = await showDialog<bool>(
         context: context,
@@ -872,7 +877,7 @@ class _TasksScreenState extends State<TasksScreen> {
             ],
           ),
           content: Text(
-            'Are you sure you want to mark "${tasks[index]['name']}" as complete?',
+            'Are you sure you want to mark "${taskProvider.tasks[index]['name']}" as complete?',
           ),
           actions: [
             TextButton(
@@ -896,18 +901,13 @@ class _TasksScreenState extends State<TasksScreen> {
       );
 
       if (confirmed == true) {
+        taskProvider.completeTask(index);
         setState(() {
-          // Store original status before changing to 'done'
-          originalStatuses[index] = tasks[index]['status'];
-          // Update task status to 'done'
-          tasks[index]['status'] = 'done';
-          // Move task to completed list
-          completedTasks.add(tasks[index]);
-          tasks.removeAt(index);
-          // Update checked tasks list length
           checkedTasks.removeAt(index);
+        });
 
-          // Show success message
+        // Show success message
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -928,13 +928,14 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ),
           );
-        });
+        }
       }
     }
   }
 
   Future<void> _handleCompleteAll() async {
-    if (tasks.isEmpty) return;
+    final taskProvider = context.read<TaskProvider>();
+    if (taskProvider.tasks.isEmpty) return;
 
     // Show confirmation dialog
     final bool? confirmed = await showDialog<bool>(
@@ -952,7 +953,7 @@ class _TasksScreenState extends State<TasksScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to mark all ${tasks.length} tasks as complete?',
+          'Are you sure you want to mark all ${taskProvider.tasks.length} tasks as complete?',
         ),
         actions: [
           TextButton(
@@ -976,17 +977,13 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     if (confirmed == true) {
+      taskProvider.completeAllTasks();
       setState(() {
-        for (var task in tasks) {
-          // Store original status
-          originalStatuses[tasks.indexOf(task)] = task['status'];
-          task['status'] = 'done';
-          completedTasks.add(task);
-        }
-        tasks.clear();
         checkedTasks.clear();
+      });
 
-        // Show success message
+      // Show success message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1007,12 +1004,13 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
         );
-      });
+      }
     }
   }
 
   Future<void> _handleRestoreAll() async {
-    if (completedTasks.isEmpty) return;
+    final taskProvider = context.read<TaskProvider>();
+    if (taskProvider.completedTasks.isEmpty) return;
 
     // Show confirmation dialog
     final bool? confirmed = await showDialog<bool>(
@@ -1030,7 +1028,7 @@ class _TasksScreenState extends State<TasksScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to restore all ${completedTasks.length} tasks?',
+          'Are you sure you want to restore all ${taskProvider.completedTasks.length} tasks?',
         ),
         actions: [
           TextButton(
@@ -1054,17 +1052,13 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     if (confirmed == true) {
+      taskProvider.restoreAllTasks();
       setState(() {
-        for (var task in completedTasks) {
-          final index = completedTasks.indexOf(task);
-          task['status'] = originalStatuses[index] ?? 'to do';
-          tasks.add(task);
-        }
-        completedTasks.clear();
-        originalStatuses.clear();
-        checkedTasks = List.generate(tasks.length, (_) => false);
+        checkedTasks = List.generate(taskProvider.tasks.length, (_) => false);
+      });
 
-        // Show success message
+      // Show success message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1085,11 +1079,14 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
         );
-      });
+      }
     }
   }
 
   Future<void> _restoreTask(int index) async {
+    final taskProvider = context.read<TaskProvider>();
+    final task = taskProvider.completedTasks[index];
+
     // Show confirmation dialog
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -1106,7 +1103,7 @@ class _TasksScreenState extends State<TasksScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to restore "${completedTasks[index]['name']}"?',
+          'Are you sure you want to restore "${task['name']}"?',
         ),
         actions: [
           TextButton(
@@ -1130,15 +1127,13 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     if (confirmed == true) {
+      taskProvider.restoreTask(index);
       setState(() {
-        final task = completedTasks[index];
-        task['status'] = originalStatuses[index] ?? 'to do';
-        tasks.add(task);
-        completedTasks.removeAt(index);
         checkedTasks.add(false);
-        originalStatuses.remove(index);
+      });
 
-        // Show success message
+      // Show success message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1159,12 +1154,15 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
         );
-      });
+      }
     }
   }
 
   Future<void> _handleDelete(int index, bool isCompleted) async {
-    final task = isCompleted ? completedTasks[index] : tasks[index];
+    final tasks = isCompleted
+        ? context.read<TaskProvider>().completedTasks
+        : context.read<TaskProvider>().tasks;
+    final task = tasks[index];
 
     // Show confirmation dialog
     final bool? confirmed = await showDialog<bool>(
@@ -1219,9 +1217,9 @@ class _TasksScreenState extends State<TasksScreen> {
     if (confirmed == true) {
       setState(() {
         if (isCompleted) {
-          completedTasks.removeAt(index);
+          context.read<TaskProvider>().deleteCompletedTask(index);
         } else {
-          tasks.removeAt(index);
+          context.read<TaskProvider>().deleteTask(index);
           checkedTasks.removeAt(index);
         }
 
@@ -1251,40 +1249,41 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _handleEdit(int index) async {
+    final taskProvider = context.read<TaskProvider>();
     final result = await showDialog(
       context: context,
       builder: (context) => AddTaskDialog(
         isEditing: true,
-        task: tasks[index],
+        task: taskProvider.tasks[index],
       ),
     );
 
     if (result != null) {
-      setState(() {
-        tasks[index] = result;
-      });
+      taskProvider.updateTask(index, result);
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
-                color: Colors.white,
-              ),
-              const SizedBox(width: 8),
-              Text('Task "${result['name']}" has been updated'),
-            ],
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                Text('Task "${result['name']}" has been updated'),
+              ],
+            ),
+            backgroundColor: Colors.blue.shade400,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-          backgroundColor: Colors.blue.shade400,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+        );
+      }
     }
   }
 

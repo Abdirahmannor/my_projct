@@ -4,7 +4,14 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/string_extensions.dart';
 
 class ProjectGridItem extends StatelessWidget {
-  final Map<String, dynamic> project;
+  final String name;
+  final String? description;
+  final String startDate;
+  final String dueDate;
+  final int completedTasks;
+  final int totalTasks;
+  final String priority;
+  final String status;
   final bool isChecked;
   final bool isHovered;
   final Function(bool?) onCheckChanged;
@@ -13,7 +20,14 @@ class ProjectGridItem extends StatelessWidget {
 
   const ProjectGridItem({
     super.key,
-    required this.project,
+    required this.name,
+    this.description,
+    required this.startDate,
+    required this.dueDate,
+    required this.completedTasks,
+    required this.totalTasks,
+    required this.priority,
+    required this.status,
     required this.isChecked,
     required this.isHovered,
     required this.onCheckChanged,
@@ -62,7 +76,7 @@ class ProjectGridItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _buildPriorityBadge(context, project['priority']),
+                    _buildPriorityBadge(context, priority),
                   ],
                 ),
                 Row(
@@ -98,7 +112,7 @@ class ProjectGridItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  project['name'],
+                  name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -107,7 +121,7 @@ class ProjectGridItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  project['description'],
+                  description ?? '',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).hintColor,
                       ),
@@ -128,8 +142,8 @@ class ProjectGridItem extends StatelessWidget {
                 _buildProgressSection(
                   context,
                   'Tasks Progress',
-                  project['completedTasks'],
-                  project['tasks'],
+                  completedTasks,
+                  totalTasks,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -138,7 +152,7 @@ class ProjectGridItem extends StatelessWidget {
                       child: _buildDateInfo(
                         context,
                         'Start',
-                        project['startDate'],
+                        startDate,
                         PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
                       ),
                     ),
@@ -147,14 +161,14 @@ class ProjectGridItem extends StatelessWidget {
                       child: _buildDateInfo(
                         context,
                         'Due',
-                        project['dueDate'],
+                        dueDate,
                         PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildStatusBadge(context, project['status']),
+                _buildStatusBadge(context, status),
               ],
             ),
           ),

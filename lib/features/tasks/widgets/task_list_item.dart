@@ -4,7 +4,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/string_extensions.dart';
 
 class TaskListItem extends StatelessWidget {
-  final Map<String, dynamic> task;
+  final String name;
+  final String? description;
+  final String project;
+  final String dueDate;
+  final String priority;
+  final String status;
   final bool isChecked;
   final bool isHovered;
   final Function(bool?) onCheckChanged;
@@ -14,7 +19,12 @@ class TaskListItem extends StatelessWidget {
 
   const TaskListItem({
     super.key,
-    required this.task,
+    required this.name,
+    this.description,
+    required this.project,
+    required this.dueDate,
+    required this.priority,
+    required this.status,
     required this.isChecked,
     required this.isHovered,
     required this.onCheckChanged,
@@ -79,7 +89,7 @@ class TaskListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task['name'],
+                    name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           decoration: isChecked
@@ -89,9 +99,9 @@ class TaskListItem extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: 4),
-                  if (task['description'] != null)
+                  if (description != null)
                     Text(
-                      task['description'],
+                      description!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).hintColor,
                             decoration: isChecked
@@ -130,7 +140,7 @@ class TaskListItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          task['project'],
+                          project,
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w500,
@@ -178,7 +188,7 @@ class TaskListItem extends StatelessWidget {
               child: _buildDateInfo(
                 context,
                 'Due',
-                task['dueDate'],
+                dueDate,
                 PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
               ),
             ),
@@ -191,11 +201,11 @@ class TaskListItem extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 18),
                     child: Text(
-                      task['priority']?.toString().toUpperCase() ?? '',
+                      priority.toUpperCase(),
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.priorityColors[task['priority']] ??
-                            Colors.grey,
+                        color:
+                            AppColors.priorityColors[priority] ?? Colors.grey,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -207,17 +217,17 @@ class TaskListItem extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: (AppColors.priorityColors[task['priority']] ??
-                                Colors.grey)
-                            .withOpacity(0.1),
+                        color:
+                            (AppColors.priorityColors[priority] ?? Colors.grey)
+                                .withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Icon(
-                          _getPriorityIcon(task['priority']),
+                          _getPriorityIcon(priority),
                           size: 18,
-                          color: AppColors.priorityColors[task['priority']] ??
-                              Colors.grey,
+                          color:
+                              AppColors.priorityColors[priority] ?? Colors.grey,
                         ),
                       ),
                     ),
@@ -235,10 +245,10 @@ class TaskListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task['status']?.toString().toUpperCase() ?? '',
+                    status.toUpperCase(),
                     style: TextStyle(
                       fontSize: 11,
-                      color: _getStatusColor(task['status']),
+                      color: _getStatusColor(status),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -247,14 +257,14 @@ class TaskListItem extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: _getStatusColor(task['status']).withOpacity(0.1),
+                      color: _getStatusColor(status).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Icon(
-                        _getStatusIcon(task['status']),
+                        _getStatusIcon(status),
                         size: 18,
-                        color: _getStatusColor(task['status']),
+                        color: _getStatusColor(status),
                       ),
                     ),
                   ),
@@ -443,8 +453,10 @@ class TaskListItem extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
+                overflow: TextOverflow.ellipsis,
               ),
-              Row(
+              Wrap(
+                spacing: 4, // horizontal spacing between elements
                 children: [
                   Container(
                     padding:
@@ -473,7 +485,6 @@ class TaskListItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
                   Text(
                     isOverdue
                         ? '${daysRemaining.abs()}d overdue'
