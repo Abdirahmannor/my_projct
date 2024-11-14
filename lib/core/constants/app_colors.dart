@@ -32,9 +32,12 @@ class AppColors {
   static const Color info = Color(0xFF3B82F6); // Blue
 
   // Priority Colors
-  static const Color priorityHigh = Color(0xFFEF4444); // Red
-  static const Color priorityMedium = Color(0xFFF59E0B); // Amber
-  static const Color priorityLow = Color(0xFF22C55E); // Green
+  static final Map<String, Color> priorityColors = {
+    'critical': Colors.red.shade600,
+    'high': Colors.red.shade400,
+    'medium': Colors.orange.shade400,
+    'low': Colors.green.shade400,
+  };
 
   // Status Colors
   static const Color statusNotStarted = Color(0xFF64748B); // Gray

@@ -1,3 +1,4 @@
+import 'package:school_task_manager/features/tasks/widgets/add_task_dialog.dart';
 import 'package:school_task_manager/features/tasks/widgets/task_list_item.dart';
 
 import '../widgets/task_grid_item.dart';
@@ -32,7 +33,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Complete Math Assignment',
       'description': 'Chapter 5 exercises on calculus',
       'project': 'Mathematics',
-      'dueDate': '2024-03-20T14:30:00',
+      'dueDate': '2024-03-20T14:30:00.000',
       'priority': 'high',
       'status': 'in progress',
     },
@@ -40,7 +41,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Study for Physics Test',
       'description': 'Review chapters 3 and 4',
       'project': 'Physics',
-      'dueDate': '2024-03-25T09:00:00',
+      'dueDate': '2024-03-25T09:00:00.000',
       'priority': 'high',
       'status': 'to do',
     },
@@ -48,7 +49,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Write Essay',
       'description': 'Research paper on renewable energy',
       'project': 'English',
-      'dueDate': '2024-03-15T16:45:00',
+      'dueDate': '2024-03-15T16:45:00.000',
       'priority': 'medium',
       'status': 'in progress',
     },
@@ -118,8 +119,41 @@ class _TasksScreenState extends State<TasksScreen> {
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () {
-                              // Add new task dialog
+                            onTap: () async {
+                              final result = await showDialog(
+                                context: context,
+                                builder: (context) => const AddTaskDialog(),
+                              );
+
+                              if (result != null) {
+                                setState(() {
+                                  tasks.add(result);
+                                  checkedTasks.add(false);
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(
+                                          PhosphorIcons.checkCircle(
+                                              PhosphorIconsStyle.fill),
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                            'Task "${result['name']}" has been created'),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green.shade400,
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.all(16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
@@ -415,7 +449,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          flex: 3,
+                          flex: 2,
                           child: Text(
                             'Task Name',
                             style: Theme.of(context)
@@ -427,7 +461,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                         ),
                         Expanded(
-                          flex: 2,
+                          flex: 1,
                           child: Container(
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -502,7 +536,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                         ),
                         Expanded(
-                          flex: 2,
+                          flex: 1,
                           child: Text(
                             'Due Date',
                             style: Theme.of(context).textTheme.titleSmall,
@@ -587,8 +621,8 @@ class _TasksScreenState extends State<TasksScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(
-                          width: 100,
+                        SizedBox(
+                          width: 80,
                           child: Text(
                             'Actions',
                             style: TextStyle(fontSize: 12),
@@ -603,13 +637,13 @@ class _TasksScreenState extends State<TasksScreen> {
                   Expanded(
                     child: !isListView
                         ? GridView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 4,
                               childAspectRatio: 0.7,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
                             ),
                             itemCount: showCompleted
                                 ? completedTasks.where(_filterTask).length

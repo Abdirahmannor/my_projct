@@ -46,22 +46,25 @@ class TaskListItem extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           children: [
             // Checkbox
             SizedBox(
-              width: 24,
-              child: Checkbox(
-                value: isChecked,
-                onChanged: onCheckChanged,
+              width: 16,
+              child: Transform.scale(
+                scale: 0.8,
+                child: Checkbox(
+                  value: isChecked,
+                  onChanged: onCheckChanged,
+                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 4),
 
             // Task Info
             Expanded(
-              flex: 3,
+              flex: 2,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -94,25 +97,24 @@ class TaskListItem extends StatelessWidget {
 
             // Project Badge
             Expanded(
-              flex: 2,
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: AppColors.accent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Center(
                       child: Icon(
                         PhosphorIcons.folder(PhosphorIconsStyle.fill),
-                        size: 16,
+                        size: 14,
                         color: AppColors.accent,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,15 +124,16 @@ class TaskListItem extends StatelessWidget {
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'Project', // Or you could add a project category here
+                          'Project',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context).hintColor,
-                                    fontSize: 11,
+                                    fontSize: 10,
                                   ),
                         ),
                       ],
@@ -142,7 +145,7 @@ class TaskListItem extends StatelessWidget {
                       child: MouseRegion(
                         cursor: SystemMouseCursors.click,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
                             color: AppColors.accent.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -150,7 +153,7 @@ class TaskListItem extends StatelessWidget {
                           child: Icon(
                             PhosphorIcons.arrowSquareOut(
                                 PhosphorIconsStyle.bold),
-                            size: 14,
+                            size: 12,
                             color: AppColors.accent,
                           ),
                         ),
@@ -162,7 +165,6 @@ class TaskListItem extends StatelessWidget {
 
             // Due Date
             Expanded(
-              flex: 2,
               child: _buildDateInfo(
                 context,
                 'Due',
@@ -173,17 +175,68 @@ class TaskListItem extends StatelessWidget {
 
             // Priority Badge
             Expanded(
-              child: _buildPriorityBadge(context, task['priority']),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        task['priority']?.toString() ?? '',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.priorityColors[task['priority']] ??
+                              Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color:
+                                (AppColors.priorityColors[task['priority']] ??
+                                        Colors.grey)
+                                    .withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            _getPriorityIcon(task['priority']),
+                            size: 14,
+                            color:
+                                (AppColors.priorityColors[task['priority']] ??
+                                        Colors.grey)
+                                    .withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 24),
+                ],
+              ),
             ),
 
             // Status Badge
             Expanded(
-              child: _buildStatusBadge(context, task['status']),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _buildStatusBadge(context, task['status']),
+                ],
+              ),
             ),
 
             // Actions
             SizedBox(
-              width: 100,
+              width: 50,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -193,9 +246,15 @@ class TaskListItem extends StatelessWidget {
                       icon: Icon(
                         PhosphorIcons.arrowCounterClockwise(
                             PhosphorIconsStyle.bold),
-                        size: 18,
+                        size: 14,
                         color: AppColors.accent,
                       ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 24,
+                        minHeight: 24,
+                      ),
+                      visualDensity: VisualDensity.compact,
                       tooltip: 'Restore',
                     )
                   else ...[
@@ -203,18 +262,30 @@ class TaskListItem extends StatelessWidget {
                       onPressed: onEdit,
                       icon: Icon(
                         PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                        size: 18,
+                        size: 14,
                         color: Theme.of(context).hintColor,
                       ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 24,
+                        minHeight: 24,
+                      ),
+                      visualDensity: VisualDensity.compact,
                       tooltip: 'Edit',
                     ),
                     IconButton(
                       onPressed: onDelete,
                       icon: Icon(
                         PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 18,
+                        size: 14,
                         color: Colors.red,
                       ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 24,
+                        minHeight: 24,
+                      ),
+                      visualDensity: VisualDensity.compact,
                       tooltip: 'Delete',
                     ),
                   ],
@@ -224,72 +295,6 @@ class TaskListItem extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPriorityBadge(BuildContext context, String priority) {
-    final colors = {
-      'critical': Colors.red.shade600,
-      'high': Colors.red.shade400,
-      'medium': Colors.orange.shade400,
-      'low': Colors.green.shade400,
-    };
-
-    final priorityMessages = {
-      'critical': 'Critical Priority - Immediate attention required',
-      'high': 'High Priority - Urgent attention needed',
-      'medium': 'Medium Priority - Important but not urgent',
-      'low': 'Low Priority - Can be handled later',
-    };
-
-    final priorityValues = {
-      'critical': 1.0,
-      'high': 0.75,
-      'medium': 0.5,
-      'low': 0.25,
-    };
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Tooltip(
-          message: priorityMessages[priority] ?? 'Unknown priority',
-          child: Container(
-            width: 40,
-            height: 40,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colors[priority]?.withOpacity(0.3) ??
-                    Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Stack(
-              children: [
-                CircularProgressIndicator(
-                  value: priorityValues[priority] ?? 0,
-                  backgroundColor: colors[priority]?.withOpacity(0.1) ??
-                      Colors.grey.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colors[priority] ?? Colors.grey,
-                  ),
-                  strokeWidth: 4,
-                ),
-                Center(
-                  child: Icon(
-                    _getPriorityIcon(priority),
-                    size: 16,
-                    color: colors[priority]?.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -327,8 +332,8 @@ class TaskListItem extends StatelessWidget {
         Tooltip(
           message: statusMessages[status] ?? 'Unknown status',
           child: Container(
-            width: 40,
-            height: 40,
+            width: 28,
+            height: 28,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
@@ -382,85 +387,67 @@ class TaskListItem extends StatelessWidget {
             ? Colors.orange.shade400
             : Theme.of(context).hintColor;
 
-    // Format time
+    // Format time more compactly
     final String timeString = _formatTime(dateTime);
-    final bool isToday = dateTime.year == now.year &&
-        dateTime.month == now.month &&
-        dateTime.day == now.day;
 
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: dateColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
-            size: 16,
+            size: 14,
             color: dateColor,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Text(
-                    date,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  Flexible(
+                    child: Text(
+                      _formatDateCompact(dateTime),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: 10,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 2),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
                     decoration: BoxDecoration(
-                      color: (isToday ? Colors.green.shade400 : dateColor)
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: (isToday ? Colors.green.shade400 : dateColor)
-                            .withOpacity(0.2),
-                      ),
+                      color: dateColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          PhosphorIcons.clock(PhosphorIconsStyle.fill),
-                          size: 12,
-                          color: isToday ? Colors.green.shade400 : dateColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          timeString,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color:
-                                    isToday ? Colors.green.shade400 : dateColor,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 11,
-                              ),
-                        ),
-                      ],
+                    child: Text(
+                      timeString,
+                      style: TextStyle(
+                        color: dateColor,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
               Text(
                 isOverdue
-                    ? '${daysRemaining.abs()} days overdue'
+                    ? '${daysRemaining.abs()}d'
                     : daysRemaining == 0
-                        ? 'Due today'
-                        : '$daysRemaining days remaining',
+                        ? 'Today'
+                        : '${daysRemaining}d',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: dateColor,
+                      fontSize: 9,
                       fontWeight: FontWeight.w500,
                     ),
               ),
@@ -471,16 +458,38 @@ class TaskListItem extends StatelessWidget {
     );
   }
 
+  // Add this new helper method for compact date formatting
+  String _formatDateCompact(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
+  // Update the _formatTime method to be more compact:
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
     final hour12 = hour > 12
         ? hour - 12
         : hour == 0
             ? 12
             : hour;
-    return '$hour12:$minute $period';
+    // Even more compact format
+    return minute == '00'
+        ? '$hour12${hour >= 12 ? "p" : "a"}'
+        : '$hour12$minute${hour >= 12 ? "p" : "a"}';
   }
 
   IconData _getPriorityIcon(String priority) {
@@ -519,26 +528,23 @@ class TaskListItem extends StatelessWidget {
 
   DateTime _parseDate(String date) {
     try {
-      // First try parsing as DateTime directly
-      return DateTime.parse(date);
-    } catch (e) {
-      try {
-        // If that fails, try parsing our custom format
+      if (date.contains('T')) {
+        // Handle ISO format
+        return DateTime.parse(date);
+      } else {
+        // Handle custom format
         final parts = date.split(' ');
         if (parts.length >= 3) {
           final day = int.parse(parts[0].replaceAll(',', ''));
           final month = _getMonth(parts[1].replaceAll(',', ''));
           final year = int.parse(parts[2]);
           return DateTime(year, month, day);
-        } else {
-          // If we can't parse it, return current date
-          return DateTime.now();
         }
-      } catch (e) {
-        // If all parsing fails, return current date
-        return DateTime.now();
       }
+    } catch (e) {
+      print('Error parsing date: $e');
     }
+    return DateTime.now();
   }
 
   int _getMonth(String month) {

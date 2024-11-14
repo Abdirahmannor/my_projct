@@ -151,7 +151,8 @@ class TaskGridItem extends StatelessWidget {
                 // Project Badge
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.accent.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -162,21 +163,21 @@ class TaskGridItem extends StatelessWidget {
                   child: Row(
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
                           color: AppColors.accent.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Center(
                           child: Icon(
                             PhosphorIcons.folder(PhosphorIconsStyle.fill),
-                            size: 16,
+                            size: 14,
                             color: AppColors.accent,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +228,7 @@ class TaskGridItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _buildDateInfo(
                   context,
                   'Due',
