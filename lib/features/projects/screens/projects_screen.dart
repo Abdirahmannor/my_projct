@@ -34,9 +34,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     'This Year',
     'All Time'
   ];
-  bool _isStatisticsExpanded = true;
+  bool _isStatisticsExpanded = false;
   DateTimeRange? _selectedDateRange;
-  bool _showChart = false;
+  bool _showChart = true;
   List<Map<String, dynamic>> archivedProjects = [];
 
   // Sample projects data
