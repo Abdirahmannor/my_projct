@@ -386,29 +386,29 @@ class _TasksScreenState extends State<TasksScreen> {
                       children: [
                         SizedBox(
                           width: 24,
-                          child: Checkbox(
-                            value: showCompleted
-                                ? completedTasks.isNotEmpty
-                                : checkedTasks.every((checked) => checked),
-                            onChanged: showCompleted
-                                ? null
-                                : (value) {
-                                    if (value == true) {
-                                      // Move all tasks to completed
-                                      setState(() {
-                                        for (var task in tasks) {
-                                          // Store original status
-                                          originalStatuses[tasks
-                                              .indexOf(task)] = task['status'];
-                                          task['status'] = 'done';
-                                          completedTasks.add(task);
-                                        }
-                                        tasks.clear();
-                                        checkedTasks.clear();
-                                      });
-                                    }
-                                  },
-                            tristate: !showCompleted,
+                          child: Tooltip(
+                            message: showCompleted
+                                ? 'Restore all completed tasks'
+                                : 'Complete all tasks',
+                            child: showCompleted
+                                ? IconButton(
+                                    onPressed: _handleRestoreAll,
+                                    icon: Icon(
+                                      PhosphorIcons.arrowCounterClockwise(
+                                          PhosphorIconsStyle.bold),
+                                      size: 18,
+                                      color: AppColors.accent,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  )
+                                : Checkbox(
+                                    value: tasks.isNotEmpty &&
+                                        checkedTasks
+                                            .every((checked) => checked),
+                                    onChanged: (value) => _handleCompleteAll(),
+                                    tristate: true,
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -728,16 +728,233 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
-  void _restoreTask(int index) {
-    setState(() {
-      final task = completedTasks[index];
-      task['status'] = originalStatuses[index] ??
-          'to do'; // Use original status or default to 'to do'
-      tasks.add(task);
-      completedTasks.removeAt(index);
-      checkedTasks.add(false);
-      // Clean up the stored status
-      originalStatuses.remove(index);
-    });
+  Future<void> _handleCompleteAll() async {
+    if (tasks.isEmpty) return;
+
+    // Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+              color: Colors.green.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Complete All Tasks'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to mark all ${tasks.length} tasks as complete?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.shade400,
+            ),
+            child: const Text('Complete All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        for (var task in tasks) {
+          // Store original status
+          originalStatuses[tasks.indexOf(task)] = task['status'];
+          task['status'] = 'done';
+          completedTasks.add(task);
+        }
+        tasks.clear();
+        checkedTasks.clear();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                const Text('All tasks marked as complete'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
+  }
+
+  Future<void> _handleRestoreAll() async {
+    if (completedTasks.isEmpty) return;
+
+    // Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore All Tasks'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore all ${completedTasks.length} tasks?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        for (var task in completedTasks) {
+          final index = completedTasks.indexOf(task);
+          task['status'] = originalStatuses[index] ?? 'to do';
+          tasks.add(task);
+        }
+        completedTasks.clear();
+        originalStatuses.clear();
+        checkedTasks = List.generate(tasks.length, (_) => false);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                const Text('All tasks have been restored'),
+              ],
+            ),
+            backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
+  }
+
+  Future<void> _restoreTask(int index) async {
+    // Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore Task'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore "${completedTasks[index]['name']}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        final task = completedTasks[index];
+        task['status'] = originalStatuses[index] ?? 'to do';
+        tasks.add(task);
+        completedTasks.removeAt(index);
+        checkedTasks.add(false);
+        originalStatuses.remove(index);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                Text('Task "${task['name']}" has been restored'),
+              ],
+            ),
+            backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
   }
 }
