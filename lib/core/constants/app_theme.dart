@@ -125,7 +125,7 @@ class AppTheme {
   static ThemeData darkTheme = ThemeData(
     scaffoldBackgroundColor: AppColors.darkBackground,
     cardColor: AppColors.darkSurface,
-    dividerColor: AppColors.darkDivider,
+    dividerColor: Colors.white.withOpacity(0.1),
     hoverColor: AppColors.hoverDark,
 
     // Text themes
@@ -162,11 +162,11 @@ class AppTheme {
       filled: true,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -184,7 +184,7 @@ class AppTheme {
         }
         return AppColors.darkSurface;
       }),
-      side: const BorderSide(color: AppColors.darkBorder),
+      side: BorderSide(color: Colors.white.withOpacity(0.1)),
     ),
 
     // Icon theme
@@ -198,7 +198,7 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.darkBorder),
+        side: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
     ),
 

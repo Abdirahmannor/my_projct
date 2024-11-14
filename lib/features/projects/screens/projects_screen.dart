@@ -92,17 +92,80 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
   }
 
-  void _handleDelete(int index) {
+  void _handleDelete(int index) async {
     final projectName = projects[index]['name'];
-    setState(() {
-      projects.removeAt(index);
-      checkedProjects = List.generate(projects.length, (_) => false);
-    });
 
-    _showSuccessMessage(
-      message: 'Project "$projectName" has been deleted successfully',
-      icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+    // Show confirmation dialog
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              PhosphorIcons.warning(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Delete Project',
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 300,
+          child: Text(
+            'Are you sure you want to delete "$projectName"?',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        actionsPadding: const EdgeInsets.all(12),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      ),
     );
+
+    // If user confirmed, delete the project
+    if (confirm == true) {
+      setState(() {
+        projects.removeAt(index);
+        checkedProjects = List.generate(projects.length, (_) => false);
+      });
+
+      _showSuccessMessage(
+        message: 'Project "$projectName" has been deleted successfully',
+        icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+      );
+    }
   }
 
   bool _filterProject(int index) {
@@ -353,24 +416,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           Container(
                             width: 240,
                             height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Theme.of(context).dividerColor,
+                                width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(8),
+                              color: Theme.of(context).cardColor,
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  PhosphorIcons.magnifyingGlass(
-                                      PhosphorIconsStyle.bold),
-                                  size: 18,
-                                  color: Theme.of(context).hintColor,
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12),
+                                  child: Icon(
+                                    PhosphorIcons.magnifyingGlass(
+                                        PhosphorIconsStyle.bold),
+                                    size: 18,
+                                    color: Theme.of(context).hintColor,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: TextField(
+                                  child: TextFormField(
                                     controller: searchController,
                                     onChanged: (value) {
                                       setState(() {
@@ -379,11 +446,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                     },
                                     decoration: InputDecoration(
                                       hintText: 'Search projects...',
-                                      border: InputBorder.none,
-                                      isDense: true,
                                       hintStyle: TextStyle(
                                         color: Theme.of(context).hintColor,
                                       ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                      isDense: true,
                                     ),
                                   ),
                                 ),
@@ -401,7 +473,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                       });
                                     },
                                     padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
                                   ),
                               ],
                             ),
@@ -581,9 +656,84 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           ),
                         ),
                         Expanded(
-                          child: Text(
-                            'Status',
-                            style: Theme.of(context).textTheme.titleSmall,
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: PopupMenuButton<String>(
+                              offset: const Offset(0, 40),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Status',
+                                    style: TextStyle(
+                                      color: selectedStatus != null
+                                          ? AppColors.accent
+                                          : null,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Icon(
+                                    PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                    size: 14,
+                                    color: selectedStatus != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'all',
+                                  child: Text('All Status'),
+                                ),
+                                const PopupMenuDivider(),
+                                ...[
+                                  'not started',
+                                  'in progress',
+                                  'on hold',
+                                  'completed'
+                                ].map(
+                                  (status) => PopupMenuItem(
+                                    value: status,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: status == 'not started'
+                                                ? Colors.grey.shade400
+                                                : status == 'in progress'
+                                                    ? Colors.blue.shade400
+                                                    : status == 'on hold'
+                                                        ? Colors.orange.shade400
+                                                        : Colors.green.shade400,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(status.toUpperCase()),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onSelected: (value) {
+                                setState(() {
+                                  selectedStatus =
+                                      value == 'all' ? null : value;
+                                });
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(

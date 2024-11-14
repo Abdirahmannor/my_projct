@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter/gestures.dart';
 
 class AddProjectDialog extends StatefulWidget {
   final bool isEditing;
@@ -25,6 +26,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   String _priority = 'medium';
   String _status = 'not started';
   int _tasks = 0;
+  String _category = 'personal';
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
       _priority = widget.project!['priority'];
       _status = widget.project!['status'];
       _tasks = widget.project!['tasks'];
+      _category = widget.project!['category'];
     }
   }
 
@@ -165,8 +168,8 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                             child: _buildDatePicker(
                               label: 'Start Date',
                               value: _startDate,
-                              icon: PhosphorIcons.calendarBlank(
-                                  PhosphorIconsStyle.bold),
+                              icon: PhosphorIcons.calendar(
+                                  PhosphorIconsStyle.regular),
                               onChanged: (date) =>
                                   setState(() => _startDate = date),
                             ),
@@ -177,7 +180,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                               label: 'Due Date',
                               value: _dueDate,
                               icon: PhosphorIcons.calendarCheck(
-                                  PhosphorIconsStyle.bold),
+                                  PhosphorIconsStyle.regular),
                               onChanged: (date) =>
                                   setState(() => _dueDate = date),
                             ),
@@ -199,6 +202,9 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         ],
                       ),
                       const SizedBox(height: 24),
+
+                      // Category Selector
+                      _buildCategorySelector(),
 
                       // Tasks Counter
                       _buildTasksCounter(),
@@ -280,7 +286,12 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: hasError ? Colors.red : null),
+            Icon(
+                label == 'Start Date'
+                    ? PhosphorIcons.calendar(PhosphorIconsStyle.regular)
+                    : PhosphorIcons.calendarCheck(PhosphorIconsStyle.regular),
+                size: 20,
+                color: hasError ? Colors.red : null),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -407,6 +418,49 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     );
   }
 
+  Widget _buildCategorySelector() {
+    final categories = {
+      'school': PhosphorIcons.graduationCap(PhosphorIconsStyle.regular),
+      'personal': PhosphorIcons.user(PhosphorIconsStyle.regular),
+      'work': PhosphorIcons.suitcase(PhosphorIconsStyle.regular),
+      'online work': PhosphorIcons.globe(PhosphorIconsStyle.regular),
+      'other': PhosphorIcons.folder(PhosphorIconsStyle.regular),
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Category',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: categories.entries.map((entry) {
+              return RadioListTile(
+                title: Row(
+                  children: [
+                    Icon(entry.value, size: 20),
+                    const SizedBox(width: 12),
+                    Text(entry.key.toUpperCase()),
+                  ],
+                ),
+                value: entry.key,
+                groupValue: _category,
+                onChanged: (value) => setState(() => _category = value!),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTasksCounter() {
     final bool hasError =
         _formKey.currentState?.validate() == false && _tasks <= 0;
@@ -495,6 +549,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
       'completedTasks': 0,
       'priority': _priority,
       'status': _status,
+      'category': _category,
     };
 
     Navigator.pop(context, project);
