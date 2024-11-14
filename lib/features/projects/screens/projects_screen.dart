@@ -307,7 +307,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -618,7 +618,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
           // Add this after the header section and before the content section
           Container(
-            margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -656,7 +656,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     }
                   }),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
                         Icon(
@@ -775,7 +775,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   secondChild: _showChart
                       ? Container(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
                           child: Row(
                             children: [
                               // Quick stats in more compact form
@@ -829,7 +829,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           // Content section
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(24.0),
+              margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
@@ -842,7 +842,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 children: [
                   // Table Header
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
                         SizedBox(
@@ -989,13 +989,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   Expanded(
                     child: !isListView
                         ? GridView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 1,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
+                              crossAxisCount: 4,
+                              childAspectRatio: 0.85,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
                             ),
                             itemCount: projects.length,
                             itemBuilder: (context, index) {
@@ -1019,7 +1019,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             },
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             itemCount: projects.length,
                             itemBuilder: (context, index) {
                               if (!_filterProject(index))
@@ -1044,7 +1044,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   if (checkedProjects.contains(true))
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
