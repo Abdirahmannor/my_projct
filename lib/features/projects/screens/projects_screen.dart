@@ -17,7 +17,7 @@ class ProjectsScreen extends StatefulWidget {
 class _ProjectsScreenState extends State<ProjectsScreen> {
   String? selectedPriority;
   String? selectedStatus;
-  List<bool> checkedProjects = List.generate(5, (_) => false);
+  List<bool> checkedProjects = [];
   bool showArchived = false;
   bool showAllProjects = true;
   bool isListView = true;
@@ -39,51 +39,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool _showChart = false;
 
   // Sample projects data
-  List<Map<String, dynamic>> projects = [
-    {
-      'name': 'School Management System',
-      'description': 'A comprehensive system for managing school operations',
-      'startDate': '15 Sep, 2024',
-      'dueDate': '15 Oct, 2024',
-      'tasks': 5,
-      'completedTasks': 3,
-      'priority': 'high',
-      'status': 'in progress',
-    },
-    {
-      'name': 'E-commerce Platform',
-      'description': 'Online shopping platform with modern features',
-      'startDate': '1 Oct, 2024',
-      'dueDate': '30 Nov, 2024',
-      'tasks': 8,
-      'completedTasks': 5,
-      'priority': 'medium',
-      'status': 'not started',
-    },
-    {
-      'name': 'Mobile Banking App',
-      'description': 'Secure and user-friendly banking application',
-      'startDate': '20 Sep, 2024',
-      'dueDate': '20 Dec, 2024',
-      'tasks': 12,
-      'completedTasks': 7,
-      'priority': 'high',
-      'status': 'on hold',
-    },
-    {
-      'name': 'Social Media Dashboard',
-      'description': 'Analytics and management dashboard for social media',
-      'startDate': '5 Oct, 2024',
-      'dueDate': '5 Nov, 2024',
-      'tasks': 6,
-      'completedTasks': 4,
-      'priority': 'low',
-      'status': 'completed',
-    },
-  ];
+  List<Map<String, dynamic>> projects = [];
 
   // Add this map to store original status
   final Map<int, String> originalStatuses = {};
+
+  @override
+  void initState() {
+    super.initState();
+    checkedProjects = List.generate(projects.length, (_) => false);
+  }
 
   void _handleEdit(int index) async {
     final result = await showDialog(
@@ -616,7 +581,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
           ),
 
-          // Add this after the header section and before the content section
+          // Add this widget between the statistics and project list
           Container(
             margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
             decoration: BoxDecoration(
@@ -1127,22 +1092,30 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     required bool isActive,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color:
-            isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(
-          icon,
-          size: 18,
-          color: isActive ? AppColors.accent : null,
+    return Tooltip(
+      message: icon == PhosphorIcons.list(PhosphorIconsStyle.bold)
+          ? 'List View'
+          : 'Grid View',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
         ),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
+        child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(
+            icon,
+            size: 18,
+            color: isActive ? AppColors.accent : null,
+          ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          tooltip: icon == PhosphorIcons.list(PhosphorIconsStyle.bold)
+              ? 'List View'
+              : 'Grid View',
+        ),
       ),
     );
   }
@@ -1320,21 +1293,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             start: DateTime.now(),
             end: DateTime.now().add(const Duration(days: 7)),
           ),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            appBarTheme: AppBarTheme(
-              backgroundColor: AppColors.accent,
-              iconTheme: const IconThemeData(color: Colors.white),
-              titleTextStyle: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -1632,6 +1590,37 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
         ),
       ],
+    );
+  }
+
+  Widget _buildViewOptions() {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          _buildViewToggleButton(
+            icon: PhosphorIcons.list(PhosphorIconsStyle.bold),
+            isActive: isListView,
+            onPressed: () => setState(() => isListView = true),
+          ),
+          Container(
+            width: 1,
+            height: 20,
+            color: Theme.of(context).dividerColor,
+          ),
+          _buildViewToggleButton(
+            icon: PhosphorIcons.squaresFour(PhosphorIconsStyle.bold),
+            isActive: !isListView,
+            onPressed: () => setState(() => isListView = false),
+          ),
+        ],
+      ),
     );
   }
 }
