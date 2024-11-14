@@ -59,29 +59,39 @@ class ProjectListItem extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    project.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          decoration: onRestore != null
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
+                  _buildCategoryIcon(context, project.category),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          project.name,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    decoration: onRestore != null
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                  ),
                         ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    project.description ?? '',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).hintColor,
-                          decoration: onRestore != null
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
+                        const SizedBox(height: 4),
+                        Text(
+                          project.description ?? '',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).hintColor,
+                                    decoration: onRestore != null
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                  ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -429,5 +439,54 @@ class ProjectListItem extends StatelessWidget {
       'Dec'
     ];
     return '${date.day} ${months[date.month - 1]}, ${date.year}';
+  }
+
+  Widget _buildCategoryIcon(BuildContext context, String category) {
+    final categoryInfo = {
+      'school': (
+        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
+        AppColors.accent,
+        'School Project'
+      ),
+      'personal': (
+        PhosphorIcons.user(PhosphorIconsStyle.fill),
+        Colors.purple.shade400,
+        'Personal Project'
+      ),
+      'work': (
+        PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
+        Colors.blue.shade400,
+        'Work Project'
+      ),
+      'online': (
+        PhosphorIcons.globe(PhosphorIconsStyle.fill),
+        Colors.green.shade400,
+        'Online Project'
+      ),
+      'other': (
+        PhosphorIcons.folder(PhosphorIconsStyle.fill),
+        Colors.grey.shade400,
+        'Other Project'
+      ),
+    };
+
+    final (icon, color, tooltip) =
+        categoryInfo[category] ?? categoryInfo['other']!;
+
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: color,
+        ),
+      ),
+    );
   }
 }
