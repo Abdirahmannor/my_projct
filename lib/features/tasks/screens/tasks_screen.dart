@@ -20,6 +20,9 @@ class _TasksScreenState extends State<TasksScreen> {
   int? hoveredIndex;
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
+  List<Map<String, dynamic>> completedTasks = [];
+  bool showCompleted = false;
+  final Map<int, String> originalStatuses = {};
 
   // Sample tasks data (empty for now)
   List<Map<String, dynamic>> tasks = [
@@ -30,8 +33,6 @@ class _TasksScreenState extends State<TasksScreen> {
       'dueDate': '2024-03-20',
       'priority': 'high',
       'status': 'in progress',
-      'completedSubtasks': 3,
-      'totalSubtasks': 5,
     },
     {
       'name': 'Study for Physics Test',
@@ -40,8 +41,6 @@ class _TasksScreenState extends State<TasksScreen> {
       'dueDate': '2024-03-25',
       'priority': 'high',
       'status': 'to do',
-      'completedSubtasks': 0,
-      'totalSubtasks': 4,
     },
     {
       'name': 'Write Essay',
@@ -50,18 +49,6 @@ class _TasksScreenState extends State<TasksScreen> {
       'dueDate': '2024-03-15',
       'priority': 'medium',
       'status': 'in progress',
-      'completedSubtasks': 2,
-      'totalSubtasks': 3,
-    },
-    {
-      'name': 'Practice Programming',
-      'description': 'Complete coding exercises',
-      'project': 'Computer Science',
-      'dueDate': '2024-03-30',
-      'priority': 'low',
-      'status': 'done',
-      'completedSubtasks': 5,
-      'totalSubtasks': 5,
     },
   ];
 
@@ -182,15 +169,19 @@ class _TasksScreenState extends State<TasksScreen> {
                           _buildFilterButton(
                             'All Tasks',
                             PhosphorIcons.listChecks(PhosphorIconsStyle.bold),
-                            true,
-                            () {},
+                            !showCompleted,
+                            () => setState(() {
+                              showCompleted = false;
+                            }),
                           ),
                           const SizedBox(width: 8),
                           _buildFilterButton(
-                            'My Tasks',
-                            PhosphorIcons.user(PhosphorIconsStyle.bold),
-                            false,
-                            () {},
+                            'Completed',
+                            PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+                            showCompleted,
+                            () => setState(() {
+                              showCompleted = true;
+                            }),
                           ),
                         ],
                       ),
@@ -396,14 +387,28 @@ class _TasksScreenState extends State<TasksScreen> {
                         SizedBox(
                           width: 24,
                           child: Checkbox(
-                            value: checkedTasks.every((checked) => checked),
-                            onChanged: (value) {
-                              setState(() {
-                                checkedTasks = List.generate(
-                                    tasks.length, (_) => value ?? false);
-                              });
-                            },
-                            tristate: true,
+                            value: showCompleted
+                                ? completedTasks.isNotEmpty
+                                : checkedTasks.every((checked) => checked),
+                            onChanged: showCompleted
+                                ? null
+                                : (value) {
+                                    if (value == true) {
+                                      // Move all tasks to completed
+                                      setState(() {
+                                        for (var task in tasks) {
+                                          // Store original status
+                                          originalStatuses[tasks
+                                              .indexOf(task)] = task['status'];
+                                          task['status'] = 'done';
+                                          completedTasks.add(task);
+                                        }
+                                        tasks.clear();
+                                        checkedTasks.clear();
+                                      });
+                                    }
+                                  },
+                            tristate: !showCompleted,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -528,25 +533,40 @@ class _TasksScreenState extends State<TasksScreen> {
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.all(12),
-                      itemCount: tasks.length,
+                      itemCount:
+                          showCompleted ? completedTasks.length : tasks.length,
                       itemBuilder: (context, index) {
+                        final task = showCompleted
+                            ? completedTasks[index]
+                            : tasks[index];
                         return MouseRegion(
                           onEnter: (_) => setState(() => hoveredIndex = index),
                           onExit: (_) => setState(() => hoveredIndex = null),
                           child: TaskListItem(
-                            task: tasks[index],
-                            isChecked: checkedTasks[index],
-                            onCheckChanged: (value) {
+                            task: task,
+                            isChecked: task['status'] == 'done',
+                            onCheckChanged: showCompleted
+                                ? (_) {}
+                                : (value) =>
+                                    _handleCheckboxChange(index, value),
+                            onEdit: showCompleted
+                                ? () {}
+                                : () {
+                                    // Add Task Edit functionality
+                                  },
+                            onDelete: () {
                               setState(() {
-                                checkedTasks[index] = value ?? false;
+                                if (showCompleted) {
+                                  completedTasks.removeAt(index);
+                                } else {
+                                  tasks.removeAt(index);
+                                  checkedTasks.removeAt(index);
+                                }
                               });
                             },
-                            onEdit: () {
-                              // Add Task Edit functionality
-                            },
-                            onDelete: () {
-                              // Add Task Delete functionality
-                            },
+                            onRestore: showCompleted
+                                ? () => _restoreTask(index)
+                                : null,
                             isHovered: hoveredIndex == index,
                           ),
                         );
@@ -627,5 +647,97 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
     );
+  }
+
+  void _handleCheckboxChange(int index, bool? value) async {
+    if (value == true) {
+      // Show confirmation dialog
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                color: Colors.green.shade400,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text('Complete Task'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to mark "${tasks[index]['name']}" as complete?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green.shade400,
+              ),
+              child: const Text('Complete'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        setState(() {
+          // Store original status before changing to 'done'
+          originalStatuses[index] = tasks[index]['status'];
+          // Update task status to 'done'
+          tasks[index]['status'] = 'done';
+          // Move task to completed list
+          completedTasks.add(tasks[index]);
+          tasks.removeAt(index);
+          // Update checked tasks list length
+          checkedTasks.removeAt(index);
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Task marked as complete'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade400,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        });
+      }
+    }
+  }
+
+  void _restoreTask(int index) {
+    setState(() {
+      final task = completedTasks[index];
+      task['status'] = originalStatuses[index] ??
+          'to do'; // Use original status or default to 'to do'
+      tasks.add(task);
+      completedTasks.removeAt(index);
+      checkedTasks.add(false);
+      // Clean up the stored status
+      originalStatuses.remove(index);
+    });
   }
 }
