@@ -98,14 +98,36 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
 
     if (result != null && result is Project) {
-      setState(() {
-        projects[index] = result;
-      });
+      try {
+        // Create updated project with the same ID
+        final updatedProject = Project(
+          id: projects[index].id, // Keep the same ID
+          name: result.name,
+          description: result.description,
+          startDate: result.startDate,
+          dueDate: result.dueDate,
+          tasks: result.tasks,
+          completedTasks: result.completedTasks,
+          priority: result.priority,
+          status: result.status,
+          category: result.category,
+        );
 
-      _showSuccessMessage(
-        message: 'Project "${result.name}" has been updated successfully',
-        icon: PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
-      );
+        // Save to database
+        await _projectDatabaseService.updateProject(updatedProject);
+
+        // Update local state
+        setState(() {
+          projects[index] = updatedProject;
+        });
+
+        _showSuccessMessage(
+          message: 'Project "${result.name}" has been updated successfully',
+          icon: PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to update project: $e');
+      }
     }
   }
 
@@ -266,79 +288,45 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleCheckboxChange(int index, bool? value) async {
-    if (showArchived) return; // Don't handle checkbox changes in archived view
+    if (showArchived) return;
 
-    // Show confirmation dialog
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              PhosphorIcons.archive(PhosphorIconsStyle.fill),
-              color: AppColors.accent,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            const Text('Archive Project'),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to archive "${projects[index].name}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-            ),
-            child: const Text('Archive'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      setState(() {
-        // Store original status
+    if (value == true) {
+      try {
+        // Store original status before completing
         originalStatuses[index] = projects[index].status;
 
-        // Move to archived list
-        archivedProjects.add(projects[index]);
-        projects.removeAt(index);
-        checkedProjects.removeAt(index);
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.archive(PhosphorIconsStyle.fill),
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 8),
-                const Text('Project has been archived'),
-              ],
-            ),
-            backgroundColor: AppColors.accent,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        // Create completed project
+        final updatedProject = Project(
+          id: projects[index].id,
+          name: projects[index].name,
+          description: projects[index].description,
+          startDate: projects[index].startDate,
+          dueDate: projects[index].dueDate,
+          tasks: projects[index].tasks,
+          completedTasks: projects[index].tasks,
+          priority: projects[index].priority,
+          status: 'completed',
+          category: projects[index].category,
         );
-      });
+
+        // Save to database
+        await _projectDatabaseService.updateProject(updatedProject);
+
+        setState(() {
+          // Move to archived list
+          archivedProjects.add(updatedProject);
+          // Remove from active projects
+          projects.removeAt(index);
+          checkedProjects.removeAt(index);
+        });
+
+        _showSuccessMessage(
+          message: 'Project marked as complete',
+          icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to update project status: $e');
+      }
     }
   }
 
@@ -441,7 +429,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 2),
         content: Row(
           children: [
             Expanded(
@@ -588,6 +576,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               showAllProjects = true;
                               showArchived = false;
                             }),
+                            tooltip: 'Show all active projects',
                           ),
                           const SizedBox(width: 8),
                           _buildFilterButton(
@@ -598,6 +587,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               showArchived = true;
                               showAllProjects = false;
                             }),
+                            tooltip: 'Show completed projects',
                           ),
                         ],
                       ),
@@ -1012,11 +1002,29 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       children: [
                         SizedBox(
                           width: 24,
-                          child: Checkbox(
-                            value: checkedProjects.every((checked) => checked),
-                            onChanged: _toggleAllProjects,
-                            tristate: true,
-                          ),
+                          child: showArchived
+                              ? Tooltip(
+                                  message: 'Restore all archived projects',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      PhosphorIcons.arrowCounterClockwise(
+                                          PhosphorIconsStyle.bold),
+                                      size: 18,
+                                      color: AppColors.accent,
+                                    ),
+                                    onPressed: _handleRestoreAll,
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                )
+                              : Tooltip(
+                                  message: 'Select all projects',
+                                  child: Checkbox(
+                                    value: checkedProjects
+                                        .every((checked) => checked),
+                                    onChanged: _toggleAllProjects,
+                                    tristate: true,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -1260,7 +1268,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             .primary
                             .withOpacity(0.1),
                         border: Border(
-                          bottom:
+                          top:
                               BorderSide(color: Theme.of(context).dividerColor),
                         ),
                       ),
@@ -1271,22 +1279,24 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const Spacer(),
-                          TextButton.icon(
-                            onPressed: () {
-                              // Bulk archive
-                            },
-                            icon: Icon(
-                                PhosphorIcons.archive(PhosphorIconsStyle.bold)),
-                            label: const Text('Archive Selected'),
+                          FilledButton.icon(
+                            onPressed: _handleCompleteSelected,
+                            icon: Icon(PhosphorIcons.checkCircle(
+                                PhosphorIconsStyle.bold)),
+                            label: const Text('Complete Selected'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.green.shade400,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          TextButton.icon(
-                            onPressed: () {
-                              // Bulk delete
-                            },
+                          FilledButton.icon(
+                            onPressed: _handleDeleteSelected,
                             icon: Icon(
                                 PhosphorIcons.trash(PhosphorIconsStyle.bold)),
                             label: const Text('Delete Selected'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.red.shade400,
+                            ),
                           ),
                         ],
                       ),
@@ -1301,30 +1311,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Widget _buildFilterButton(
-      String label, IconData icon, bool isActive, VoidCallback onPressed) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.accent.withOpacity(0.1)
-            : Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isActive ? AppColors.accent : Colors.transparent,
-          width: 1,
+      String label, IconData icon, bool isActive, VoidCallback onPressed,
+      {String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.accent.withOpacity(0.1)
+              : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? AppColors.accent : Colors.transparent,
+            width: 1,
+          ),
         ),
-      ),
-      child: TextButton.icon(
-        onPressed: onPressed,
-        icon: Icon(
-          icon,
-          size: 18,
-          color: isActive ? AppColors.accent : null,
-        ),
-        label: Text(
-          label,
-          style: TextStyle(
+        child: TextButton.icon(
+          onPressed: onPressed,
+          icon: Icon(
+            icon,
+            size: 18,
             color: isActive ? AppColors.accent : null,
+          ),
+          label: Text(
+            label,
+            style: TextStyle(
+              color: isActive ? AppColors.accent : null,
+            ),
           ),
         ),
       ),
@@ -1340,25 +1354,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       message: icon == PhosphorIcons.list(PhosphorIconsStyle.bold)
           ? 'List View'
           : 'Grid View',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color:
-              isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          width: 40,
+          height: 40,
+          color: isActive ? AppColors.accent.withOpacity(0.1) : null,
+          child: Icon(
             icon,
-            size: 18,
+            size: 16,
             color: isActive ? AppColors.accent : null,
           ),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-          tooltip: icon == PhosphorIcons.list(PhosphorIconsStyle.bold)
-              ? 'List View'
-              : 'Grid View',
         ),
       ),
     );
@@ -1547,7 +1553,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     if (picked != null) {
       setState(() {
         _selectedDateRange = picked;
-        // Update your project filtering logic here
         _filterProjects();
       });
     }
@@ -1871,5 +1876,223 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ],
       ),
     );
+  }
+
+  void _handleRestoreAll() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore All Projects'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore all ${archivedProjects.length} archived projects?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Restore each project with its original status
+        for (int i = archivedProjects.length - 1; i >= 0; i--) {
+          final restoredProject = Project(
+            id: archivedProjects[i].id,
+            name: archivedProjects[i].name,
+            description: archivedProjects[i].description,
+            startDate: archivedProjects[i].startDate,
+            dueDate: archivedProjects[i].dueDate,
+            tasks: archivedProjects[i].tasks,
+            completedTasks: archivedProjects[i].completedTasks,
+            priority: archivedProjects[i].priority,
+            status: originalStatuses[i] ?? 'in progress',
+            category: archivedProjects[i].category,
+          );
+
+          // Save to database
+          await _projectDatabaseService.updateProject(restoredProject);
+
+          // Update local state
+          setState(() {
+            projects.add(restoredProject);
+            archivedProjects.removeAt(i);
+          });
+        }
+
+        // Reset checked projects
+        setState(() {
+          checkedProjects = List.generate(projects.length, (_) => false);
+          originalStatuses.clear();
+        });
+
+        _showSuccessMessage(
+          message: 'All projects have been restored',
+          icon: PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to restore projects: $e');
+      }
+    }
+  }
+
+  void _handleCompleteSelected() async {
+    final selectedCount = checkedProjects.where((c) => c).length;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+              color: Colors.green.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Complete Projects'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to mark $selectedCount projects as completed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.shade400,
+            ),
+            child: const Text('Complete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Update each selected project
+        for (int i = projects.length - 1; i >= 0; i--) {
+          if (checkedProjects[i]) {
+            final updatedProject = Project(
+              id: projects[i].id,
+              name: projects[i].name,
+              description: projects[i].description,
+              startDate: projects[i].startDate,
+              dueDate: projects[i].dueDate,
+              tasks: projects[i].tasks,
+              completedTasks: projects[i].tasks,
+              priority: projects[i].priority,
+              status: 'completed',
+              category: projects[i].category,
+            );
+
+            // Save to database
+            await _projectDatabaseService.updateProject(updatedProject);
+
+            // Move to archived list
+            archivedProjects.add(updatedProject);
+            projects.removeAt(i);
+            checkedProjects.removeAt(i);
+          }
+        }
+
+        _showSuccessMessage(
+          message: 'Selected projects marked as complete',
+          icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to complete projects: $e');
+      }
+    }
+  }
+
+  void _handleDeleteSelected() async {
+    final selectedCount = checkedProjects.where((c) => c).length;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Delete Projects'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete $selectedCount projects? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Delete selected projects from database and local state
+        for (int i = projects.length - 1; i >= 0; i--) {
+          if (checkedProjects[i]) {
+            if (projects[i].id != null) {
+              await _projectDatabaseService.deleteProject(projects[i].id!);
+            }
+            projects.removeAt(i);
+            checkedProjects.removeAt(i);
+          }
+        }
+
+        // Reload projects to ensure sync with database
+        await _loadProjects();
+
+        _showSuccessMessage(
+          message: 'Selected projects have been deleted',
+          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to delete projects: $e');
+      }
+    }
   }
 }
