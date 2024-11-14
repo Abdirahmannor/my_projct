@@ -32,7 +32,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Complete Math Assignment',
       'description': 'Chapter 5 exercises on calculus',
       'project': 'Mathematics',
-      'dueDate': '2024-03-20',
+      'dueDate': '2024-03-20T14:30:00',
       'priority': 'high',
       'status': 'in progress',
     },
@@ -40,7 +40,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Study for Physics Test',
       'description': 'Review chapters 3 and 4',
       'project': 'Physics',
-      'dueDate': '2024-03-25',
+      'dueDate': '2024-03-25T09:00:00',
       'priority': 'high',
       'status': 'to do',
     },
@@ -48,7 +48,7 @@ class _TasksScreenState extends State<TasksScreen> {
       'name': 'Write Essay',
       'description': 'Research paper on renewable energy',
       'project': 'English',
-      'dueDate': '2024-03-15',
+      'dueDate': '2024-03-15T16:45:00',
       'priority': 'medium',
       'status': 'in progress',
     },
@@ -428,9 +428,77 @@ class _TasksScreenState extends State<TasksScreen> {
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text(
-                            'Project',
-                            style: Theme.of(context).textTheme.titleSmall,
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: PopupMenuButton<String>(
+                              offset: const Offset(0, 40),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Project',
+                                    style: TextStyle(
+                                      color: selectedProject != null
+                                          ? AppColors.accent
+                                          : null,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Icon(
+                                    PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                    size: 14,
+                                    color: selectedProject != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'all',
+                                  child: Text('All Projects'),
+                                ),
+                                const PopupMenuDivider(),
+                                ...{
+                                  // Get unique project names
+                                  ...tasks.map((t) => t['project']),
+                                  ...completedTasks.map((t) => t['project']),
+                                }.map(
+                                  (project) => PopupMenuItem(
+                                    value: project,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accent,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(project),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onSelected: (value) {
+                                setState(() {
+                                  selectedProject =
+                                      value == 'all' ? null : value;
+                                });
+                              },
+                            ),
                           ),
                         ),
                         Expanded(
@@ -544,12 +612,13 @@ class _TasksScreenState extends State<TasksScreen> {
                               mainAxisSpacing: 16,
                             ),
                             itemCount: showCompleted
-                                ? completedTasks.length
-                                : tasks.length,
+                                ? completedTasks.where(_filterTask).length
+                                : tasks.where(_filterTask).length,
                             itemBuilder: (context, index) {
-                              final task = showCompleted
-                                  ? completedTasks[index]
-                                  : tasks[index];
+                              final filteredTasks = showCompleted
+                                  ? completedTasks.where(_filterTask).toList()
+                                  : tasks.where(_filterTask).toList();
+                              final task = filteredTasks[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
@@ -580,12 +649,13 @@ class _TasksScreenState extends State<TasksScreen> {
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: showCompleted
-                                ? completedTasks.length
-                                : tasks.length,
+                                ? completedTasks.where(_filterTask).length
+                                : tasks.where(_filterTask).length,
                             itemBuilder: (context, index) {
-                              final task = showCompleted
-                                  ? completedTasks[index]
-                                  : tasks[index];
+                              final filteredTasks = showCompleted
+                                  ? completedTasks.where(_filterTask).toList()
+                                  : tasks.where(_filterTask).toList();
+                              final task = filteredTasks[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
@@ -1084,5 +1154,26 @@ class _TasksScreenState extends State<TasksScreen> {
         );
       });
     }
+  }
+
+  bool _filterTask(Map<String, dynamic> task) {
+    if (searchQuery.isNotEmpty) {
+      final String taskName = task['name'].toLowerCase();
+      if (!taskName.contains(searchQuery.toLowerCase())) return false;
+    }
+
+    if (selectedPriority != null && selectedPriority != 'all') {
+      if (task['priority'] != selectedPriority) return false;
+    }
+
+    if (selectedStatus != null && selectedStatus != 'all') {
+      if (task['status'] != selectedStatus) return false;
+    }
+
+    if (selectedProject != null && selectedProject != 'all') {
+      if (task['project'] != selectedProject) return false;
+    }
+
+    return true;
   }
 }

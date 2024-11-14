@@ -151,32 +151,79 @@ class TaskGridItem extends StatelessWidget {
                 // Project Badge
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.accent.withOpacity(0.1),
+                    color: AppColors.accent.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.accent.withOpacity(0.1),
+                    ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        PhosphorIcons.folder(PhosphorIconsStyle.fill),
-                        size: 14,
-                        color: AppColors.accent,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          task['project'],
-                          style: TextStyle(
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            PhosphorIcons.folder(PhosphorIconsStyle.fill),
+                            size: 16,
                             color: AppColors.accent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              task['project'],
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Project', // Or project category
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context).hintColor,
+                                    fontSize: 11,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isHovered)
+                        Tooltip(
+                          message: 'Go to project',
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(
+                                PhosphorIcons.arrowSquareOut(
+                                    PhosphorIconsStyle.bold),
+                                size: 14,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -352,6 +399,12 @@ class TaskGridItem extends StatelessWidget {
             ? Colors.orange.shade400
             : Theme.of(context).hintColor;
 
+    // Format time
+    final String timeString = _formatTime(dateTime);
+    final bool isToday = dateTime.year == now.year &&
+        dateTime.month == now.month &&
+        dateTime.day == now.day;
+
     return Row(
       children: [
         Container(
@@ -371,9 +424,50 @@ class TaskGridItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                date,
-                style: Theme.of(context).textTheme.bodyMedium,
+              Row(
+                children: [
+                  Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (isToday ? Colors.green.shade400 : dateColor)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: (isToday ? Colors.green.shade400 : dateColor)
+                            .withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          PhosphorIcons.clock(PhosphorIconsStyle.fill),
+                          size: 12,
+                          color: isToday ? Colors.green.shade400 : dateColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          timeString,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color:
+                                    isToday ? Colors.green.shade400 : dateColor,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 11,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 2),
               Text(
@@ -392,6 +486,18 @@ class TaskGridItem extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final hour12 = hour > 12
+        ? hour - 12
+        : hour == 0
+            ? 12
+            : hour;
+    return '$hour12:$minute $period';
   }
 
   IconData _getPriorityIcon(String priority) {
