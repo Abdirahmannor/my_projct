@@ -10,6 +10,7 @@ class ProjectGridItem extends StatelessWidget {
   final Function(bool?) onCheckChanged;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onRestore;
 
   const ProjectGridItem({
     super.key,
@@ -19,6 +20,7 @@ class ProjectGridItem extends StatelessWidget {
     required this.onCheckChanged,
     required this.onEdit,
     required this.onDelete,
+    this.onRestore,
   });
 
   @override
@@ -57,7 +59,7 @@ class ProjectGridItem extends StatelessWidget {
                       width: 24,
                       height: 24,
                       child: Checkbox(
-                        value: isChecked,
+                        value: onRestore != null ? true : isChecked,
                         onChanged: onCheckChanged,
                       ),
                     ),
@@ -67,24 +69,37 @@ class ProjectGridItem extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: onEdit,
-                      icon: Icon(
-                        PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Theme.of(context).hintColor,
+                    if (onRestore != null)
+                      IconButton(
+                        onPressed: onRestore,
+                        icon: Icon(
+                          PhosphorIcons.arrowCounterClockwise(
+                              PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: AppColors.accent,
+                        ),
+                        tooltip: 'Restore',
+                      )
+                    else ...[
+                      IconButton(
+                        onPressed: onEdit,
+                        icon: Icon(
+                          PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Theme.of(context).hintColor,
+                        ),
+                        tooltip: 'Edit',
                       ),
-                      tooltip: 'Edit',
-                    ),
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Icon(
-                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Colors.red,
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Delete',
                       ),
-                      tooltip: 'Delete',
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -101,6 +116,9 @@ class ProjectGridItem extends StatelessWidget {
                   project['name'],
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        decoration: onRestore != null
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
                       ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -110,6 +128,9 @@ class ProjectGridItem extends StatelessWidget {
                   project['description'],
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).hintColor,
+                        decoration: onRestore != null
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
                       ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

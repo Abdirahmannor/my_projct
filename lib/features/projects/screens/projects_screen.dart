@@ -37,9 +37,61 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool _isStatisticsExpanded = true;
   DateTimeRange? _selectedDateRange;
   bool _showChart = false;
+  List<Map<String, dynamic>> archivedProjects = [];
 
   // Sample projects data
-  List<Map<String, dynamic>> projects = [];
+  List<Map<String, dynamic>> projects = [
+    {
+      'name': 'Mathematics Research Project',
+      'description': 'Advanced calculus and linear algebra research paper',
+      'startDate': '15 Mar 2024',
+      'dueDate': '30 Apr 2024',
+      'completedTasks': 3,
+      'tasks': 8,
+      'priority': 'high',
+      'status': 'in progress',
+    },
+    {
+      'name': 'Physics Lab Experiments',
+      'description': 'Series of mechanics and thermodynamics experiments',
+      'startDate': '1 Mar 2024',
+      'dueDate': '15 May 2024',
+      'completedTasks': 2,
+      'tasks': 6,
+      'priority': 'medium',
+      'status': 'in progress',
+    },
+    {
+      'name': 'Literature Review',
+      'description': 'Analysis of 20th century American literature',
+      'startDate': '10 Mar 2024',
+      'dueDate': '20 Mar 2024',
+      'completedTasks': 0,
+      'tasks': 4,
+      'priority': 'high',
+      'status': 'not started',
+    },
+    {
+      'name': 'Biology Research Paper',
+      'description': 'Study on local ecosystem biodiversity',
+      'startDate': '1 Feb 2024',
+      'dueDate': '1 Apr 2024',
+      'completedTasks': 5,
+      'tasks': 5,
+      'priority': 'medium',
+      'status': 'completed',
+    },
+    {
+      'name': 'Chemistry Lab Report',
+      'description': 'Documentation of organic chemistry experiments',
+      'startDate': '5 Mar 2024',
+      'dueDate': '25 Mar 2024',
+      'completedTasks': 2,
+      'tasks': 7,
+      'priority': 'low',
+      'status': 'on hold',
+    },
+  ];
 
   // Add this map to store original status
   final Map<int, String> originalStatuses = {};
@@ -148,7 +200,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   bool _filterProject(int index) {
-    final project = projects[index];
+    final project = showArchived ? archivedProjects[index] : projects[index];
 
     // Date range filter
     if (_selectedDateRange != null) {
@@ -174,10 +226,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       if (project['status'] != selectedStatus) return false;
     }
 
-    if (!showAllProjects && !showArchived) return false;
-    if (showArchived && !checkedProjects[index]) return false;
+    // Show projects based on the current view
+    if (showArchived) {
+      return true; // Show all archived projects
+    } else if (showAllProjects) {
+      return true; // Show all active projects
+    }
 
-    return true;
+    return false;
   }
 
   void _toggleAllProjects(bool? value) {
@@ -200,23 +256,158 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     });
   }
 
-  void _handleCheckboxChange(int index, bool? value) {
-    setState(() {
-      checkedProjects[index] = value ?? false;
-      if (value == true) {
-        // Store original status and set to completed
+  void _handleCheckboxChange(int index, bool? value) async {
+    if (showArchived) return; // Don't handle checkbox changes in archived view
+
+    // Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.archive(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Archive Project'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to archive "${projects[index]['name']}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        // Store original status
         originalStatuses[index] = projects[index]['status'];
-        projects[index]['status'] = 'completed';
-        projects[index]['completedTasks'] = projects[index]['tasks'];
-      } else {
-        // Restore original status
-        projects[index]['status'] = originalStatuses[index] ?? 'in progress';
-        // You might want to restore the original completedTasks count as well
-        // This is optional, depending on your requirements
-        projects[index]['completedTasks'] =
-            (projects[index]['tasks'] * 0.6).round(); // Example: restore to 60%
-      }
-    });
+
+        // Move to archived list
+        archivedProjects.add(projects[index]);
+        projects.removeAt(index);
+        checkedProjects.removeAt(index);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.archive(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                const Text('Project has been archived'),
+              ],
+            ),
+            backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
+  }
+
+  void _handleRestore(int index) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore Project'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore "${archivedProjects[index]['name']}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        // Restore original status if available
+        if (originalStatuses.containsKey(index)) {
+          archivedProjects[index]['status'] = originalStatuses[index]!;
+          originalStatuses.remove(index);
+        }
+
+        // Move back to projects list
+        projects.add(archivedProjects[index]);
+        archivedProjects.removeAt(index);
+        checkedProjects.add(false);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                const Text('Project has been restored'),
+              ],
+            ),
+            backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
   }
 
   void _showSuccessMessage({
@@ -962,22 +1153,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                               crossAxisSpacing: 8,
                               mainAxisSpacing: 8,
                             ),
-                            itemCount: projects.length,
+                            itemCount: showArchived
+                                ? archivedProjects.length
+                                : projects.length,
                             itemBuilder: (context, index) {
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
+                              final project = showArchived
+                                  ? archivedProjects[index]
+                                  : projects[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
                                 onExit: (_) =>
                                     setState(() => hoveredIndex = null),
                                 child: ProjectGridItem(
-                                  project: projects[index],
+                                  project: project,
                                   isChecked: checkedProjects[index],
                                   onCheckChanged: (value) =>
                                       _handleCheckboxChange(index, value),
-                                  onEdit: () => _handleEdit(index),
-                                  onDelete: () => _handleDelete(index),
+                                  onEdit: showArchived
+                                      ? () {}
+                                      : () => _handleEdit(index),
+                                  onDelete: showArchived
+                                      ? () {}
+                                      : () => _handleDelete(index),
+                                  onRestore: showArchived
+                                      ? () => _handleRestore(index)
+                                      : null,
                                   isHovered: hoveredIndex == index,
                                 ),
                               );
@@ -985,22 +1188,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(12),
-                            itemCount: projects.length,
+                            itemCount: showArchived
+                                ? archivedProjects.length
+                                : projects.length,
                             itemBuilder: (context, index) {
                               if (!_filterProject(index))
                                 return const SizedBox.shrink();
+                              final project = showArchived
+                                  ? archivedProjects[index]
+                                  : projects[index];
                               return MouseRegion(
                                 onEnter: (_) =>
                                     setState(() => hoveredIndex = index),
                                 onExit: (_) =>
                                     setState(() => hoveredIndex = null),
                                 child: ProjectListItem(
-                                  project: projects[index],
+                                  project: project,
                                   isChecked: checkedProjects[index],
                                   onCheckChanged: (value) =>
                                       _handleCheckboxChange(index, value),
-                                  onEdit: () => _handleEdit(index),
-                                  onDelete: () => _handleDelete(index),
+                                  onEdit: showArchived
+                                      ? () {}
+                                      : () => _handleEdit(index),
+                                  onDelete: showArchived
+                                      ? () {}
+                                      : () => _handleDelete(index),
+                                  onRestore: showArchived
+                                      ? () => _handleRestore(index)
+                                      : null,
                                   isHovered: hoveredIndex == index,
                                 ),
                               );
@@ -1122,6 +1337,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   Widget _buildTimeframeDropdown() {
     return PopupMenuButton<String>(
+      initialValue: _selectedTimeframe,
       offset: const Offset(0, 40),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1152,7 +1368,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
       ),
-      itemBuilder: (context) => _timeframes.map((timeframe) {
+      itemBuilder: (BuildContext context) => _timeframes.map((timeframe) {
         return PopupMenuItem<String>(
           value: timeframe,
           child: Row(
@@ -1174,7 +1390,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       onSelected: (String value) {
         setState(() {
           _selectedTimeframe = value;
-          // Here you would typically update your statistics based on the selected timeframe
           _updateStatistics(value);
         });
       },
