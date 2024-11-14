@@ -400,19 +400,15 @@ class TaskGridItem extends StatelessWidget {
             ? Colors.orange.shade400
             : Theme.of(context).hintColor;
 
-    // Format time
     final String timeString = _formatTime(dateTime);
-    final bool isToday = dateTime.year == now.year &&
-        dateTime.month == now.month &&
-        dateTime.day == now.day;
 
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: dateColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
@@ -425,62 +421,56 @@ class TaskGridItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                _formatDateCompact(dateTime),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
               Row(
                 children: [
-                  Text(
-                    date,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(width: 8),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
-                      color: (isToday ? Colors.green.shade400 : dateColor)
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: (isToday ? Colors.green.shade400 : dateColor)
-                            .withOpacity(0.2),
-                      ),
+                      color: dateColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           PhosphorIcons.clock(PhosphorIconsStyle.fill),
-                          size: 12,
-                          color: isToday ? Colors.green.shade400 : dateColor,
+                          size: 10,
+                          color: dateColor,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Text(
                           timeString,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color:
-                                    isToday ? Colors.green.shade400 : dateColor,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 11,
-                              ),
+                          style: TextStyle(
+                            color: dateColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isOverdue
+                        ? '${daysRemaining.abs()}d overdue'
+                        : daysRemaining == 0
+                            ? 'Due today'
+                            : '${daysRemaining}d remaining',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: dateColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isOverdue
-                    ? '${daysRemaining.abs()} days overdue'
-                    : daysRemaining == 0
-                        ? 'Due today'
-                        : '$daysRemaining days remaining',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: dateColor,
-                      fontWeight: FontWeight.w500,
-                    ),
               ),
             ],
           ),
@@ -492,13 +482,7 @@ class TaskGridItem extends StatelessWidget {
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final hour12 = hour > 12
-        ? hour - 12
-        : hour == 0
-            ? 12
-            : hour;
-    return '$hour12:$minute $period';
+    return '$hour:$minute'; // Simple 24-hour format
   }
 
   IconData _getPriorityIcon(String priority) {
@@ -583,5 +567,23 @@ class TaskGridItem extends StatelessWidget {
     };
 
     return monthMap[month.toLowerCase()] ?? 1;
+  }
+
+  String _formatDateCompact(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]}';
   }
 }

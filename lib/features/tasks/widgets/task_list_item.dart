@@ -175,68 +175,86 @@ class TaskListItem extends StatelessWidget {
 
             // Priority Badge
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        task['priority']?.toString() ?? '',
-                        style: TextStyle(
-                          fontSize: 11,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 18),
+                    child: Text(
+                      task['priority']?.toString().toUpperCase() ?? '',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.priorityColors[task['priority']] ??
+                            Colors.grey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 18),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: (AppColors.priorityColors[task['priority']] ??
+                                Colors.grey)
+                            .withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          _getPriorityIcon(task['priority']),
+                          size: 18,
                           color: AppColors.priorityColors[task['priority']] ??
                               Colors.grey,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        width: 28,
-                        height: 28,
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color:
-                                (AppColors.priorityColors[task['priority']] ??
-                                        Colors.grey)
-                                    .withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            _getPriorityIcon(task['priority']),
-                            size: 14,
-                            color:
-                                (AppColors.priorityColors[task['priority']] ??
-                                        Colors.grey)
-                                    .withOpacity(0.8),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(width: 24),
                 ],
               ),
             ),
 
+            // Add spacing between priority and status
+            const SizedBox(width: 16),
+
             // Status Badge
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatusBadge(context, task['status']),
+                  Text(
+                    task['status']?.toString().toUpperCase() ?? '',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _getStatusColor(task['status']),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(task['status']).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        _getStatusIcon(task['status']),
+                        size: 18,
+                        color: _getStatusColor(task['status']),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
 
             // Actions
             SizedBox(
-              width: 50,
+              width: 80,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -246,13 +264,13 @@ class TaskListItem extends StatelessWidget {
                       icon: Icon(
                         PhosphorIcons.arrowCounterClockwise(
                             PhosphorIconsStyle.bold),
-                        size: 14,
+                        size: 18,
                         color: AppColors.accent,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
-                        minWidth: 24,
-                        minHeight: 24,
+                        minWidth: 28,
+                        minHeight: 28,
                       ),
                       visualDensity: VisualDensity.compact,
                       tooltip: 'Restore',
@@ -262,28 +280,29 @@ class TaskListItem extends StatelessWidget {
                       onPressed: onEdit,
                       icon: Icon(
                         PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                        size: 14,
+                        size: 18,
                         color: Theme.of(context).hintColor,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
-                        minWidth: 24,
-                        minHeight: 24,
+                        minWidth: 28,
+                        minHeight: 28,
                       ),
                       visualDensity: VisualDensity.compact,
                       tooltip: 'Edit',
                     ),
+                    const SizedBox(width: 12),
                     IconButton(
                       onPressed: onDelete,
                       icon: Icon(
                         PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 14,
+                        size: 18,
                         color: Colors.red,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
-                        minWidth: 24,
-                        minHeight: 24,
+                        minWidth: 28,
+                        minHeight: 28,
                       ),
                       visualDensity: VisualDensity.compact,
                       tooltip: 'Delete',
@@ -387,69 +406,77 @@ class TaskListItem extends StatelessWidget {
             ? Colors.orange.shade400
             : Theme.of(context).hintColor;
 
-    // Format time more compactly
     final String timeString = _formatTime(dateTime);
 
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: dateColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
-            size: 14,
+            size: 16,
             color: dateColor,
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      _formatDateCompact(dateTime),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                          ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: dateColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      timeString,
-                      style: TextStyle(
-                        color: dateColor,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
               Text(
-                isOverdue
-                    ? '${daysRemaining.abs()}d'
-                    : daysRemaining == 0
-                        ? 'Today'
-                        : '${daysRemaining}d',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: dateColor,
-                      fontSize: 9,
+                _formatDateCompact(dateTime),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: dateColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          PhosphorIcons.clock(PhosphorIconsStyle.fill),
+                          size: 10,
+                          color: dateColor,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          timeString,
+                          style: TextStyle(
+                            color: dateColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isOverdue
+                        ? '${daysRemaining.abs()}d overdue'
+                        : daysRemaining == 0
+                            ? 'Due today'
+                            : '${daysRemaining}d remaining',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: dateColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -477,19 +504,11 @@ class TaskListItem extends StatelessWidget {
     return '${date.day} ${months[date.month - 1]}';
   }
 
-  // Update the _formatTime method to be more compact:
+  // Update the _formatTime method:
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
-    final hour12 = hour > 12
-        ? hour - 12
-        : hour == 0
-            ? 12
-            : hour;
-    // Even more compact format
-    return minute == '00'
-        ? '$hour12${hour >= 12 ? "p" : "a"}'
-        : '$hour12$minute${hour >= 12 ? "p" : "a"}';
+    return '$hour:$minute'; // Simple 24-hour format
   }
 
   IconData _getPriorityIcon(String priority) {
@@ -575,5 +594,27 @@ class TaskListItem extends StatelessWidget {
     };
 
     return monthMap[month.toLowerCase()] ?? 1;
+  }
+
+  double _getPriorityValue(String priority) {
+    final values = {
+      'critical': 1.0,
+      'high': 0.75,
+      'medium': 0.5,
+      'low': 0.25,
+    };
+    return values[priority] ?? 0.0;
+  }
+
+  Color _getStatusColor(String status) {
+    final colors = {
+      'to do': Colors.blue.shade400,
+      'in progress': Colors.orange.shade400,
+      'done': Colors.green.shade400,
+      'blocked': Colors.red.shade400,
+      'review': Colors.purple.shade400,
+      'on hold': Colors.grey.shade400,
+    };
+    return colors[status] ?? Colors.grey;
   }
 }
