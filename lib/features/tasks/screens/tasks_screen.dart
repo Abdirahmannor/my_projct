@@ -106,9 +106,8 @@ class _TasksScreenState extends State<TasksScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      // Add Task Button
                       Container(
-                        height: 40,
+                        height: 48,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -118,32 +117,51 @@ class _TasksScreenState extends State<TasksScreen> {
                                   AppColors.accent,
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.accent.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              // Add Task Dialog will be implemented next
+                              // Add new task dialog
                             },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    PhosphorIcons.plus(PhosphorIconsStyle.bold),
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Add Task',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
+                                    child: Icon(
+                                      PhosphorIcons.plus(
+                                          PhosphorIconsStyle.bold),
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Add Task',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -153,68 +171,204 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Search and Filters
+                  const SizedBox(height: 24),
+                  // Filter bar
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Search
-                      Expanded(
-                        child: Container(
-                          height: 40,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Theme.of(context).dividerColor),
-                            borderRadius: BorderRadius.circular(8),
+                      // Left side filters
+                      Row(
+                        children: [
+                          _buildFilterButton(
+                            'All Tasks',
+                            PhosphorIcons.listChecks(PhosphorIconsStyle.bold),
+                            true,
+                            () {},
                           ),
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search tasks...',
-                              prefixIcon: Icon(
-                                PhosphorIcons.magnifyingGlass(
-                                    PhosphorIconsStyle.bold),
-                                size: 16,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                            ),
-                            onChanged: (value) =>
-                                setState(() => searchQuery = value),
+                          const SizedBox(width: 8),
+                          _buildFilterButton(
+                            'My Tasks',
+                            PhosphorIcons.user(PhosphorIconsStyle.bold),
+                            false,
+                            () {},
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      // View Toggle
-                      Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Theme.of(context).dividerColor),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildViewToggleButton(
-                              icon: PhosphorIcons.list(PhosphorIconsStyle.bold),
-                              isActive: isListView,
-                              onPressed: () =>
-                                  setState(() => isListView = true),
+
+                      // Right side controls
+                      Row(
+                        children: [
+                          // Search
+                          Container(
+                            width: 240,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              color: Theme.of(context).cardColor,
                             ),
-                            Container(
-                              width: 1,
-                              height: 20,
-                              color: Theme.of(context).dividerColor,
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12),
+                                  child: Icon(
+                                    PhosphorIcons.magnifyingGlass(
+                                        PhosphorIconsStyle.bold),
+                                    size: 18,
+                                    color: Theme.of(context).hintColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: searchController,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        searchQuery = value;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: 'Search tasks...',
+                                      hintStyle: TextStyle(
+                                        color: Theme.of(context).hintColor,
+                                      ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                                if (searchQuery.isNotEmpty)
+                                  IconButton(
+                                    icon: Icon(
+                                      PhosphorIcons.x(PhosphorIconsStyle.bold),
+                                      size: 18,
+                                      color: Theme.of(context).hintColor,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchQuery = '';
+                                        searchController.clear();
+                                      });
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                              ],
                             ),
-                            _buildViewToggleButton(
-                              icon: PhosphorIcons.squaresFour(
-                                  PhosphorIconsStyle.bold),
-                              isActive: !isListView,
-                              onPressed: () =>
-                                  setState(() => isListView = false),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Priority Filter
+                          Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ],
-                        ),
+                            child: PopupMenuButton<String>(
+                              offset: const Offset(0, 40),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    PhosphorIcons.funnel(
+                                        PhosphorIconsStyle.bold),
+                                    size: 18,
+                                    color: selectedPriority != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    selectedPriority?.capitalize() ??
+                                        'All Priority',
+                                    style: TextStyle(
+                                      color: selectedPriority != null
+                                          ? AppColors.accent
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                    size: 18,
+                                    color: selectedPriority != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'all',
+                                  child: Text('All Priority'),
+                                ),
+                                const PopupMenuDivider(),
+                                ...['critical', 'high', 'medium', 'low'].map(
+                                  (priority) => PopupMenuItem(
+                                    value: priority,
+                                    child: Text(priority.capitalize()),
+                                  ),
+                                ),
+                              ],
+                              onSelected: (value) {
+                                setState(() {
+                                  selectedPriority =
+                                      value == 'all' ? null : value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // View Toggle
+                          Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildViewToggleButton(
+                                  icon: PhosphorIcons.list(
+                                      PhosphorIconsStyle.bold),
+                                  isActive: isListView,
+                                  onPressed: () =>
+                                      setState(() => isListView = true),
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 20,
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                                _buildViewToggleButton(
+                                  icon: PhosphorIcons.squaresFour(
+                                      PhosphorIconsStyle.bold),
+                                  isActive: !isListView,
+                                  onPressed: () =>
+                                      setState(() => isListView = false),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -438,5 +592,40 @@ class _TasksScreenState extends State<TasksScreen> {
     setState(() {
       // Filter tasks based on search, status, priority, etc.
     });
+  }
+
+  Widget _buildFilterButton(
+    String label,
+    IconData icon,
+    bool isActive,
+    VoidCallback onPressed,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppColors.accent.withOpacity(0.1)
+            : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive ? AppColors.accent : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isActive ? AppColors.accent : null,
+        ),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? AppColors.accent : null,
+          ),
+        ),
+      ),
+    );
   }
 }
