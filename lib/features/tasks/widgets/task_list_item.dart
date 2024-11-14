@@ -434,49 +434,45 @@ class TaskListItem extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
               ),
-              Row(
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: dateColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(3),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: dateColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      PhosphorIcons.clock(PhosphorIconsStyle.fill),
+                      size: 10,
+                      color: dateColor,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          PhosphorIcons.clock(PhosphorIconsStyle.fill),
-                          size: 10,
-                          color: dateColor,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          timeString,
-                          style: TextStyle(
-                            color: dateColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 3),
+                    Text(
+                      timeString,
+                      style: TextStyle(
+                        color: dateColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isOverdue
-                        ? '${daysRemaining.abs()}d overdue'
-                        : daysRemaining == 0
-                            ? 'Due today'
-                            : '${daysRemaining}d remaining',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: dateColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                isOverdue
+                    ? '${daysRemaining.abs()}d overdue'
+                    : daysRemaining == 0
+                        ? 'Due today'
+                        : '${daysRemaining}d remaining',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: dateColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ],
           ),
