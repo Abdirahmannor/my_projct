@@ -225,6 +225,34 @@ class _TasksScreenState extends State<TasksScreen> {
                       // Right side controls
                       Row(
                         children: [
+                          if (hasActiveFilters) ...[
+                            Container(
+                              height: 40,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.red.shade300,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: TextButton.icon(
+                                onPressed: _clearAllFilters,
+                                icon: Icon(
+                                  PhosphorIcons.x(PhosphorIconsStyle.bold),
+                                  size: 18,
+                                  color: Colors.red.shade400,
+                                ),
+                                label: Text(
+                                  'Clear Filters',
+                                  style: TextStyle(
+                                    color: Colors.red.shade400,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           // Search
                           Container(
                             width: 240,
@@ -1209,5 +1237,43 @@ class _TasksScreenState extends State<TasksScreen> {
     }
 
     return true;
+  }
+
+  bool get hasActiveFilters =>
+      searchQuery.isNotEmpty ||
+      selectedPriority != null ||
+      selectedStatus != null ||
+      selectedProject != null;
+
+  void _clearAllFilters() {
+    setState(() {
+      searchQuery = '';
+      searchController.clear();
+      selectedPriority = null;
+      selectedStatus = null;
+      selectedProject = null;
+    });
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              PhosphorIcons.check(PhosphorIconsStyle.fill),
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            const Text('All filters have been cleared'),
+          ],
+        ),
+        backgroundColor: Colors.green.shade400,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 }
