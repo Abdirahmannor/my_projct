@@ -1,4 +1,6 @@
-import '../widgets/task_list_item.dart';
+import 'package:school_task_manager/features/tasks/widgets/task_list_item.dart';
+
+import '../widgets/task_grid_item.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
@@ -371,7 +373,7 @@ class _TasksScreenState extends State<TasksScreen> {
           // Content section
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(24),
+              margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
@@ -529,49 +531,88 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
                   const Divider(height: 1),
-                  // Task list will be implemented next
+                  // Task list/grid
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount:
-                          showCompleted ? completedTasks.length : tasks.length,
-                      itemBuilder: (context, index) {
-                        final task = showCompleted
-                            ? completedTasks[index]
-                            : tasks[index];
-                        return MouseRegion(
-                          onEnter: (_) => setState(() => hoveredIndex = index),
-                          onExit: (_) => setState(() => hoveredIndex = null),
-                          child: TaskListItem(
-                            task: task,
-                            isChecked: task['status'] == 'done',
-                            onCheckChanged: showCompleted
-                                ? (_) {}
-                                : (value) =>
-                                    _handleCheckboxChange(index, value),
-                            onEdit: showCompleted
-                                ? () {}
-                                : () {
-                                    // Add Task Edit functionality
-                                  },
-                            onDelete: () {
-                              setState(() {
-                                if (showCompleted) {
-                                  completedTasks.removeAt(index);
-                                } else {
-                                  tasks.removeAt(index);
-                                  checkedTasks.removeAt(index);
-                                }
-                              });
+                    child: !isListView
+                        ? GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              childAspectRatio: 0.7,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            itemCount: showCompleted
+                                ? completedTasks.length
+                                : tasks.length,
+                            itemBuilder: (context, index) {
+                              final task = showCompleted
+                                  ? completedTasks[index]
+                                  : tasks[index];
+                              return MouseRegion(
+                                onEnter: (_) =>
+                                    setState(() => hoveredIndex = index),
+                                onExit: (_) =>
+                                    setState(() => hoveredIndex = null),
+                                child: TaskGridItem(
+                                  task: task,
+                                  isChecked: task['status'] == 'done',
+                                  onCheckChanged: showCompleted
+                                      ? (_) {}
+                                      : (value) =>
+                                          _handleCheckboxChange(index, value),
+                                  onEdit: showCompleted
+                                      ? () {}
+                                      : () {
+                                          // Add Task Edit functionality
+                                        },
+                                  onDelete: () =>
+                                      _handleDelete(index, showCompleted),
+                                  onRestore: showCompleted
+                                      ? () => _restoreTask(index)
+                                      : null,
+                                  isHovered: hoveredIndex == index,
+                                ),
+                              );
                             },
-                            onRestore: showCompleted
-                                ? () => _restoreTask(index)
-                                : null,
-                            isHovered: hoveredIndex == index,
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: showCompleted
+                                ? completedTasks.length
+                                : tasks.length,
+                            itemBuilder: (context, index) {
+                              final task = showCompleted
+                                  ? completedTasks[index]
+                                  : tasks[index];
+                              return MouseRegion(
+                                onEnter: (_) =>
+                                    setState(() => hoveredIndex = index),
+                                onExit: (_) =>
+                                    setState(() => hoveredIndex = null),
+                                child: TaskListItem(
+                                  task: task,
+                                  isChecked: task['status'] == 'done',
+                                  onCheckChanged: showCompleted
+                                      ? (_) {}
+                                      : (value) =>
+                                          _handleCheckboxChange(index, value),
+                                  onEdit: showCompleted
+                                      ? () {}
+                                      : () {
+                                          // Add Task Edit functionality
+                                        },
+                                  onDelete: () =>
+                                      _handleDelete(index, showCompleted),
+                                  onRestore: showCompleted
+                                      ? () => _restoreTask(index)
+                                      : null,
+                                  isHovered: hoveredIndex == index,
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
@@ -947,6 +988,93 @@ class _TasksScreenState extends State<TasksScreen> {
               ],
             ),
             backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      });
+    }
+  }
+
+  Future<void> _handleDelete(int index, bool isCompleted) async {
+    final task = isCompleted ? completedTasks[index] : tasks[index];
+
+    // Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Delete Task'),
+          ],
+        ),
+        content: SizedBox(
+          width: 300,
+          child: Text(
+            'Are you sure you want to delete "${task['name']}"? This action cannot be undone.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        actionsPadding: const EdgeInsets.all(12),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        if (isCompleted) {
+          completedTasks.removeAt(index);
+        } else {
+          tasks.removeAt(index);
+          checkedTasks.removeAt(index);
+        }
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.trash(PhosphorIconsStyle.fill),
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                Text('Task "${task['name']}" has been deleted'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade400,
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
