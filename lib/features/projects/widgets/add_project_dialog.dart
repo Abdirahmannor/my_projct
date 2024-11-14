@@ -41,6 +41,11 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
       _status = widget.project!['status'];
       _tasks = widget.project!['tasks'];
       _category = widget.project!['category'];
+    } else {
+      // Set default values for new projects
+      _startDate = DateTime.now();
+      _dueDate = DateTime.now();
+      _tasks = 1;
     }
   }
 
