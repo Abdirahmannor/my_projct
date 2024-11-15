@@ -652,7 +652,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Row(
       children: [
         _buildFilterButton(
-          'Active Projects',
+          'Active', // Shortened from 'Active Projects'
           PhosphorIcons.playCircle(PhosphorIconsStyle.bold),
           showAllProjects,
           () => setState(() {
@@ -662,14 +662,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             _hasVisitedActive = true;
             _newlyActiveCount = 0;
           }),
-          tooltip: 'Show active projects',
+          tooltip: 'Show active projects', // Keep full description in tooltip
           badge: !_hasVisitedActive && _newlyActiveCount > 0
               ? '$_newlyActiveCount'
               : null,
         ),
         const SizedBox(width: 8),
         _buildFilterButton(
-          'Archived',
+          'Archived', // Already short enough
           PhosphorIcons.archive(PhosphorIconsStyle.bold),
           showArchived,
           () => setState(() {
@@ -686,7 +686,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ),
         const SizedBox(width: 8),
         _buildFilterButton(
-          'Recycle Bin',
+          'Recycle Bin', // Keep this as is since it's a distinct term
           PhosphorIcons.trash(PhosphorIconsStyle.bold),
           showRecycleBin,
           () {
@@ -773,76 +773,108 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         if (showAllProjects && checkedProjects.contains(true)) ...[
           FilledButton.icon(
             onPressed: _handleCompleteSelected,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors
+                  .accent, // Changed from Colors.green.shade400 to AppColors.accent
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
+            ),
             icon: Icon(
               PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+              size: 16,
               color: Colors.white,
             ),
-            label: const Text('Complete Selected'),
+            label: const Text('Complete'),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           FilledButton.icon(
             onPressed: _handleDeleteSelected,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 0), // Even smaller padding
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
+            ),
             icon: Icon(
               PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              size: 16,
               color: Colors.white,
             ),
-            label: const Text('Delete Selected'),
+            label: const Text('Delete'), // Shortened text
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
         ],
         // Add Archived view buttons
         if (showArchived && archivedCheckedProjects.contains(true)) ...[
           FilledButton.icon(
             onPressed: _handleRestoreSelectedArchived,
-            icon: Icon(
-              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
-              color: Colors.white,
-            ),
-            label: const Text('Restore Selected'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
             ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _handleDeleteSelectedArchived,
             icon: Icon(
-              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
+              size: 16,
               color: Colors.white,
             ),
-            label: const Text('Delete Selected'),
+            label: const Text('Restore'), // Shortened text
+          ),
+          const SizedBox(width: 6),
+          FilledButton.icon(
+            onPressed: _handleDeleteSelectedArchived,
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade400,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
             ),
+            icon: Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              size: 16,
+              color: Colors.white,
+            ),
+            label: const Text('Delete'), // Shortened text
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
         ],
         // Add Recycle Bin view buttons
         if (showRecycleBin && recycleBinCheckedProjects.contains(true)) ...[
           FilledButton.icon(
             onPressed: _handleRestoreSelected,
-            icon: Icon(
-              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
-              color: Colors.white,
-            ),
-            label: const Text('Restore Selected'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
             ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _handlePermanentlyDeleteSelected,
             icon: Icon(
-              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
+              size: 16,
               color: Colors.white,
             ),
-            label: const Text('Delete Permanently'),
+            label: const Text('Restore'), // Shortened text
+          ),
+          const SizedBox(width: 6),
+          FilledButton.icon(
+            onPressed: _handlePermanentlyDeleteSelected,
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade400,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontSize: 13),
             ),
+            icon: Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              size: 16,
+              color: Colors.white,
+            ),
+            label: const Text('Delete'), // Shortened text
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
         ],
         // Rest of your existing controls (Search, Filters, etc.)
         if (hasActiveFilters) ...[
