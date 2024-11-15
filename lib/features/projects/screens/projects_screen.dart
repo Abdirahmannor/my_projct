@@ -1563,7 +1563,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleRestoreAll() async {
-    if (archivedProjects.isEmpty) {
+    // Check which list we're working with
+    final isRecycleBin = showRecycleBin;
+    final listToRestore = isRecycleBin ? deletedProjects : archivedProjects;
+
+    if (listToRestore.isEmpty) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -1575,11 +1579,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 size: 24,
               ),
               const SizedBox(width: 8),
-              const Text('No Archived Projects'),
+              Text('No ${isRecycleBin ? 'Deleted' : 'Archived'} Projects'),
             ],
           ),
-          content: const Text(
-            'There are no archived projects to restore.',
+          content: Text(
+            'There are no ${isRecycleBin ? 'deleted' : 'archived'} projects to restore.',
           ),
           actions: [
             FilledButton(
@@ -1613,7 +1617,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to restore all ${archivedProjects.length} archived projects?',
+          'Are you sure you want to restore all ${listToRestore.length} ${isRecycleBin ? 'deleted' : 'archived'} projects?',
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1641,16 +1645,47 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirmed == true) {
       try {
-        // Restore each project
-        for (int i = archivedProjects.length - 1; i >= 0; i--) {
-          if (archivedProjects[i].id != null) {
-            await _projectDatabaseService
-                .restoreFromRecycleBin(archivedProjects[i].id!);
+        if (isRecycleBin) {
+          // Restore all projects from recycle bin
+          for (final project in listToRestore) {
+            if (project.id != null) {
+              await _projectDatabaseService.restoreFromRecycleBin(project.id!);
+            }
           }
+          setState(() {
+            projects.addAll(listToRestore);
+            deletedProjects.clear();
+            checkedProjects = List.generate(projects.length, (_) => false);
+          });
+        } else {
+          // Restore all archived projects
+          for (final project in listToRestore) {
+            final restoredProject = Project(
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              startDate: project.startDate,
+              dueDate: project.dueDate,
+              tasks: project.tasks,
+              completedTasks: project.completedTasks,
+              priority: project.priority,
+              status: 'in progress',
+              category: project.category,
+            );
+            projects.add(restoredProject);
+          }
+          setState(() {
+            archivedProjects.clear();
+            checkedProjects = List.generate(projects.length, (_) => false);
+            originalStatuses.clear();
+          });
         }
 
-        // Reload projects
+        // Reload projects to ensure sync with database
         await _loadProjects();
+        if (isRecycleBin) {
+          await _loadDeletedProjects();
+        }
 
         _showSuccessMessage(
           message: 'All projects have been restored',
