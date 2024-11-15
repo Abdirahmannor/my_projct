@@ -70,6 +70,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool _hasVisitedRecycleBin = false;
   bool _isPriorityHeaderHovered = false;
   bool _isStatusHeaderHovered = false;
+  int _newlyArchivedCount = 0;
+  int _newlyActiveCount = 0;
+  bool _hasVisitedArchived = false;
+  bool _hasVisitedActive = false;
 
   @override
   void initState() {
@@ -438,24 +442,32 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           );
 
           await _projectDatabaseService.updateProject(restoredProject);
+
+          // Update the counter before updating the lists
+          setState(() {
+            _newlyActiveCount++;
+            _hasVisitedActive = false;
+          });
+
+          // Then update the lists
           setState(() {
             projects.add(restoredProject);
             archivedProjects.removeAt(index);
-
-            // Update both checkbox arrays
             checkedProjects = List.generate(projects.length, (_) => false);
             archivedCheckedProjects =
                 List.generate(archivedProjects.length, (_) => false);
-
-            // Reset select all states
             archivedSelectAll = false;
           });
         } else {
           // Restore from recycle bin to active projects
           if (project.id != null) {
             await _projectDatabaseService.restoreFromRecycleBin(project.id!);
-            await _loadProjects(); // Reload to get updated projects list
-            await _loadDeletedProjects(); // Reload deleted projects
+            setState(() {
+              _newlyActiveCount++;
+              _hasVisitedActive = false;
+            });
+            await _loadProjects();
+            await _loadDeletedProjects();
           }
         }
 
@@ -647,8 +659,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             showAllProjects = true;
             showArchived = false;
             showRecycleBin = false;
+            _hasVisitedActive = true;
+            _newlyActiveCount = 0;
           }),
           tooltip: 'Show active projects',
+          badge: !_hasVisitedActive && _newlyActiveCount > 0
+              ? '$_newlyActiveCount'
+              : null,
         ),
         const SizedBox(width: 8),
         _buildFilterButton(
@@ -659,8 +676,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             showArchived = true;
             showAllProjects = false;
             showRecycleBin = false;
+            _hasVisitedArchived = true;
+            _newlyArchivedCount = 0;
           }),
           tooltip: 'Show completed projects',
+          badge: !_hasVisitedArchived && _newlyArchivedCount > 0
+              ? '$_newlyArchivedCount'
+              : null,
         ),
         const SizedBox(width: 8),
         _buildFilterButton(
@@ -672,8 +694,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               showRecycleBin = true;
               showAllProjects = false;
               showArchived = false;
-              _newlyDeletedCount = 0;
               _hasVisitedRecycleBin = true;
+              _newlyDeletedCount = 0;
             });
           },
           tooltip: 'Show deleted projects',
@@ -1800,6 +1822,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           checkedProjects = List.generate(projects.length, (_) => false);
           archivedCheckedProjects =
               List.generate(archivedProjects.length, (_) => false);
+          _newlyArchivedCount += selectedProjects.length;
+          _hasVisitedArchived = false;
         });
 
         _showSuccessMessage(
