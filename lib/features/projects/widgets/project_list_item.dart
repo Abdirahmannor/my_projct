@@ -176,18 +176,31 @@ class ProjectListItem extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (onRestore != null)
-                    IconButton(
-                      onPressed: onRestore,
-                      icon: Icon(
-                        PhosphorIcons.arrowCounterClockwise(
-                            PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: AppColors.accent,
+                  if (onRestore != null) ...[
+                    Tooltip(
+                      message: 'Restore project back to active list',
+                      child: IconButton(
+                        onPressed: onRestore,
+                        icon: Icon(
+                          PhosphorIcons.arrowCounterClockwise(
+                              PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: AppColors.accent,
+                        ),
                       ),
-                      tooltip: 'Restore',
-                    )
-                  else ...[
+                    ),
+                    Tooltip(
+                      message: 'Permanently delete project',
+                      child: IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Colors.red.shade400,
+                        ),
+                      ),
+                    ),
+                  ] else ...[
                     IconButton(
                       onPressed: onEdit,
                       icon: Icon(

@@ -50,6 +50,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Timer? _cleanupTimer;
   List<bool> recycleBinCheckedProjects = [];
   bool recycleBinSelectAll = false;
+  int _newlyDeletedCount = 0;
+  bool _hasVisitedRecycleBin = false;
 
   @override
   void initState() {
@@ -226,6 +228,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           checkedProjects = List.generate(projects.length, (_) => false);
           recycleBinCheckedProjects =
               List.generate(deletedProjects.length, (_) => false);
+          _newlyDeletedCount++;
+          _hasVisitedRecycleBin = false;
         });
 
         _showSuccessMessage(
@@ -742,13 +746,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           'Recycle Bin',
           PhosphorIcons.trash(PhosphorIconsStyle.bold),
           showRecycleBin,
-          () => setState(() {
-            showRecycleBin = true;
-            showAllProjects = false;
-            showArchived = false;
-          }),
-          badge:
-              deletedProjects.isNotEmpty ? '${deletedProjects.length}' : null,
+          () {
+            setState(() {
+              showRecycleBin = true;
+              showAllProjects = false;
+              showArchived = false;
+              _newlyDeletedCount = 0;
+              _hasVisitedRecycleBin = true;
+            });
+          },
+          tooltip: 'Show deleted projects',
+          badge: !_hasVisitedRecycleBin && _newlyDeletedCount > 0
+              ? '$_newlyDeletedCount'
+              : null,
         ),
       ],
     );
@@ -1992,6 +2002,93 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
   }
 
+  void _handlePermanentDelete(int index) async {
+    final projectName = deletedProjects[index].name;
+    final projectId = deletedProjects[index].id;
+
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              PhosphorIcons.warning(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Permanently Delete Project',
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to permanently delete "$projectName"?',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This action cannot be undone.',
+              style: TextStyle(
+                color: Colors.red.shade400,
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text(
+              'Delete Permanently',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && projectId != null) {
+      try {
+        await _projectDatabaseService.permanentlyDelete(projectId);
+
+        setState(() {
+          deletedProjects.removeAt(index);
+          recycleBinCheckedProjects =
+              List.generate(deletedProjects.length, (_) => false);
+        });
+
+        _showSuccessMessage(
+          message: 'Project "$projectName" has been permanently deleted',
+          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to delete project: $e');
+      }
+    }
+  }
+
   Widget _buildProjectsList() {
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -2010,76 +2107,49 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                SizedBox(
-                  width: 24,
-                  child: showRecycleBin
-                      ? Tooltip(
-                          message: 'Select all projects',
-                          child: Checkbox(
-                            value: recycleBinSelectAll,
-                            onChanged: _handleRecycleBinSelectAll,
-                          ),
-                        )
-                      : showArchived
-                          ? Tooltip(
-                              message: 'Restore all archived projects',
-                              child: IconButton(
-                                icon: Icon(
-                                  PhosphorIcons.arrowCounterClockwise(
-                                      PhosphorIconsStyle.bold),
-                                  size: 18,
-                                  color: AppColors.accent,
-                                ),
-                                onPressed: _handleRestoreAll,
-                                padding: EdgeInsets.zero,
-                              ),
-                            )
-                          : Tooltip(
-                              message: 'Select all projects',
-                              child: Checkbox(
-                                value:
-                                    checkedProjects.every((checked) => checked),
-                                onChanged: _toggleAllProjects,
-                                tristate: true,
-                              ),
-                            ),
-                ),
+                // Checkbox or restore all button
+                if (showRecycleBin)
+                  SizedBox(
+                    width: 24,
+                    child: Checkbox(
+                      value: recycleBinSelectAll,
+                      onChanged: (value) {
+                        setState(() {
+                          recycleBinSelectAll = value ?? false;
+                          recycleBinCheckedProjects = List.generate(
+                            deletedProjects.length,
+                            (_) => value ?? false,
+                          );
+                        });
+                      },
+                    ),
+                  ),
                 const Spacer(),
                 // Show action buttons only when items are selected in recycle bin
                 if (showRecycleBin &&
                     recycleBinCheckedProjects.contains(true)) ...[
-                  Tooltip(
-                    message: 'Restore selected projects back to active list',
-                    child: FilledButton.icon(
-                      onPressed: _handleRestoreSelected,
-                      icon: Icon(
-                        PhosphorIcons.arrowCounterClockwise(
-                            PhosphorIconsStyle.bold),
-                        color: Colors.white,
-                      ),
-                      label: const Text('Restore Selected'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                      ),
+                  FilledButton.icon(
+                    onPressed: _handleRestoreSelected,
+                    icon: Icon(
+                      PhosphorIcons.arrowCounterClockwise(
+                          PhosphorIconsStyle.bold),
+                      color: Colors.white,
+                    ),
+                    label: const Text('Restore Selected'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Tooltip(
-                    message: 'Permanently delete selected projects',
-                    child: FilledButton.icon(
-                      onPressed: _handlePermanentlyDeleteSelected,
-                      icon: Icon(
-                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        color: Colors.white,
-                      ),
-                      label: const Text('Delete Permanently'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                      ),
+                  FilledButton.icon(
+                    onPressed: _handlePermanentlyDeleteSelected,
+                    icon: Icon(
+                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                      color: Colors.white,
+                    ),
+                    label: const Text('Delete Permanently'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red.shade400,
                     ),
                   ),
                 ],
@@ -2089,110 +2159,42 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           const Divider(height: 1),
           // Project List
           Expanded(
-            child: !isListView
-                ? GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemCount: showArchived
-                        ? archivedProjects.length
-                        : showRecycleBin
-                            ? deletedProjects.length
-                            : projects.length,
-                    itemBuilder: (context, index) {
-                      if (!_filterProject(index)) {
-                        return const SizedBox.shrink();
-                      }
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount:
+                  showRecycleBin ? deletedProjects.length : projects.length,
+              itemBuilder: (context, index) {
+                final project =
+                    showRecycleBin ? deletedProjects[index] : projects[index];
 
-                      final project = showArchived
-                          ? archivedProjects[index]
-                          : showRecycleBin
-                              ? deletedProjects[index]
-                              : projects[index];
-
-                      return MouseRegion(
-                        onEnter: (_) => setState(() => hoveredIndex = index),
-                        onExit: (_) => setState(() => hoveredIndex = null),
-                        child: ProjectGridItem(
-                          project: project,
-                          isChecked: showRecycleBin
-                              ? recycleBinCheckedProjects[index]
-                              : showArchived
-                                  ? true
-                                  : checkedProjects[index],
-                          onCheckChanged: showRecycleBin
-                              ? (value) => setState(() {
-                                    recycleBinCheckedProjects[index] =
-                                        value ?? false;
-                                  })
-                              : (value) => _handleCheckboxChange(index, value),
-                          onEdit: showArchived || showRecycleBin
-                              ? () {}
-                              : () => _handleEdit(index),
-                          onDelete: showArchived || showRecycleBin
-                              ? () {}
-                              : () => _handleDelete(index),
-                          onRestore: showArchived || showRecycleBin
-                              ? () => _handleRestore(index)
-                              : null,
-                          isHovered: hoveredIndex == index,
-                        ),
-                      );
-                    },
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: showArchived
-                        ? archivedProjects.length
-                        : showRecycleBin
-                            ? deletedProjects.length
-                            : projects.length,
-                    itemBuilder: (context, index) {
-                      if (!_filterProject(index)) {
-                        return const SizedBox.shrink();
-                      }
-
-                      final project = showArchived
-                          ? archivedProjects[index]
-                          : showRecycleBin
-                              ? deletedProjects[index]
-                              : projects[index];
-
-                      return MouseRegion(
-                        onEnter: (_) => setState(() => hoveredIndex = index),
-                        onExit: (_) => setState(() => hoveredIndex = null),
-                        child: ProjectListItem(
-                          project: project,
-                          isChecked: showRecycleBin
-                              ? recycleBinCheckedProjects[index]
-                              : showArchived
-                                  ? true
-                                  : checkedProjects[index],
-                          onCheckChanged: showRecycleBin
-                              ? (value) => setState(() {
-                                    recycleBinCheckedProjects[index] =
-                                        value ?? false;
-                                  })
-                              : (value) => _handleCheckboxChange(index, value),
-                          onEdit: showArchived || showRecycleBin
-                              ? () {}
-                              : () => _handleEdit(index),
-                          onDelete: showArchived || showRecycleBin
-                              ? () {}
-                              : () => _handleDelete(index),
-                          onRestore: showArchived || showRecycleBin
-                              ? () => _handleRestore(index)
-                              : null,
-                          isHovered: hoveredIndex == index,
-                        ),
-                      );
-                    },
+                return MouseRegion(
+                  onEnter: (_) => setState(() => hoveredIndex = index),
+                  onExit: (_) => setState(() => hoveredIndex = null),
+                  child: ProjectListItem(
+                    project: project,
+                    isChecked: showRecycleBin
+                        ? recycleBinCheckedProjects[index]
+                        : checkedProjects[index],
+                    onCheckChanged: showRecycleBin
+                        ? (value) {
+                            setState(() {
+                              recycleBinCheckedProjects[index] = value ?? false;
+                              recycleBinSelectAll = recycleBinCheckedProjects
+                                  .every((checked) => checked);
+                            });
+                          }
+                        : (value) => _handleCheckboxChange(index, value),
+                    onEdit: showRecycleBin ? () {} : () => _handleEdit(index),
+                    onDelete: showRecycleBin
+                        ? () => _handlePermanentDelete(index)
+                        : () => _handleDelete(index),
+                    onRestore:
+                        showRecycleBin ? () => _handleRestore(index) : null,
+                    isHovered: hoveredIndex == index,
                   ),
+                );
+              },
+            ),
           ),
         ],
       ),
