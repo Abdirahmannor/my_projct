@@ -177,8 +177,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleDelete(int index) async {
-    final projectName = projects[index].name;
-    final projectId = projects[index].id;
+    // Get the correct project based on current view
+    final project = showArchived ? archivedProjects[index] : projects[index];
+
+    final projectName = project.name;
+    final projectId = project.id;
 
     // Show confirmation dialog
     final bool? confirm = await showDialog(
@@ -193,18 +196,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               size: 20,
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Move to Recycle Bin',
-              style: TextStyle(fontSize: 16),
+            Text(
+              showArchived ? 'Move to Recycle Bin' : 'Delete Project',
+              style: const TextStyle(fontSize: 16),
             ),
           ],
         ),
-        content: SizedBox(
-          width: 300,
-          child: Text(
-            'Are you sure you want to move "$projectName" to recycle bin?',
-            style: const TextStyle(fontSize: 14),
-          ),
+        content: Text(
+          'Are you sure you want to move "$projectName" to recycle bin?',
+          style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -234,22 +234,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirm == true && projectId != null) {
       try {
-        await _projectDatabaseService.moveToRecycleBin(projects[index]);
-
-        setState(() {
-          deletedProjects.add(projects[index]);
-          projects.removeAt(index);
-          checkedProjects = List.generate(projects.length, (_) => false);
-          recycleBinCheckedProjects =
-              List.generate(deletedProjects.length, (_) => false);
-          _newlyDeletedCount++;
-          _hasVisitedRecycleBin = false;
-        });
+        if (showArchived) {
+          // Move archived project to recycle bin
+          await _projectDatabaseService.moveArchivedToRecycleBin(project);
+          setState(() {
+            archivedProjects.removeAt(index);
+            archivedCheckedProjects =
+                List.generate(archivedProjects.length, (_) => false);
+            _newlyDeletedCount++;
+            _hasVisitedRecycleBin = false;
+          });
+        } else {
+          // Move normal project to recycle bin
+          await _projectDatabaseService.moveToRecycleBin(project);
+          setState(() {
+            projects.removeAt(index);
+            checkedProjects = List.generate(projects.length, (_) => false);
+            _newlyDeletedCount++;
+            _hasVisitedRecycleBin = false;
+          });
+        }
 
         _showSuccessMessage(
           message: 'Project "$projectName" has been moved to recycle bin',
           icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
         );
+
+        // Reload deleted projects
+        await _loadDeletedProjects();
       } catch (e) {
         _showError('Failed to move project to recycle bin: $e');
       }
