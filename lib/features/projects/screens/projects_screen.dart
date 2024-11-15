@@ -1746,7 +1746,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleCompleteSelected() async {
-    final selectedCount = checkedProjects.where((c) => c).length;
+    final selectedProjects = projects
+        .asMap()
+        .entries
+        .where((entry) => checkedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -1763,12 +1770,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to mark $selectedCount projects as completed?',
+          'Are you sure you want to mark ${selectedProjects.length} projects as complete?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -1783,34 +1790,52 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirmed == true) {
       try {
-        // Update each selected project
-        for (int i = projects.length - 1; i >= 0; i--) {
-          if (checkedProjects[i]) {
-            final updatedProject = Project(
-              id: projects[i].id,
-              name: projects[i].name,
-              description: projects[i].description,
-              startDate: projects[i].startDate,
-              dueDate: projects[i].dueDate,
-              tasks: projects[i].tasks,
-              completedTasks: projects[i].tasks,
-              priority: projects[i].priority,
-              status: 'completed',
-              category: projects[i].category,
-            );
+        for (final project in selectedProjects) {
+          final completedProject = Project(
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            startDate: project.startDate,
+            dueDate: project.dueDate,
+            tasks: project.tasks,
+            completedTasks: project.tasks,
+            priority: project.priority,
+            status: 'completed',
+            category: project.category,
+            archivedDate: DateTime.now(),
+          );
 
-            // Save to database
-            await _projectDatabaseService.updateProject(updatedProject);
-
-            // Move to archived list
-            archivedProjects.add(updatedProject);
-            projects.removeAt(i);
-            checkedProjects.removeAt(i);
-          }
+          await _projectDatabaseService.archiveProject(completedProject);
         }
 
+        setState(() {
+          // Move to archived list
+          archivedProjects.addAll(selectedProjects.map((p) => Project(
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                startDate: p.startDate,
+                dueDate: p.dueDate,
+                tasks: p.tasks,
+                completedTasks: p.tasks,
+                priority: p.priority,
+                status: 'completed',
+                category: p.category,
+                archivedDate: DateTime.now(),
+              )));
+
+          // Remove from active projects
+          projects.removeWhere((project) =>
+              selectedProjects.any((selected) => selected.id == project.id));
+
+          // Update checkbox arrays
+          checkedProjects = List.generate(projects.length, (_) => false);
+          archivedCheckedProjects =
+              List.generate(archivedProjects.length, (_) => false);
+        });
+
         _showSuccessMessage(
-          message: 'Selected projects marked as complete',
+          message: 'Selected projects have been completed',
           icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
         );
       } catch (e) {
@@ -1820,7 +1845,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleDeleteSelected() async {
-    final selectedCount = checkedProjects.where((c) => c).length;
+    final selectedProjects = projects
+        .asMap()
+        .entries
+        .where((entry) => checkedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -1833,23 +1865,23 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               size: 24,
             ),
             const SizedBox(width: 8),
-            const Text('Delete Projects'),
+            const Text('Move to Recycle Bin'),
           ],
         ),
         content: Text(
-          'Are you sure you want to delete $selectedCount projects? This action cannot be undone.',
+          'Are you sure you want to move ${selectedProjects.length} projects to recycle bin?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade400,
             ),
-            child: const Text('Delete'),
+            child: const Text('Move to Recycle Bin'),
           ),
         ],
       ),
@@ -1857,26 +1889,29 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirmed == true) {
       try {
-        // Delete selected projects from database and local state
-        for (int i = projects.length - 1; i >= 0; i--) {
-          if (checkedProjects[i]) {
-            if (projects[i].id != null) {
-              await _projectDatabaseService.deleteProject(projects[i].id!);
-            }
-            projects.removeAt(i);
-            checkedProjects.removeAt(i);
-          }
+        for (final project in selectedProjects) {
+          await _projectDatabaseService.moveToRecycleBin(project);
         }
 
-        // Reload projects to ensure sync with database
-        await _loadProjects();
+        setState(() {
+          // Remove from active projects
+          projects.removeWhere((project) =>
+              selectedProjects.any((selected) => selected.id == project.id));
+
+          // Update checkbox arrays
+          checkedProjects = List.generate(projects.length, (_) => false);
+          _newlyDeletedCount += selectedProjects.length;
+          _hasVisitedRecycleBin = false;
+        });
+
+        await _loadDeletedProjects();
 
         _showSuccessMessage(
-          message: 'Selected projects have been deleted',
+          message: 'Selected projects have been moved to recycle bin',
           icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
         );
       } catch (e) {
-        _showError('Failed to delete projects: $e');
+        _showError('Failed to move projects to recycle bin: $e');
       }
     }
   }
@@ -2140,7 +2175,31 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Checkbox or restore all button
+                // Show checkbox for active projects and archived view
+                if (showAllProjects || showArchived)
+                  SizedBox(
+                    width: 24,
+                    child: Checkbox(
+                      value: showArchived
+                          ? archivedSelectAll
+                          : showAllProjects
+                              ? checkedProjects.every((checked) => checked)
+                              : false,
+                      onChanged: (value) {
+                        setState(() {
+                          if (showArchived) {
+                            archivedSelectAll = value ?? false;
+                            archivedCheckedProjects = List.generate(
+                                archivedProjects.length, (_) => value ?? false);
+                          } else if (showAllProjects) {
+                            checkedProjects = List.generate(
+                                projects.length, (_) => value ?? false);
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                // Show checkbox for recycle bin
                 if (showRecycleBin)
                   SizedBox(
                     width: 24,
@@ -2150,19 +2209,42 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         setState(() {
                           recycleBinSelectAll = value ?? false;
                           recycleBinCheckedProjects = List.generate(
-                            deletedProjects.length,
-                            (_) => value ?? false,
-                          );
+                              deletedProjects.length, (_) => value ?? false);
                         });
                       },
                     ),
                   ),
                 const Spacer(),
-                // Show action buttons only when items are selected in recycle bin
-                if (showRecycleBin &&
-                    recycleBinCheckedProjects.contains(true)) ...[
+                // Action buttons for active projects
+                if (showAllProjects && checkedProjects.contains(true)) ...[
                   FilledButton.icon(
-                    onPressed: _handleRestoreSelected,
+                    onPressed: _handleCompleteSelected,
+                    icon: Icon(
+                      PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+                      color: Colors.white,
+                    ),
+                    label: const Text('Complete Selected'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green.shade400,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _handleDeleteSelected,
+                    icon: Icon(
+                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                      color: Colors.white,
+                    ),
+                    label: const Text('Delete Selected'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red.shade400,
+                    ),
+                  ),
+                ],
+                // Action buttons for archived
+                if (showArchived && archivedCheckedProjects.contains(true)) ...[
+                  FilledButton.icon(
+                    onPressed: _handleRestoreSelectedArchived,
                     icon: Icon(
                       PhosphorIcons.arrowCounterClockwise(
                           PhosphorIconsStyle.bold),
@@ -2175,17 +2257,18 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
-                    onPressed: _handlePermanentlyDeleteSelected,
+                    onPressed: _handleDeleteSelectedArchived,
                     icon: Icon(
                       PhosphorIcons.trash(PhosphorIconsStyle.bold),
                       color: Colors.white,
                     ),
-                    label: const Text('Delete Permanently'),
+                    label: const Text('Delete Selected'),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.red.shade400,
                     ),
                   ),
                 ],
+                // Existing recycle bin buttons...
               ],
             ),
           ),
@@ -2320,5 +2403,183 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ],
       ),
     );
+  }
+
+  void _handleRestoreSelectedArchived() async {
+    final selectedProjects = archivedProjects
+        .asMap()
+        .entries
+        .where((entry) => archivedCheckedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore Selected Projects'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore ${selectedProjects.length} selected projects?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        for (final project in selectedProjects) {
+          final restoredProject = Project(
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            startDate: project.startDate,
+            dueDate: project.dueDate,
+            tasks: project.tasks,
+            completedTasks: project.completedTasks,
+            priority: project.priority,
+            status: 'in progress',
+            category: project.category,
+          );
+
+          await _projectDatabaseService.updateProject(restoredProject);
+        }
+
+        setState(() {
+          // Remove restored projects from archived
+          archivedProjects.removeWhere((project) =>
+              selectedProjects.any((selected) => selected.id == project.id));
+          // Add to active projects
+          projects.addAll(selectedProjects.map((p) => Project(
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                startDate: p.startDate,
+                dueDate: p.dueDate,
+                tasks: p.tasks,
+                completedTasks: p.completedTasks,
+                priority: p.priority,
+                status: 'in progress',
+                category: p.category,
+              )));
+
+          // Reset checkbox states
+          archivedCheckedProjects =
+              List.generate(archivedProjects.length, (_) => false);
+          checkedProjects = List.generate(projects.length, (_) => false);
+          archivedSelectAll = false;
+        });
+
+        _showSuccessMessage(
+          message: 'Selected projects have been restored',
+          icon: PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to restore projects: $e');
+      }
+    }
+  }
+
+  void _handleDeleteSelectedArchived() async {
+    final selectedProjects = archivedProjects
+        .asMap()
+        .entries
+        .where((entry) => archivedCheckedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Move to Recycle Bin'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to move ${selectedProjects.length} selected projects to recycle bin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+            child: const Text('Move to Recycle Bin'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        for (final project in selectedProjects) {
+          await _projectDatabaseService.moveArchivedToRecycleBin(project);
+        }
+
+        setState(() {
+          archivedProjects.removeWhere((project) =>
+              selectedProjects.any((selected) => selected.id == project.id));
+          archivedCheckedProjects =
+              List.generate(archivedProjects.length, (_) => false);
+          archivedSelectAll = false;
+          _newlyDeletedCount += selectedProjects.length;
+          _hasVisitedRecycleBin = false;
+        });
+
+        await _loadDeletedProjects();
+
+        _showSuccessMessage(
+          message: 'Selected projects have been moved to recycle bin',
+          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to move projects to recycle bin: $e');
+      }
+    }
   }
 }
