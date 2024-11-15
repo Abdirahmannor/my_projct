@@ -31,6 +31,111 @@ class ProjectDatabaseService {
     await box.put(id, newProject);
   }
 
+  // Archive project
+  Future<void> archiveProject(Project project) async {
+    final box = await _box;
+    final archivedProject = Project(
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      dueDate: project.dueDate,
+      tasks: project.tasks,
+      completedTasks: project.completedTasks,
+      priority: project.priority,
+      status: 'completed',
+      category: project.category,
+      archivedDate: DateTime.now(),
+    );
+    await box.put(project.id!, archivedProject);
+  }
+
+  // Move archived to recycle bin
+  Future<void> moveArchivedToRecycleBin(Project project) async {
+    final box = await _box;
+    final deletedBox = await _deletedBox;
+
+    final deletedProject = Project(
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      dueDate: project.dueDate,
+      tasks: project.tasks,
+      completedTasks: project.completedTasks,
+      priority: project.priority,
+      status: project.status,
+      category: project.category,
+      archivedDate: project.archivedDate,
+      deletedAt: DateTime.now(),
+    );
+
+    await deletedBox.put(project.id, deletedProject);
+    await box.delete(project.id);
+  }
+
+  // Restore from recycle bin to archived
+  Future<void> restoreToArchived(String projectId) async {
+    final box = await _box;
+    final deletedBox = await _deletedBox;
+
+    final project = await deletedBox.get(projectId);
+    if (project != null) {
+      final restoredProject = Project(
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        startDate: project.startDate,
+        dueDate: project.dueDate,
+        tasks: project.tasks,
+        completedTasks: project.completedTasks,
+        priority: project.priority,
+        status: 'completed',
+        category: project.category,
+        archivedDate: DateTime.now(),
+        lastRestoredDate: DateTime.now(),
+      );
+
+      await box.put(projectId, restoredProject);
+      await deletedBox.delete(projectId);
+    }
+  }
+
+  // Clean up old archived projects (move to recycle bin after 2 months)
+  Future<void> cleanupOldArchivedProjects() async {
+    final box = await _box;
+    final now = DateTime.now();
+    final projects = box.values.where((p) => p.status == 'completed').toList();
+
+    for (final project in projects) {
+      if (project.archivedDate != null) {
+        final difference = now.difference(project.archivedDate!);
+        if (difference.inDays >= 60) {
+          await moveArchivedToRecycleBin(project);
+        }
+      }
+    }
+  }
+
+  // Update existing cleanup method for recycle bin
+  Future<void> cleanupOldProjects() async {
+    final deletedBox = await _deletedBox;
+    final now = DateTime.now();
+    final deletedProjects = deletedBox.values.toList();
+
+    for (final project in deletedProjects) {
+      if (project.deletedAt != null) {
+        final difference = now.difference(project.deletedAt!);
+        if (difference.inDays >= 7) {
+          await deletedBox.delete(project.id);
+        }
+      }
+    }
+
+    // Also cleanup old archived projects
+    await cleanupOldArchivedProjects();
+  }
+
   // Read
   Future<List<Project>> getAllProjects() async {
     final box = await _box;
@@ -113,21 +218,5 @@ class ProjectDatabaseService {
   Future<void> permanentlyDelete(String projectId) async {
     final deletedBox = await _deletedBox;
     await deletedBox.delete(projectId);
-  }
-
-  // Clean up old deleted projects (older than 7 days)
-  Future<void> cleanupOldProjects() async {
-    final deletedBox = await _deletedBox;
-    final now = DateTime.now();
-    final deletedProjects = deletedBox.values.toList();
-
-    for (final project in deletedProjects) {
-      if (project.deletedAt != null) {
-        final difference = now.difference(project.deletedAt!);
-        if (difference.inDays >= 7) {
-          await deletedBox.delete(project.id);
-        }
-      }
-    }
   }
 }

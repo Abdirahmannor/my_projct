@@ -2175,38 +2175,55 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             child: isListView
                 ? ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: showRecycleBin
-                        ? deletedProjects.length
-                        : projects.length,
+                    itemCount: showArchived
+                        ? archivedProjects.length
+                        : showRecycleBin
+                            ? deletedProjects.length
+                            : projects.length,
                     itemBuilder: (context, index) {
-                      final project = showRecycleBin
-                          ? deletedProjects[index]
-                          : projects[index];
+                      final project = showArchived
+                          ? archivedProjects[index]
+                          : showRecycleBin
+                              ? deletedProjects[index]
+                              : projects[index];
                       return MouseRegion(
                         onEnter: (_) => setState(() => hoveredIndex = index),
                         onExit: (_) => setState(() => hoveredIndex = null),
                         child: ProjectListItem(
                           project: project,
-                          isChecked: showRecycleBin
-                              ? recycleBinCheckedProjects[index]
-                              : checkedProjects[index],
-                          onCheckChanged: showRecycleBin
+                          isChecked: showArchived
+                              ? archivedCheckedProjects[index]
+                              : showRecycleBin
+                                  ? recycleBinCheckedProjects[index]
+                                  : checkedProjects[index],
+                          onCheckChanged: showArchived
                               ? (value) {
                                   setState(() {
-                                    recycleBinCheckedProjects[index] =
+                                    archivedCheckedProjects[index] =
                                         value ?? false;
-                                    recycleBinSelectAll =
-                                        recycleBinCheckedProjects
-                                            .every((checked) => checked);
+                                    archivedSelectAll = archivedCheckedProjects
+                                        .every((checked) => checked);
                                   });
                                 }
-                              : (value) => _handleCheckboxChange(index, value),
-                          onEdit:
-                              showRecycleBin ? () {} : () => _handleEdit(index),
+                              : showRecycleBin
+                                  ? (value) {
+                                      setState(() {
+                                        recycleBinCheckedProjects[index] =
+                                            value ?? false;
+                                        recycleBinSelectAll =
+                                            recycleBinCheckedProjects
+                                                .every((checked) => checked);
+                                      });
+                                    }
+                                  : (value) =>
+                                      _handleCheckboxChange(index, value),
+                          onEdit: showRecycleBin || showArchived
+                              ? () {}
+                              : () => _handleEdit(index),
                           onDelete: showRecycleBin
                               ? () => _handlePermanentDelete(index)
                               : () => _handleDelete(index),
-                          onRestore: showRecycleBin
+                          onRestore: (showRecycleBin || showArchived)
                               ? () => _handleRestore(index)
                               : null,
                           isHovered: hoveredIndex == index,

@@ -35,6 +35,12 @@ class Project {
   final String category;
 
   @HiveField(10)
+  final DateTime? archivedDate;
+
+  @HiveField(11)
+  final DateTime? lastRestoredDate;
+
+  @HiveField(12)
   final DateTime? deletedAt;
 
   Project({
@@ -48,6 +54,8 @@ class Project {
     required this.priority,
     required this.status,
     required this.category,
+    this.archivedDate,
+    this.lastRestoredDate,
     this.deletedAt,
   });
 
@@ -63,7 +71,9 @@ class Project {
       'priority': priority,
       'status': status,
       'category': category,
-      'deletedAt': deletedAt,
+      'archivedDate': archivedDate?.toIso8601String(),
+      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
     };
   }
 
@@ -79,7 +89,14 @@ class Project {
       priority: map['priority'],
       status: map['status'],
       category: map['category'],
-      deletedAt: map['deletedAt'],
+      archivedDate: map['archivedDate'] != null
+          ? DateTime.parse(map['archivedDate'])
+          : null,
+      lastRestoredDate: map['lastRestoredDate'] != null
+          ? DateTime.parse(map['lastRestoredDate'])
+          : null,
+      deletedAt:
+          map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
     );
   }
 
