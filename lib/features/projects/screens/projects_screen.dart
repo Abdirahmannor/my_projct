@@ -41,6 +41,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   DateTimeRange? _selectedDateRange;
   bool _showChart = true;
   List<Project> archivedProjects = [];
+  List<bool> archivedCheckedProjects = [];
+  bool archivedSelectAll = false;
   final _projectDatabaseService = ProjectDatabaseService();
   List<Project> projects = [];
   final Map<int, String> originalStatuses = {};
@@ -73,12 +75,24 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     try {
       final loadedProjects = await _projectDatabaseService.getAllProjects();
       setState(() {
-        projects = loadedProjects;
+        projects =
+            loadedProjects.where((p) => p.status != 'completed').toList();
+        archivedProjects =
+            loadedProjects.where((p) => p.status == 'completed').toList();
+
+        // Initialize checkbox lists
         checkedProjects = List.generate(projects.length, (_) => false);
+        archivedCheckedProjects =
+            List.generate(archivedProjects.length, (_) => false);
+        recycleBinCheckedProjects =
+            List.generate(deletedProjects.length, (_) => false);
+
+        // Reset select all states
+        archivedSelectAll = false;
+        recycleBinSelectAll = false;
       });
     } catch (e) {
       print('Error loading projects: $e');
-      // Optionally show error message to user
     }
   }
 
@@ -2205,42 +2219,59 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 400,
-                      childAspectRatio: 1.2,
+                      childAspectRatio: 0.85,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemCount: showRecycleBin
-                        ? deletedProjects.length
-                        : projects.length,
+                    itemCount: showArchived
+                        ? archivedProjects.length
+                        : showRecycleBin
+                            ? deletedProjects.length
+                            : projects.length,
                     itemBuilder: (context, index) {
-                      final project = showRecycleBin
-                          ? deletedProjects[index]
-                          : projects[index];
+                      final project = showArchived
+                          ? archivedProjects[index]
+                          : showRecycleBin
+                              ? deletedProjects[index]
+                              : projects[index];
                       return MouseRegion(
                         onEnter: (_) => setState(() => hoveredIndex = index),
                         onExit: (_) => setState(() => hoveredIndex = null),
                         child: ProjectGridItem(
                           project: project,
-                          isChecked: showRecycleBin
-                              ? recycleBinCheckedProjects[index]
-                              : checkedProjects[index],
-                          onCheckChanged: showRecycleBin
+                          isChecked: showArchived
+                              ? archivedCheckedProjects[index]
+                              : showRecycleBin
+                                  ? recycleBinCheckedProjects[index]
+                                  : checkedProjects[index],
+                          onCheckChanged: showArchived
                               ? (value) {
                                   setState(() {
-                                    recycleBinCheckedProjects[index] =
+                                    archivedCheckedProjects[index] =
                                         value ?? false;
-                                    recycleBinSelectAll =
-                                        recycleBinCheckedProjects
-                                            .every((checked) => checked);
+                                    archivedSelectAll = archivedCheckedProjects
+                                        .every((checked) => checked);
                                   });
                                 }
-                              : (value) => _handleCheckboxChange(index, value),
-                          onEdit:
-                              showRecycleBin ? () {} : () => _handleEdit(index),
+                              : showRecycleBin
+                                  ? (value) {
+                                      setState(() {
+                                        recycleBinCheckedProjects[index] =
+                                            value ?? false;
+                                        recycleBinSelectAll =
+                                            recycleBinCheckedProjects
+                                                .every((checked) => checked);
+                                      });
+                                    }
+                                  : (value) =>
+                                      _handleCheckboxChange(index, value),
+                          onEdit: showRecycleBin || showArchived
+                              ? () {}
+                              : () => _handleEdit(index),
                           onDelete: showRecycleBin
                               ? () => _handlePermanentDelete(index)
                               : () => _handleDelete(index),
-                          onRestore: showRecycleBin
+                          onRestore: (showRecycleBin || showArchived)
                               ? () => _handleRestore(index)
                               : null,
                           isHovered: hoveredIndex == index,

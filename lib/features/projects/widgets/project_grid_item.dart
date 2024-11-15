@@ -50,7 +50,7 @@ class ProjectGridItem extends StatelessWidget {
         children: [
           // Header with checkbox and actions
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -70,7 +70,7 @@ class ProjectGridItem extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    if (onRestore != null)
+                    if (onRestore != null) ...[
                       IconButton(
                         onPressed: onRestore,
                         icon: Icon(
@@ -80,8 +80,17 @@ class ProjectGridItem extends StatelessWidget {
                           color: AppColors.accent,
                         ),
                         tooltip: 'Restore',
-                      )
-                    else ...[
+                      ),
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Delete Permanently',
+                      ),
+                    ] else ...[
                       IconButton(
                         onPressed: onEdit,
                         icon: Icon(
