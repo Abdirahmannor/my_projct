@@ -881,6 +881,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: TextButton.icon(
+              // Add child property
               onPressed: _clearAllFilters,
               icon: Icon(
                 PhosphorIcons.x(PhosphorIconsStyle.bold),
@@ -895,7 +896,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 8), // Move SizedBox outside Container
         ],
         // Search Bar
         Container(
@@ -2338,31 +2339,43 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
 
-                // Tasks with same width as list items
-                SizedBox(
-                  width: 100, // Fixed width to match list items
-                  child: Text(
-                    'Tasks',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    textAlign: TextAlign.center,
+                // Tasks with right padding and fixed width
+                Padding(
+                  padding:
+                      const EdgeInsets.only(right: 25), // Added right padding
+                  child: SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Tasks',
+                      style: Theme.of(context).textTheme.titleSmall,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
 
-                // Priority and Status with fixed widths
-                SizedBox(
-                  width: 100, // Fixed width to match list items
-                  child: Text(
-                    'Priority',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    textAlign: TextAlign.center,
+                // Priority with right padding and fixed width
+                Padding(
+                  padding:
+                      const EdgeInsets.only(right: 20), // Added right padding
+                  child: SizedBox(
+                    width: 100, // Fixed width to match list items
+                    child: Text(
+                      'Priority',
+                      style: Theme.of(context).textTheme.titleSmall,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  width: 100, // Fixed width to match list items
-                  child: Text(
-                    'Status',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.only(
+                      right: 15), // Added right padding of 15px
+                  child: SizedBox(
+                    width: 100, // Fixed width to match list items
+                    child: Text(
+                      'Status',
+                      style: Theme.of(context).textTheme.titleSmall,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
 
