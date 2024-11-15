@@ -514,7 +514,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     if (confirmed == true) {
       try {
         if (showArchived) {
-          // Handle archived project restoration
+          // Handle archived project restoration to active projects
           final restoredProject = Project(
             id: project.id,
             name: project.name,
@@ -524,26 +524,29 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             tasks: project.tasks,
             completedTasks: project.completedTasks,
             priority: project.priority,
-            status: originalStatuses[index] ?? 'in progress',
+            status: 'in progress',
             category: project.category,
           );
 
-          // Move back to projects list
+          await _projectDatabaseService.updateProject(restoredProject);
           setState(() {
             projects.add(restoredProject);
             archivedProjects.removeAt(index);
-            checkedProjects.add(false);
-            originalStatuses.remove(index);
+
+            // Update both checkbox arrays
+            checkedProjects = List.generate(projects.length, (_) => false);
+            archivedCheckedProjects =
+                List.generate(archivedProjects.length, (_) => false);
+
+            // Reset select all states
+            archivedSelectAll = false;
           });
         } else {
-          // Handle recycle bin project restoration
+          // Restore from recycle bin to active projects
           if (project.id != null) {
             await _projectDatabaseService.restoreFromRecycleBin(project.id!);
-            setState(() {
-              projects.add(project);
-              deletedProjects.removeAt(index);
-              checkedProjects.add(false);
-            });
+            await _loadProjects(); // Reload to get updated projects list
+            await _loadDeletedProjects(); // Reload deleted projects
           }
         }
 
@@ -750,15 +753,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Row(
       children: [
         _buildFilterButton(
-          'All Projects',
-          PhosphorIcons.folder(PhosphorIconsStyle.bold),
+          'Active Projects',
+          PhosphorIcons.playCircle(PhosphorIconsStyle.bold),
           showAllProjects,
           () => setState(() {
             showAllProjects = true;
             showArchived = false;
             showRecycleBin = false;
           }),
-          tooltip: 'Show all active projects',
+          tooltip: 'Show active projects',
         ),
         const SizedBox(width: 8),
         _buildFilterButton(

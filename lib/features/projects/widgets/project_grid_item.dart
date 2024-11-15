@@ -88,7 +88,9 @@ class ProjectGridItem extends StatelessWidget {
                           size: 18,
                           color: Colors.red,
                         ),
-                        tooltip: 'Delete Permanently',
+                        tooltip: project.status == 'completed'
+                            ? 'Move to Recycle Bin'
+                            : 'Delete Permanently',
                       ),
                     ] else ...[
                       IconButton(

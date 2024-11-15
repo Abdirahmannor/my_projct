@@ -195,6 +195,7 @@ class ProjectDatabaseService {
 
     final project = await deletedBox.get(projectId);
     if (project != null) {
+      // Always restore to active projects
       final restoredProject = Project(
         id: project.id,
         name: project.name,
@@ -204,12 +205,17 @@ class ProjectDatabaseService {
         tasks: project.tasks,
         completedTasks: project.completedTasks,
         priority: project.priority,
-        status: project.status,
+        status: 'in progress', // Always set to in progress
         category: project.category,
+        // Clear all special dates since it's going back to active projects
+        archivedDate: null,
+        lastRestoredDate: null,
         deletedAt: null,
       );
 
+      // Save to active projects
       await box.put(projectId, restoredProject);
+      // Remove from recycle bin
       await deletedBox.delete(projectId);
     }
   }
