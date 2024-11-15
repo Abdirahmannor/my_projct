@@ -48,6 +48,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool showRecycleBin = false;
   List<Project> deletedProjects = [];
   Timer? _cleanupTimer;
+  List<bool> recycleBinCheckedProjects = [];
+  bool recycleBinSelectAll = false;
 
   @override
   void initState() {
@@ -83,6 +85,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       final loadedProjects = await _projectDatabaseService.getDeletedProjects();
       setState(() {
         deletedProjects = loadedProjects;
+        recycleBinCheckedProjects =
+            List.generate(loadedProjects.length, (_) => false);
+        recycleBinSelectAll = false;
       });
     } catch (e) {
       print('Error loading deleted projects: $e');
@@ -213,14 +218,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirm == true && projectId != null) {
       try {
-        // Move to recycle bin instead of deleting
         await _projectDatabaseService.moveToRecycleBin(projects[index]);
 
-        // Update local state
         setState(() {
           deletedProjects.add(projects[index]);
           projects.removeAt(index);
           checkedProjects = List.generate(projects.length, (_) => false);
+          recycleBinCheckedProjects =
+              List.generate(deletedProjects.length, (_) => false);
         });
 
         _showSuccessMessage(
@@ -1833,6 +1838,160 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
   }
 
+  void _handleRecycleBinSelectAll(bool? value) {
+    setState(() {
+      recycleBinSelectAll = value ?? false;
+      recycleBinCheckedProjects = List.generate(
+        deletedProjects.length,
+        (_) => recycleBinSelectAll,
+      );
+    });
+  }
+
+  void _handleRestoreSelected() async {
+    // Fix the where clause to use indexed iteration
+    final selectedProjects = deletedProjects
+        .asMap()
+        .entries
+        .where((entry) => recycleBinCheckedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+              color: AppColors.accent,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Restore Selected Projects'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore ${selectedProjects.length} selected projects?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        for (final project in selectedProjects) {
+          if (project.id != null) {
+            await _projectDatabaseService.restoreFromRecycleBin(project.id!);
+          }
+        }
+        await _loadProjects();
+        await _loadDeletedProjects();
+        _showSuccessMessage(
+          message: 'Selected projects have been restored',
+          icon: PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to restore projects: $e');
+      }
+    }
+  }
+
+  void _handlePermanentlyDeleteSelected() async {
+    // Fix the where clause to use indexed iteration
+    final selectedProjects = deletedProjects
+        .asMap()
+        .entries
+        .where((entry) => recycleBinCheckedProjects[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedProjects.isEmpty) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.warning(PhosphorIconsStyle.fill),
+              color: Colors.red.shade400,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Permanently Delete Projects'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to permanently delete ${selectedProjects.length} selected projects?',
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This action cannot be undone.',
+              style: TextStyle(
+                color: Colors.red.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        for (final project in selectedProjects) {
+          if (project.id != null) {
+            await _projectDatabaseService.permanentlyDelete(project.id!);
+          }
+        }
+        await _loadDeletedProjects();
+        _showSuccessMessage(
+          message: 'Selected projects have been permanently deleted',
+          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+        );
+      } catch (e) {
+        _showError('Failed to delete projects: $e');
+      }
+    }
+  }
+
   Widget _buildProjectsList() {
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -1853,30 +2012,77 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               children: [
                 SizedBox(
                   width: 24,
-                  child: showArchived
+                  child: showRecycleBin
                       ? Tooltip(
-                          message: 'Restore all archived projects',
-                          child: IconButton(
-                            icon: Icon(
-                              PhosphorIcons.arrowCounterClockwise(
-                                  PhosphorIconsStyle.bold),
-                              size: 18,
-                              color: AppColors.accent,
-                            ),
-                            onPressed: _handleRestoreAll,
-                            padding: EdgeInsets.zero,
-                          ),
-                        )
-                      : Tooltip(
                           message: 'Select all projects',
                           child: Checkbox(
-                            value: checkedProjects.every((checked) => checked),
-                            onChanged: _toggleAllProjects,
-                            tristate: true,
+                            value: recycleBinSelectAll,
+                            onChanged: _handleRecycleBinSelectAll,
                           ),
-                        ),
+                        )
+                      : showArchived
+                          ? Tooltip(
+                              message: 'Restore all archived projects',
+                              child: IconButton(
+                                icon: Icon(
+                                  PhosphorIcons.arrowCounterClockwise(
+                                      PhosphorIconsStyle.bold),
+                                  size: 18,
+                                  color: AppColors.accent,
+                                ),
+                                onPressed: _handleRestoreAll,
+                                padding: EdgeInsets.zero,
+                              ),
+                            )
+                          : Tooltip(
+                              message: 'Select all projects',
+                              child: Checkbox(
+                                value:
+                                    checkedProjects.every((checked) => checked),
+                                onChanged: _toggleAllProjects,
+                                tristate: true,
+                              ),
+                            ),
                 ),
-                // Rest of your table header...
+                const Spacer(),
+                // Show action buttons only when items are selected in recycle bin
+                if (showRecycleBin &&
+                    recycleBinCheckedProjects.contains(true)) ...[
+                  Tooltip(
+                    message: 'Restore selected projects back to active list',
+                    child: FilledButton.icon(
+                      onPressed: _handleRestoreSelected,
+                      icon: Icon(
+                        PhosphorIcons.arrowCounterClockwise(
+                            PhosphorIconsStyle.bold),
+                        color: Colors.white,
+                      ),
+                      label: const Text('Restore Selected'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'Permanently delete selected projects',
+                    child: FilledButton.icon(
+                      onPressed: _handlePermanentlyDeleteSelected,
+                      icon: Icon(
+                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                        color: Colors.white,
+                      ),
+                      label: const Text('Delete Permanently'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1914,11 +2120,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         onExit: (_) => setState(() => hoveredIndex = null),
                         child: ProjectGridItem(
                           project: project,
-                          isChecked: showArchived || showRecycleBin
-                              ? true
-                              : checkedProjects[index],
-                          onCheckChanged: (value) =>
-                              _handleCheckboxChange(index, value),
+                          isChecked: showRecycleBin
+                              ? recycleBinCheckedProjects[index]
+                              : showArchived
+                                  ? true
+                                  : checkedProjects[index],
+                          onCheckChanged: showRecycleBin
+                              ? (value) => setState(() {
+                                    recycleBinCheckedProjects[index] =
+                                        value ?? false;
+                                  })
+                              : (value) => _handleCheckboxChange(index, value),
                           onEdit: showArchived || showRecycleBin
                               ? () {}
                               : () => _handleEdit(index),
@@ -1956,11 +2168,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         onExit: (_) => setState(() => hoveredIndex = null),
                         child: ProjectListItem(
                           project: project,
-                          isChecked: showArchived || showRecycleBin
-                              ? true
-                              : checkedProjects[index],
-                          onCheckChanged: (value) =>
-                              _handleCheckboxChange(index, value),
+                          isChecked: showRecycleBin
+                              ? recycleBinCheckedProjects[index]
+                              : showArchived
+                                  ? true
+                                  : checkedProjects[index],
+                          onCheckChanged: showRecycleBin
+                              ? (value) => setState(() {
+                                    recycleBinCheckedProjects[index] =
+                                        value ?? false;
+                                  })
+                              : (value) => _handleCheckboxChange(index, value),
                           onEdit: showArchived || showRecycleBin
                               ? () {}
                               : () => _handleEdit(index),
