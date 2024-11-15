@@ -756,6 +756,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               color: Colors.white,
             ),
             label: const Text('Complete Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.shade400,
+            ),
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
@@ -765,6 +768,60 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               color: Colors.white,
             ),
             label: const Text('Delete Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
+        // Add Archived view buttons
+        if (showArchived && archivedCheckedProjects.contains(true)) ...[
+          FilledButton.icon(
+            onPressed: _handleRestoreSelectedArchived,
+            icon: Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Restore Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: _handleDeleteSelectedArchived,
+            icon: Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Delete Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
+        // Add Recycle Bin view buttons
+        if (showRecycleBin && recycleBinCheckedProjects.contains(true)) ...[
+          FilledButton.icon(
+            onPressed: _handleRestoreSelected,
+            icon: Icon(
+              PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Restore Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: _handlePermanentlyDeleteSelected,
+            icon: Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Delete Permanently'),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade400,
             ),
