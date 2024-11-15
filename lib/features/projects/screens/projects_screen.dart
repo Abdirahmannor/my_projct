@@ -2294,10 +2294,92 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       ),
       child: Column(
         children: [
-          // Keep spacing at top
-          const SizedBox(height: 12),
+          // Table Header
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // Checkbox
+                SizedBox(
+                  width: 24,
+                  child: Checkbox(
+                    value: checkedProjects.every((checked) => checked),
+                    onChanged: _toggleAllProjects,
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-          // Project List/Grid
+                // Project Name
+                Expanded(
+                  flex: 3, // Changed from 2 to 3
+                  child: Text(
+                    'Project Name',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+
+                // Start Date
+                Expanded(
+                  flex: 2, // Changed from 1 to 2
+                  child: Text(
+                    'Start Date',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+
+                // Due Date
+                Expanded(
+                  flex: 2, // Changed from 1 to 2
+                  child: Text(
+                    'Due Date',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+
+                // Tasks with same width as list items
+                SizedBox(
+                  width: 100, // Fixed width to match list items
+                  child: Text(
+                    'Tasks',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                // Priority and Status with fixed widths
+                SizedBox(
+                  width: 100, // Fixed width to match list items
+                  child: Text(
+                    'Priority',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                SizedBox(
+                  width: 100, // Fixed width to match list items
+                  child: Text(
+                    'Status',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                // Actions
+                SizedBox(
+                  width: 100, // Changed from 80 to 100 to match list items
+                  child: Text(
+                    'Actions',
+                    style: TextStyle(fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Rest of the list content...
           Expanded(
             child: isListView
                 ? ListView.builder(
