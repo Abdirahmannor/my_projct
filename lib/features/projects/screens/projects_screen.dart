@@ -801,7 +801,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ],
         // Search Bar
         Container(
-          width: 240,
+          width: 200, // Reduced from 240 to 200
           height: 40,
           decoration: BoxDecoration(
             border: Border.all(
@@ -814,14 +814,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           child: Row(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsets.only(left: 8), // Reduced from 12 to 8
                 child: Icon(
                   PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.bold),
-                  size: 18,
+                  size: 16, // Reduced from 18 to 16
                   color: Theme.of(context).hintColor,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4), // Reduced from 8 to 4
               Expanded(
                 child: TextFormField(
                   controller: searchController,
@@ -869,7 +869,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         // Category Filter
         Container(
           height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8), // Reduced from 12 to 8
           decoration: BoxDecoration(
             border: Border.all(
               color: Theme.of(context).dividerColor,
@@ -878,24 +879,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ),
           child: PopupMenuButton<String>(
             offset: const Offset(0, 40),
+            tooltip: 'Filter by Category', // Add tooltip for better UX
             child: Row(
+              mainAxisSize: MainAxisSize.min, // Make row as small as possible
               children: [
                 Icon(
                   PhosphorIcons.folder(PhosphorIconsStyle.bold),
-                  size: 18,
+                  size: 16, // Reduced from 18 to 16
                   color: selectedCategory != null ? AppColors.accent : null,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  selectedCategory?.capitalize() ?? 'All Categories',
-                  style: TextStyle(
-                    color: selectedCategory != null ? AppColors.accent : null,
-                  ),
-                ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4), // Reduced from 8 to 4
                 Icon(
                   PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
-                  size: 18,
+                  size: 14,
                   color: selectedCategory != null ? AppColors.accent : null,
                 ),
               ],
