@@ -311,41 +311,99 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     if (showArchived) return;
 
     if (value == true) {
-      try {
-        // Store original status before completing
-        originalStatuses[index] = projects[index].status;
+      // Show confirmation dialog
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                color: Colors.green.shade400,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text('Complete Project'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to mark "${projects[index].name}" as complete?',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will move the project to the archived section.',
+                style: TextStyle(
+                  color: Theme.of(context).hintColor,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green.shade400,
+              ),
+              child: const Text('Complete'),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
 
-        // Create completed project
-        final updatedProject = Project(
-          id: projects[index].id,
-          name: projects[index].name,
-          description: projects[index].description,
-          startDate: projects[index].startDate,
-          dueDate: projects[index].dueDate,
-          tasks: projects[index].tasks,
-          completedTasks: projects[index].tasks,
-          priority: projects[index].priority,
-          status: 'completed',
-          category: projects[index].category,
-        );
+      if (confirmed == true) {
+        try {
+          // Store original status before completing
+          originalStatuses[index] = projects[index].status;
 
-        // Save to database
-        await _projectDatabaseService.updateProject(updatedProject);
+          // Create completed project
+          final updatedProject = Project(
+            id: projects[index].id,
+            name: projects[index].name,
+            description: projects[index].description,
+            startDate: projects[index].startDate,
+            dueDate: projects[index].dueDate,
+            tasks: projects[index].tasks,
+            completedTasks: projects[index].tasks,
+            priority: projects[index].priority,
+            status: 'completed',
+            category: projects[index].category,
+          );
 
-        setState(() {
-          // Move to archived list
-          archivedProjects.add(updatedProject);
-          // Remove from active projects
-          projects.removeAt(index);
-          checkedProjects.removeAt(index);
-        });
+          // Save to database
+          await _projectDatabaseService.updateProject(updatedProject);
 
-        _showSuccessMessage(
-          message: 'Project marked as complete',
-          icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
-        );
-      } catch (e) {
-        _showError('Failed to update project status: $e');
+          setState(() {
+            // Move to archived list
+            archivedProjects.add(updatedProject);
+            // Remove from active projects
+            projects.removeAt(index);
+            checkedProjects.removeAt(index);
+          });
+
+          _showSuccessMessage(
+            message: 'Project marked as complete',
+            icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+          );
+        } catch (e) {
+          _showError('Failed to update project status: $e');
+        }
       }
     }
   }
@@ -806,7 +864,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                         PhosphorIconsStyle.fill),
                                     Colors.blue.shade400
                                   ),
-                                  'online': (
+                                  'online work': (
                                     PhosphorIcons.globe(
                                         PhosphorIconsStyle.fill),
                                     Colors.green.shade400
@@ -2094,6 +2152,43 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleRestoreAll() async {
+    // Check if archived list is empty
+    if (archivedProjects.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                PhosphorIcons.info(PhosphorIconsStyle.fill),
+                color: AppColors.accent,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text('No Archived Projects'),
+            ],
+          ),
+          content: const Text(
+            'There are no archived projects to restore.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+              ),
+              child: const Text('OK'),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // If there are archived projects, show the regular confirmation dialog
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

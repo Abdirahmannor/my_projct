@@ -458,10 +458,10 @@ class ProjectListItem extends StatelessWidget {
         Colors.blue.shade400,
         'Work Project'
       ),
-      'online': (
+      'online work': (
         PhosphorIcons.globe(PhosphorIconsStyle.fill),
         Colors.green.shade400,
-        'Online Project'
+        'Online Work Project'
       ),
       'other': (
         PhosphorIcons.folder(PhosphorIconsStyle.fill),
