@@ -4,11 +4,25 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../widgets/add_project_dialog.dart';
 import '../widgets/project_list_item.dart';
-import '../../../core/utils/string_extensions.dart';
 import '../widgets/project_grid_item.dart';
+import '../../../core/utils/string_extensions.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/project.dart';
 import '../services/project_database_service.dart';
+
+class ProjectListLayout {
+  static const double checkboxWidth = 24.0;
+  static const double iconSpacing = 16.0;
+  static const int nameColumnFlex = 3;
+  static const int dateColumnFlex = 2;
+  static const double tasksWidth = 100.0;
+  static const double priorityWidth = 100.0;
+  static const double statusWidth = 100.0;
+  static const double actionsWidth = 100.0;
+  static const double columnPadding = 12.0;
+  static const double rowHorizontalPadding = 16.0;
+  static const double rowVerticalPadding = 12.0;
+}
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -349,110 +363,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     });
   }
 
-  void _handleCheckboxChange(int index, bool? value) async {
-    if (showArchived) return;
-
-    if (value == true) {
-      // Show confirmation dialog
-      final bool? confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
-                color: Colors.green.shade400,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text('Complete Project'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to mark "${projects[index].name}" as complete?',
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This will move the project to the archived section.',
-                style: TextStyle(
-                  color: Theme.of(context).hintColor,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.green.shade400,
-              ),
-              child: const Text('Complete'),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed == true) {
-        try {
-          // Create completed project
-          final updatedProject = Project(
-            id: projects[index].id,
-            name: projects[index].name,
-            description: projects[index].description,
-            startDate: projects[index].startDate,
-            dueDate: projects[index].dueDate,
-            tasks: projects[index].tasks,
-            completedTasks: projects[index].tasks,
-            priority: projects[index].priority,
-            status: 'completed',
-            category: projects[index].category,
-            archivedDate: DateTime.now(), // Add archive date
-          );
-
-          // Save to database
-          await _projectDatabaseService.archiveProject(updatedProject);
-
-          setState(() {
-            // Move to archived list
-            archivedProjects.add(updatedProject);
-            // Remove from active projects
-            projects.removeAt(index);
-
-            // Update checkbox arrays
-            checkedProjects = List.generate(projects.length, (_) => false);
-            archivedCheckedProjects =
-                List.generate(archivedProjects.length, (_) => false);
-
-            // Reset select all states
-            archivedSelectAll = false;
-          });
-
-          _showSuccessMessage(
-            message: 'Project marked as complete',
-            icon: PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
-          );
-        } catch (e) {
-          _showError('Failed to update project status: $e');
-        }
-      }
-    }
+  void _handleCheckboxChange(int index, bool? value) {
+    setState(() {
+      checkedProjects[index] = value ?? false;
+    });
   }
 
   void _handleRestore(int index) async {
@@ -552,30 +466,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.green.shade600,
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 2),
-        content: Row(
-          children: [
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -2302,17 +2194,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               children: [
                 // Checkbox
                 SizedBox(
-                  width: 24,
+                  width: ProjectListLayout.checkboxWidth,
                   child: Checkbox(
                     value: checkedProjects.every((checked) => checked),
                     onChanged: _toggleAllProjects,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: ProjectListLayout.iconSpacing),
 
                 // Project Name
                 Expanded(
-                  flex: 3, // Changed from 2 to 3
+                  flex: ProjectListLayout.nameColumnFlex,
                   child: Text(
                     'Project Name',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -2323,7 +2215,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 // Start Date
                 Expanded(
-                  flex: 2, // Changed from 1 to 2
+                  flex: ProjectListLayout.dateColumnFlex,
                   child: Text(
                     'Start Date',
                     style: Theme.of(context).textTheme.titleSmall,
@@ -2332,7 +2224,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 // Due Date
                 Expanded(
-                  flex: 2, // Changed from 1 to 2
+                  flex: ProjectListLayout.dateColumnFlex,
                   child: Text(
                     'Due Date',
                     style: Theme.of(context).textTheme.titleSmall,
@@ -2341,10 +2233,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 // Tasks with right padding and fixed width
                 Padding(
-                  padding:
-                      const EdgeInsets.only(right: 25), // Added right padding
+                  padding: const EdgeInsets.only(
+                      right: ProjectListLayout.columnPadding),
                   child: SizedBox(
-                    width: 100,
+                    width: ProjectListLayout.tasksWidth,
                     child: Text(
                       'Tasks',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -2355,10 +2247,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 // Priority with right padding and fixed width
                 Padding(
-                  padding:
-                      const EdgeInsets.only(right: 20), // Added right padding
+                  padding: const EdgeInsets.only(
+                      right: ProjectListLayout.columnPadding),
                   child: SizedBox(
-                    width: 100, // Fixed width to match list items
+                    width: ProjectListLayout.priorityWidth,
                     child: Text(
                       'Priority',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -2368,9 +2260,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(
-                      right: 15), // Added right padding of 15px
+                      right: ProjectListLayout.columnPadding),
                   child: SizedBox(
-                    width: 100, // Fixed width to match list items
+                    width: ProjectListLayout.statusWidth,
                     child: Text(
                       'Status',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -2381,7 +2273,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
                 // Actions
                 SizedBox(
-                  width: 100, // Changed from 80 to 100 to match list items
+                  width: ProjectListLayout.actionsWidth,
                   child: Text(
                     'Actions',
                     style: TextStyle(fontSize: 12),

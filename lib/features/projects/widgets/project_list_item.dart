@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/project.dart';
+import '../screens/projects_screen.dart';
 
 class ProjectListItem extends StatelessWidget {
   final Project project;
@@ -46,19 +47,22 @@ class ProjectListItem extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: ProjectListLayout.rowHorizontalPadding,
+          vertical: ProjectListLayout.rowVerticalPadding,
+        ),
         child: Row(
           children: [
             SizedBox(
-              width: 24,
+              width: ProjectListLayout.checkboxWidth,
               child: Checkbox(
                 value: isChecked,
                 onChanged: onCheckChanged,
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: ProjectListLayout.iconSpacing),
             Expanded(
-              flex: 3,
+              flex: ProjectListLayout.nameColumnFlex,
               child: Row(
                 children: [
                   _buildCategoryIcon(context, project.category),
@@ -108,7 +112,7 @@ class ProjectListItem extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: ProjectListLayout.dateColumnFlex,
               child: _buildDateInfo(
                 context,
                 'Start',
@@ -118,7 +122,7 @@ class ProjectListItem extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: ProjectListLayout.dateColumnFlex,
               child: _buildDateInfo(
                 context,
                 'Due',
@@ -127,7 +131,8 @@ class ProjectListItem extends StatelessWidget {
                 isStart: false,
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: ProjectListLayout.tasksWidth,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -176,14 +181,16 @@ class ProjectListItem extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: ProjectListLayout.priorityWidth,
               child: _buildPriorityBadge(context, project.priority),
             ),
-            Expanded(
+            SizedBox(
+              width: ProjectListLayout.statusWidth,
               child: _buildStatusBadge(context, project.status),
             ),
             SizedBox(
-              width: 100,
+              width: ProjectListLayout.actionsWidth,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
