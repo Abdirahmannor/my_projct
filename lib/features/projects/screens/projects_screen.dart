@@ -2365,6 +2365,179 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
           ),
           const Divider(height: 1),
+          // Add this inside _buildProjectsList() method, after the first Divider
+          if (isListView) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 8), // Reduced padding
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .cardColor
+                    .withOpacity(0.5), // Slightly transparent
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Checkbox(
+                      value: checkedProjects.every((checked) => checked),
+                      onChanged: _toggleAllProjects,
+                    ),
+                  ),
+                  const SizedBox(width: 12), // Reduced spacing
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Project Name',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Start Date',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Due Date',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Tasks',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 200, // Fixed width for the last section
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              PhosphorIcons.warning(PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withOpacity(0.7),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Priority',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              PhosphorIcons.clockClockwise(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withOpacity(0.7),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Status',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              PhosphorIcons.dotsThree(PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withOpacity(0.7),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Actions',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+          ],
           // Project List/Grid
           Expanded(
             child: isListView
