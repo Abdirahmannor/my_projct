@@ -1239,15 +1239,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   void _handleDateRangeSelect() async {
     final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      initialDateRange: _selectedDateRange ??
-          DateTimeRange(
-            start: DateTime.now(),
-            end: DateTime.now().add(const Duration(days: 7)),
-          ),
-    );
+        context: context,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+        initialDateRange: _selectedDateRange ??
+            DateTimeRange(
+              start: DateTime.now(),
+              end: DateTime.now().add(const Duration(days: 7)),
+            ));
 
     if (picked != null) {
       setState(() {
@@ -2157,44 +2156,98 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
           ),
           const Divider(height: 1),
-          // Project List
+          // Project List/Grid
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount:
-                  showRecycleBin ? deletedProjects.length : projects.length,
-              itemBuilder: (context, index) {
-                final project =
-                    showRecycleBin ? deletedProjects[index] : projects[index];
-
-                return MouseRegion(
-                  onEnter: (_) => setState(() => hoveredIndex = index),
-                  onExit: (_) => setState(() => hoveredIndex = null),
-                  child: ProjectListItem(
-                    project: project,
-                    isChecked: showRecycleBin
-                        ? recycleBinCheckedProjects[index]
-                        : checkedProjects[index],
-                    onCheckChanged: showRecycleBin
-                        ? (value) {
-                            setState(() {
-                              recycleBinCheckedProjects[index] = value ?? false;
-                              recycleBinSelectAll = recycleBinCheckedProjects
-                                  .every((checked) => checked);
-                            });
-                          }
-                        : (value) => _handleCheckboxChange(index, value),
-                    onEdit: showRecycleBin ? () {} : () => _handleEdit(index),
-                    onDelete: showRecycleBin
-                        ? () => _handlePermanentDelete(index)
-                        : () => _handleDelete(index),
-                    onRestore:
-                        showRecycleBin ? () => _handleRestore(index) : null,
-                    isHovered: hoveredIndex == index,
+            child: isListView
+                ? ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: showRecycleBin
+                        ? deletedProjects.length
+                        : projects.length,
+                    itemBuilder: (context, index) {
+                      final project = showRecycleBin
+                          ? deletedProjects[index]
+                          : projects[index];
+                      return MouseRegion(
+                        onEnter: (_) => setState(() => hoveredIndex = index),
+                        onExit: (_) => setState(() => hoveredIndex = null),
+                        child: ProjectListItem(
+                          project: project,
+                          isChecked: showRecycleBin
+                              ? recycleBinCheckedProjects[index]
+                              : checkedProjects[index],
+                          onCheckChanged: showRecycleBin
+                              ? (value) {
+                                  setState(() {
+                                    recycleBinCheckedProjects[index] =
+                                        value ?? false;
+                                    recycleBinSelectAll =
+                                        recycleBinCheckedProjects
+                                            .every((checked) => checked);
+                                  });
+                                }
+                              : (value) => _handleCheckboxChange(index, value),
+                          onEdit:
+                              showRecycleBin ? () {} : () => _handleEdit(index),
+                          onDelete: showRecycleBin
+                              ? () => _handlePermanentDelete(index)
+                              : () => _handleDelete(index),
+                          onRestore: showRecycleBin
+                              ? () => _handleRestore(index)
+                              : null,
+                          isHovered: hoveredIndex == index,
+                        ),
+                      );
+                    },
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 400,
+                      childAspectRatio: 1.2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: showRecycleBin
+                        ? deletedProjects.length
+                        : projects.length,
+                    itemBuilder: (context, index) {
+                      final project = showRecycleBin
+                          ? deletedProjects[index]
+                          : projects[index];
+                      return MouseRegion(
+                        onEnter: (_) => setState(() => hoveredIndex = index),
+                        onExit: (_) => setState(() => hoveredIndex = null),
+                        child: ProjectGridItem(
+                          project: project,
+                          isChecked: showRecycleBin
+                              ? recycleBinCheckedProjects[index]
+                              : checkedProjects[index],
+                          onCheckChanged: showRecycleBin
+                              ? (value) {
+                                  setState(() {
+                                    recycleBinCheckedProjects[index] =
+                                        value ?? false;
+                                    recycleBinSelectAll =
+                                        recycleBinCheckedProjects
+                                            .every((checked) => checked);
+                                  });
+                                }
+                              : (value) => _handleCheckboxChange(index, value),
+                          onEdit:
+                              showRecycleBin ? () {} : () => _handleEdit(index),
+                          onDelete: showRecycleBin
+                              ? () => _handlePermanentDelete(index)
+                              : () => _handleDelete(index),
+                          onRestore: showRecycleBin
+                              ? () => _handleRestore(index)
+                              : null,
+                          isHovered: hoveredIndex == index,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

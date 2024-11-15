@@ -60,7 +60,7 @@ class ProjectGridItem extends StatelessWidget {
                       width: 24,
                       height: 24,
                       child: Checkbox(
-                        value: onRestore != null ? true : isChecked,
+                        value: isChecked,
                         onChanged: onCheckChanged,
                       ),
                     ),
