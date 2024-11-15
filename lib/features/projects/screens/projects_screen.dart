@@ -842,7 +842,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget _buildRightSideControls() {
     return Row(
       children: [
-        // Search
+        // Action buttons for selected projects
+        if (showAllProjects && checkedProjects.contains(true)) ...[
+          FilledButton.icon(
+            onPressed: _handleCompleteSelected,
+            icon: Icon(
+              PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Complete Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.shade400,
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: _handleDeleteSelected,
+            icon: Icon(
+              PhosphorIcons.trash(PhosphorIconsStyle.bold),
+              color: Colors.white,
+            ),
+            label: const Text('Delete Selected'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
+        // Rest of your existing controls (Search, Filters, etc.)
         if (hasActiveFilters) ...[
           Container(
             height: 40,
@@ -2263,124 +2290,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       child: Column(
         children: [
           // Table Header
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                // Show checkbox for active projects and archived view
-                if (showAllProjects || showArchived)
-                  SizedBox(
-                    width: 24,
-                    child: Checkbox(
-                      value: showArchived
-                          ? archivedSelectAll
-                          : showAllProjects
-                              ? checkedProjects.every((checked) => checked)
-                              : false,
-                      onChanged: (value) {
-                        setState(() {
-                          if (showArchived) {
-                            archivedSelectAll = value ?? false;
-                            archivedCheckedProjects = List.generate(
-                                archivedProjects.length, (_) => value ?? false);
-                          } else if (showAllProjects) {
-                            checkedProjects = List.generate(
-                                projects.length, (_) => value ?? false);
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                // Show checkbox for recycle bin
-                if (showRecycleBin)
-                  SizedBox(
-                    width: 24,
-                    child: Checkbox(
-                      value: recycleBinSelectAll,
-                      onChanged: (value) {
-                        setState(() {
-                          recycleBinSelectAll = value ?? false;
-                          recycleBinCheckedProjects = List.generate(
-                              deletedProjects.length, (_) => value ?? false);
-                        });
-                      },
-                    ),
-                  ),
-                const Spacer(),
-                // Action buttons for active projects
-                if (showAllProjects && checkedProjects.contains(true)) ...[
-                  FilledButton.icon(
-                    onPressed: _handleCompleteSelected,
-                    icon: Icon(
-                      PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
-                      color: Colors.white,
-                    ),
-                    label: const Text('Complete Selected'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green.shade400,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: _handleDeleteSelected,
-                    icon: Icon(
-                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                      color: Colors.white,
-                    ),
-                    label: const Text('Delete Selected'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
-                    ),
-                  ),
-                ],
-                // Action buttons for archived
-                if (showArchived && archivedCheckedProjects.contains(true)) ...[
-                  FilledButton.icon(
-                    onPressed: _handleRestoreSelectedArchived,
-                    icon: Icon(
-                      PhosphorIcons.arrowCounterClockwise(
-                          PhosphorIconsStyle.bold),
-                      color: Colors.white,
-                    ),
-                    label: const Text('Restore Selected'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: _handleDeleteSelectedArchived,
-                    icon: Icon(
-                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                      color: Colors.white,
-                    ),
-                    label: const Text('Delete Selected'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
-                    ),
-                  ),
-                ],
-                // Existing recycle bin buttons...
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Add this inside _buildProjectsList() method, after the first Divider
           if (isListView) ...[
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8), // Reduced padding
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .cardColor
-                    .withOpacity(0.5), // Slightly transparent
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 1,
-                  ),
-                ),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   SizedBox(
@@ -2390,7 +2302,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       onChanged: _toggleAllProjects,
                     ),
                   ),
-                  const SizedBox(width: 12), // Reduced spacing
+                  const SizedBox(width: 12),
                   Expanded(
                     flex: 3,
                     child: Text(
@@ -2434,20 +2346,23 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Text(
-                      'Tasks',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.color
-                            ?.withOpacity(0.7),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Text(
+                        'Tasks',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withOpacity(0.7),
+                        ),
                       ),
                     ),
                   ),
                   SizedBox(
-                    width: 200, // Fixed width for the last section
+                    width: 200,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
