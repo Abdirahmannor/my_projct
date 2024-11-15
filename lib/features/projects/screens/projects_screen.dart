@@ -68,6 +68,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool recycleBinSelectAll = false;
   int _newlyDeletedCount = 0;
   bool _hasVisitedRecycleBin = false;
+  bool _isPriorityHeaderHovered = false;
 
   @override
   void initState() {
@@ -958,102 +959,107 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ),
         const SizedBox(width: 8),
         // Priority Filter - Add after Category filter and before View Toggle
-        Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
+        Visibility(
+          visible: false, // This hides the widget but keeps its functionality
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: PopupMenuButton<String>(
-            offset: const Offset(0, 40),
-            child: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.warning(PhosphorIconsStyle.bold),
-                  size: 18,
-                  color: selectedPriority != null ? AppColors.accent : null,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  selectedPriority?.capitalize() ?? 'Priority',
-                  style: TextStyle(
+            child: PopupMenuButton<String>(
+              offset: const Offset(0, 40),
+              child: Row(
+                children: [
+                  Icon(
+                    PhosphorIcons.warning(PhosphorIconsStyle.bold),
+                    size: 18,
                     color: selectedPriority != null ? AppColors.accent : null,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
-                  size: 18,
-                  color: selectedPriority != null ? AppColors.accent : null,
-                ),
-              ],
-            ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'all',
-                child: Row(
-                  children: [
-                    Icon(
-                      PhosphorIcons.warning(PhosphorIconsStyle.bold),
-                      size: 16,
-                      color: selectedPriority == null ? AppColors.accent : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'All Priorities',
-                      style: TextStyle(
-                        color:
-                            selectedPriority == null ? AppColors.accent : null,
-                        fontWeight:
-                            selectedPriority == null ? FontWeight.w600 : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              ...{
-                'high': Colors.red.shade400,
-                'medium': Colors.orange.shade400,
-                'low': Colors.green.shade400,
-              }.entries.map(
-                    (entry) => PopupMenuItem(
-                      value: entry.key,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: entry.value,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            entry.key.capitalize(),
-                            style: TextStyle(
-                              color: selectedPriority == entry.key
-                                  ? AppColors.accent
-                                  : null,
-                              fontWeight: selectedPriority == entry.key
-                                  ? FontWeight.w600
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 8),
+                  Text(
+                    selectedPriority?.capitalize() ?? 'Priority',
+                    style: TextStyle(
+                      color: selectedPriority != null ? AppColors.accent : null,
                     ),
                   ),
-            ],
-            onSelected: (value) {
-              setState(() {
-                selectedPriority = value == 'all' ? null : value;
-              });
-            },
+                  const SizedBox(width: 8),
+                  Icon(
+                    PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
+                    size: 18,
+                    color: selectedPriority != null ? AppColors.accent : null,
+                  ),
+                ],
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'all',
+                  child: Row(
+                    children: [
+                      Icon(
+                        PhosphorIcons.warning(PhosphorIconsStyle.bold),
+                        size: 16,
+                        color:
+                            selectedPriority == null ? AppColors.accent : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'All Priorities',
+                        style: TextStyle(
+                          color: selectedPriority == null
+                              ? AppColors.accent
+                              : null,
+                          fontWeight:
+                              selectedPriority == null ? FontWeight.w600 : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                ...{
+                  'high': Colors.red.shade400,
+                  'medium': Colors.orange.shade400,
+                  'low': Colors.green.shade400,
+                }.entries.map(
+                      (entry) => PopupMenuItem(
+                        value: entry.key,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: entry.value,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              entry.key.capitalize(),
+                              style: TextStyle(
+                                color: selectedPriority == entry.key
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: selectedPriority == entry.key
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+              ],
+              onSelected: (value) {
+                setState(() {
+                  selectedPriority = value == 'all' ? null : value;
+                });
+              },
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -2251,13 +2257,119 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       right: ProjectListLayout.columnPadding),
                   child: SizedBox(
                     width: ProjectListLayout.priorityWidth,
-                    child: Text(
-                      'Priority',
-                      style: Theme.of(context).textTheme.titleSmall,
-                      textAlign: TextAlign.center,
+                    child: PopupMenuButton<String>(
+                      offset: const Offset(0, 40),
+                      child: MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _isPriorityHeaderHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isPriorityHeaderHovered = false),
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isPriorityHeaderHovered
+                                ? Theme.of(context).hoverColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Priority',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                selectedPriority != null
+                                    ? PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.fill)
+                                    : PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                size: 14,
+                                color: selectedPriority != null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'all',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.warning(PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: selectedPriority == null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'All Priorities',
+                                style: TextStyle(
+                                  color: selectedPriority == null
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: selectedPriority == null
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        ...{
+                          'high': Colors.red.shade400,
+                          'medium': Colors.orange.shade400,
+                          'low': Colors.green.shade400,
+                        }.entries.map(
+                              (entry) => PopupMenuItem(
+                                value: entry.key,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: entry.value,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      entry.key.capitalize(),
+                                      style: TextStyle(
+                                        color: selectedPriority == entry.key
+                                            ? AppColors.accent
+                                            : null,
+                                        fontWeight:
+                                            selectedPriority == entry.key
+                                                ? FontWeight.w600
+                                                : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                      ],
+                      onSelected: (value) {
+                        setState(() {
+                          selectedPriority = value == 'all' ? null : value;
+                        });
+                      },
                     ),
                   ),
                 ),
+
+                // Status
                 Padding(
                   padding: const EdgeInsets.only(
                       right: ProjectListLayout.columnPadding),
