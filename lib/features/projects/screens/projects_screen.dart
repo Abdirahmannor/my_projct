@@ -437,7 +437,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             tasks: project.tasks,
             completedTasks: project.completedTasks,
             priority: project.priority,
-            status: 'in progress',
+            status: project.originalStatus ??
+                'in progress', // Use original status or fallback
             category: project.category,
           );
 
@@ -1823,6 +1824,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             completedTasks: project.tasks,
             priority: project.priority,
             status: 'completed',
+            originalStatus: project.status, // Store original status
             category: project.category,
             archivedDate: DateTime.now(),
           );

@@ -43,6 +43,9 @@ class Project {
   @HiveField(12)
   final DateTime? deletedAt;
 
+  @HiveField(13)
+  final String? originalStatus;
+
   Project({
     this.id,
     required this.name,
@@ -57,6 +60,7 @@ class Project {
     this.archivedDate,
     this.lastRestoredDate,
     this.deletedAt,
+    this.originalStatus,
   });
 
   Map<String, dynamic> toMap() {
@@ -74,6 +78,7 @@ class Project {
       'archivedDate': archivedDate?.toIso8601String(),
       'lastRestoredDate': lastRestoredDate?.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
+      'originalStatus': originalStatus,
     };
   }
 
@@ -97,6 +102,7 @@ class Project {
           : null,
       deletedAt:
           map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      originalStatus: map['originalStatus'],
     );
   }
 
