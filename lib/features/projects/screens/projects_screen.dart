@@ -69,6 +69,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int _newlyDeletedCount = 0;
   bool _hasVisitedRecycleBin = false;
   bool _isPriorityHeaderHovered = false;
+  bool _isStatusHeaderHovered = false;
 
   @override
   void initState() {
@@ -323,6 +324,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       }
     }
 
+    // Status filter
+    if (selectedStatus != null && selectedStatus != 'all') {
+      if (project.status != selectedStatus) {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -487,6 +495,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool get hasActiveFilters =>
       searchQuery.isNotEmpty ||
       selectedPriority != null ||
+      selectedStatus != null ||
+      selectedCategory != null ||
       _selectedDateRange != null;
 
   // Add this method to clear all filters
@@ -495,6 +505,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       searchQuery = '';
       searchController.clear();
       selectedPriority = null;
+      selectedStatus = null;
+      selectedCategory = null;
       _selectedDateRange = null;
     });
 
@@ -773,23 +785,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: TextButton.icon(
-              // Add child property
-              onPressed: _clearAllFilters,
-              icon: Icon(
-                PhosphorIcons.x(PhosphorIconsStyle.bold),
-                size: 18,
-                color: Colors.red.shade400,
-              ),
-              label: Text(
-                'Clear Filters',
-                style: TextStyle(
-                  color: Colors.red.shade400,
-                ),
-              ),
-            ),
           ),
-          const SizedBox(width: 8), // Move SizedBox outside Container
+          const SizedBox(width: 8),
         ],
         // Search Bar
         Container(
@@ -2369,16 +2366,129 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
 
-                // Status
+                // Status with right padding and fixed width
                 Padding(
                   padding: const EdgeInsets.only(
                       right: ProjectListLayout.columnPadding),
                   child: SizedBox(
                     width: ProjectListLayout.statusWidth,
-                    child: Text(
-                      'Status',
-                      style: Theme.of(context).textTheme.titleSmall,
-                      textAlign: TextAlign.center,
+                    child: PopupMenuButton<String>(
+                      offset: const Offset(0, 40),
+                      child: MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _isStatusHeaderHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isStatusHeaderHovered = false),
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isStatusHeaderHovered
+                                ? Theme.of(context).hoverColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Status',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                selectedStatus != null
+                                    ? PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.fill)
+                                    : PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                size: 14,
+                                color: selectedStatus != null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'all',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.circle(PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: selectedStatus == null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'All Statuses',
+                                style: TextStyle(
+                                  color: selectedStatus == null
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: selectedStatus == null
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        ...{
+                          'not started': (
+                            PhosphorIcons.pause(PhosphorIconsStyle.fill),
+                            Colors.grey.shade400
+                          ),
+                          'in progress': (
+                            PhosphorIcons.play(PhosphorIconsStyle.fill),
+                            Colors.blue.shade400
+                          ),
+                          'on hold': (
+                            PhosphorIcons.clock(PhosphorIconsStyle.fill),
+                            Colors.orange.shade400
+                          ),
+                          'completed': (
+                            PhosphorIcons.check(PhosphorIconsStyle.fill),
+                            Colors.green.shade400
+                          ),
+                        }.entries.map(
+                              (entry) => PopupMenuItem(
+                                value: entry.key,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      entry.value.$1,
+                                      size: 16,
+                                      color: entry.value.$2,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      entry.key.capitalize(),
+                                      style: TextStyle(
+                                        color: selectedStatus == entry.key
+                                            ? AppColors.accent
+                                            : null,
+                                        fontWeight: selectedStatus == entry.key
+                                            ? FontWeight.w600
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                      ],
+                      onSelected: (value) {
+                        setState(() {
+                          selectedStatus = value == 'all' ? null : value;
+                        });
+                      },
                     ),
                   ),
                 ),
