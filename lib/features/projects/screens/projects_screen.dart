@@ -1,3 +1,4 @@
+import 'dart:async'; // Add this import for Timer
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
@@ -44,15 +45,26 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   List<Project> projects = [];
   final Map<int, String> originalStatuses = {};
   String? selectedCategory;
+  bool showRecycleBin = false;
+  List<Project> deletedProjects = [];
+  Timer? _cleanupTimer;
 
   @override
   void initState() {
     super.initState();
-    // Load projects when screen initializes
     _loadProjects();
+    _loadDeletedProjects();
+    _cleanupTimer = Timer.periodic(const Duration(days: 1), (_) {
+      _projectDatabaseService.cleanupOldProjects();
+    });
   }
 
-  // Add this method to load projects from database
+  @override
+  void dispose() {
+    _cleanupTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadProjects() async {
     try {
       final loadedProjects = await _projectDatabaseService.getAllProjects();
@@ -63,6 +75,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     } catch (e) {
       print('Error loading projects: $e');
       // Optionally show error message to user
+    }
+  }
+
+  Future<void> _loadDeletedProjects() async {
+    try {
+      final loadedProjects = await _projectDatabaseService.getDeletedProjects();
+      setState(() {
+        deletedProjects = loadedProjects;
+      });
+    } catch (e) {
+      print('Error loading deleted projects: $e');
     }
   }
 
@@ -144,13 +167,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              PhosphorIcons.warning(PhosphorIconsStyle.fill),
+              PhosphorIcons.trash(PhosphorIconsStyle.fill),
               color: Colors.red.shade400,
               size: 20,
             ),
             const SizedBox(width: 8),
             const Text(
-              'Delete Project',
+              'Move to Recycle Bin',
               style: TextStyle(fontSize: 16),
             ),
           ],
@@ -158,7 +181,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         content: SizedBox(
           width: 300,
           child: Text(
-            'Are you sure you want to delete "$projectName"?',
+            'Are you sure you want to move "$projectName" to recycle bin?',
             style: const TextStyle(fontSize: 14),
           ),
         ),
@@ -180,41 +203,32 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text(
-              'Delete',
+              'Move to Recycle Bin',
               style: TextStyle(fontSize: 14),
             ),
           ),
         ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        actionsPadding: const EdgeInsets.all(12),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
     );
 
-    // If user confirmed, delete the project
-    if (confirm == true) {
+    if (confirm == true && projectId != null) {
       try {
-        if (projectId != null) {
-          // Delete from database first
-          await _projectDatabaseService.deleteProject(projectId);
-        }
+        // Move to recycle bin instead of deleting
+        await _projectDatabaseService.moveToRecycleBin(projects[index]);
 
-        // Then update local state
+        // Update local state
         setState(() {
+          deletedProjects.add(projects[index]);
           projects.removeAt(index);
           checkedProjects = List.generate(projects.length, (_) => false);
         });
 
         _showSuccessMessage(
-          message: 'Project "$projectName" has been deleted successfully',
+          message: 'Project "$projectName" has been moved to recycle bin',
           icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
         );
       } catch (e) {
-        _showError('Failed to delete project: $e');
+        _showError('Failed to move project to recycle bin: $e');
       }
     }
   }
@@ -222,9 +236,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool _filterProject(int index) {
     // First check if the index is valid for the current list
     if (showArchived && index >= archivedProjects.length) return false;
-    if (!showArchived && index >= projects.length) return false;
+    if (showRecycleBin && index >= deletedProjects.length) return false;
+    if (!showArchived && !showRecycleBin && index >= projects.length)
+      return false;
 
-    final project = showArchived ? archivedProjects[index] : projects[index];
+    // Get the correct project based on current view
+    final project = showArchived
+        ? archivedProjects[index]
+        : showRecycleBin
+            ? deletedProjects[index]
+            : projects[index];
 
     // Search filter
     if (searchQuery.isNotEmpty) {
@@ -409,6 +430,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleRestore(int index) async {
+    final project =
+        showArchived ? archivedProjects[index] : deletedProjects[index];
+
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -424,7 +448,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to restore "${archivedProjects[index].name}"?',
+          'Are you sure you want to restore "${project.name}"?',
         ),
         actions: [
           TextButton(
@@ -448,49 +472,48 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        // Create new project with restored status
-        final restoredProject = Project(
-          id: archivedProjects[index].id,
-          name: archivedProjects[index].name,
-          description: archivedProjects[index].description,
-          startDate: archivedProjects[index].startDate,
-          dueDate: archivedProjects[index].dueDate,
-          tasks: archivedProjects[index].tasks,
-          completedTasks: archivedProjects[index].completedTasks,
-          priority: archivedProjects[index].priority,
-          status: originalStatuses[index] ?? 'in progress',
-          category: archivedProjects[index].category,
-        );
+      try {
+        if (showArchived) {
+          // Handle archived project restoration
+          final restoredProject = Project(
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            startDate: project.startDate,
+            dueDate: project.dueDate,
+            tasks: project.tasks,
+            completedTasks: project.completedTasks,
+            priority: project.priority,
+            status: originalStatuses[index] ?? 'in progress',
+            category: project.category,
+          );
 
-        // Move back to projects list
-        projects.add(restoredProject);
-        archivedProjects.removeAt(index);
-        checkedProjects.add(false);
-        originalStatuses.remove(index);
+          // Move back to projects list
+          setState(() {
+            projects.add(restoredProject);
+            archivedProjects.removeAt(index);
+            checkedProjects.add(false);
+            originalStatuses.remove(index);
+          });
+        } else {
+          // Handle recycle bin project restoration
+          if (project.id != null) {
+            await _projectDatabaseService.restoreFromRecycleBin(project.id!);
+            setState(() {
+              projects.add(project);
+              deletedProjects.removeAt(index);
+              checkedProjects.add(false);
+            });
+          }
+        }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 8),
-                const Text('Project has been restored'),
-              ],
-            ),
-            backgroundColor: AppColors.accent,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        _showSuccessMessage(
+          message: 'Project has been restored',
+          icon: PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill),
         );
-      });
+      } catch (e) {
+        _showError('Failed to restore project: $e');
+      }
     }
   }
 
@@ -565,1056 +588,444 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Column(
-        children: [
-          // Header section
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Projects',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.accent,
-                              Color.lerp(
-                                      AppColors.accent, Colors.purple, 0.6) ??
-                                  AppColors.accent,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () async {
-                              _handleAddProject();
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      PhosphorIcons.plus(
-                                          PhosphorIconsStyle.bold),
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Add Project',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Filter bar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Left side - All Projects and Archived
-                      Row(
-                        children: [
-                          _buildFilterButton(
-                            'All Projects',
-                            PhosphorIcons.folder(PhosphorIconsStyle.bold),
-                            showAllProjects,
-                            () => setState(() {
-                              showAllProjects = true;
-                              showArchived = false;
-                            }),
-                            tooltip: 'Show all active projects',
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterButton(
-                            'Archived',
-                            PhosphorIcons.archive(PhosphorIconsStyle.bold),
-                            showArchived,
-                            () => setState(() {
-                              showArchived = true;
-                              showAllProjects = false;
-                            }),
-                            tooltip: 'Show completed projects',
-                          ),
-                        ],
-                      ),
-
-                      // Right side controls
-                      Row(
-                        children: [
-                          // Search
-                          if (hasActiveFilters) ...[
-                            Container(
-                              height: 40,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.red.shade300,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: TextButton.icon(
-                                onPressed: _clearAllFilters,
-                                icon: Icon(
-                                  PhosphorIcons.x(PhosphorIconsStyle.bold),
-                                  size: 18,
-                                  color: Colors.red.shade400,
-                                ),
-                                label: Text(
-                                  'Clear Filters',
-                                  style: TextStyle(
-                                    color: Colors.red.shade400,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Container(
-                            width: 240,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              color: Theme.of(context).cardColor,
-                            ),
-                            child: Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 12),
-                                  child: Icon(
-                                    PhosphorIcons.magnifyingGlass(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: Theme.of(context).hintColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: searchController,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        searchQuery = value;
-                                      });
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: 'Search projects...',
-                                      hintStyle: TextStyle(
-                                        color: Theme.of(context).hintColor,
-                                      ),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 8),
-                                      isDense: true,
-                                    ),
-                                  ),
-                                ),
-                                if (searchQuery.isNotEmpty)
-                                  IconButton(
-                                    icon: Icon(
-                                      PhosphorIcons.x(PhosphorIconsStyle.bold),
-                                      size: 18,
-                                      color: Theme.of(context).hintColor,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        searchQuery = '';
-                                        searchController.clear();
-                                      });
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Category Filter
-                          Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    PhosphorIcons.funnel(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: selectedCategory != null
-                                        ? AppColors.accent
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    selectedCategory?.capitalize() ??
-                                        'All Categories',
-                                    style: TextStyle(
-                                      color: selectedCategory != null
-                                          ? AppColors.accent
-                                          : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 18,
-                                    color: selectedCategory != null
-                                        ? AppColors.accent
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: 'all',
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 6),
-                                    child: const Text('All Categories'),
-                                  ),
-                                ),
-                                const PopupMenuDivider(),
-                                ...{
-                                  'school': (
-                                    PhosphorIcons.graduationCap(
-                                        PhosphorIconsStyle.fill),
-                                    AppColors.accent
-                                  ),
-                                  'personal': (
-                                    PhosphorIcons.user(PhosphorIconsStyle.fill),
-                                    Colors.purple.shade400
-                                  ),
-                                  'work': (
-                                    PhosphorIcons.briefcase(
-                                        PhosphorIconsStyle.fill),
-                                    Colors.blue.shade400
-                                  ),
-                                  'online work': (
-                                    PhosphorIcons.globe(
-                                        PhosphorIconsStyle.fill),
-                                    Colors.green.shade400
-                                  ),
-                                  'other': (
-                                    PhosphorIcons.folder(
-                                        PhosphorIconsStyle.fill),
-                                    Colors.grey.shade400
-                                  ),
-                                }.entries.map(
-                                      (entry) => PopupMenuItem(
-                                        value: entry.key,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 6),
-                                          child: Row(
-                                            children: [
-                                              Icon(entry.value.$1,
-                                                  size: 16,
-                                                  color: entry.value.$2),
-                                              const SizedBox(width: 8),
-                                              Text(entry.key.capitalize()),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedCategory =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // View Toggle
-                          Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                _buildViewToggleButton(
-                                  icon: PhosphorIcons.list(
-                                      PhosphorIconsStyle.bold),
-                                  isActive: isListView,
-                                  onPressed: () =>
-                                      setState(() => isListView = true),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 20,
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                                _buildViewToggleButton(
-                                  icon: PhosphorIcons.squaresFour(
-                                      PhosphorIconsStyle.bold),
-                                  isActive: !isListView,
-                                  onPressed: () =>
-                                      setState(() => isListView = false),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Add this widget between the statistics and project list
-          Container(
-            margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Theme.of(context).cardColor,
-                  Color.lerp(Theme.of(context).cardColor, AppColors.accent,
-                          0.05) ??
-                      Theme.of(context).cardColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).dividerColor),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Header with collapse button
-                InkWell(
-                  onTap: () => setState(() {
-                    _isStatisticsExpanded = !_isStatisticsExpanded;
-                    if (!_isStatisticsExpanded) {
-                      // Show chart animation when collapsed
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        setState(() => _showChart = true);
-                      });
-                    } else {
-                      _showChart = false;
-                    }
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          PhosphorIcons.chartBar(PhosphorIconsStyle.fill),
-                          color: AppColors.accent,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Project Statistics',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const Spacer(),
-                        if (_isStatisticsExpanded) ...[
-                          TextButton.icon(
-                            onPressed: _handleDateRangeSelect,
-                            icon: Icon(
-                              PhosphorIcons.calendar(PhosphorIconsStyle.bold),
-                              size: 18,
-                              color: _selectedDateRange != null
-                                  ? AppColors.accent
-                                  : null,
-                            ),
-                            label: Text(
-                              _selectedDateRange != null
-                                  ? '${_selectedDateRange!.start.day} ${_getMonthName(_selectedDateRange!.start.month)} - '
-                                      '${_selectedDateRange!.end.day} ${_getMonthName(_selectedDateRange!.end.month)}'
-                                  : 'Filter by Date',
-                              style: TextStyle(
-                                color: _selectedDateRange != null
-                                    ? AppColors.accent
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          _buildTimeframeDropdown(),
-                        ],
-                        const SizedBox(width: 8),
-                        Icon(
-                          _isStatisticsExpanded
-                              ? PhosphorIcons.caretUp(PhosphorIconsStyle.bold)
-                              : PhosphorIcons.caretDown(
-                                  PhosphorIconsStyle.bold),
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Expandable content
-                AnimatedCrossFade(
-                  duration: const Duration(milliseconds: 300),
-                  crossFadeState: _isStatisticsExpanded
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  firstChild: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Row(
-                      children: [
-                        _buildEnhancedStatCard(
-                          icon: PhosphorIcons.folder(PhosphorIconsStyle.fill),
-                          title: 'Total Projects',
-                          value: projects.length.toString(),
-                          subtitle: 'Active projects',
-                          trend: '+2.5%',
-                          trendUp: true,
-                          color: AppColors.accent,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildEnhancedStatCard(
-                          icon: PhosphorIcons.clockCountdown(
-                              PhosphorIconsStyle.fill),
-                          title: 'In Progress',
-                          value: projects
-                              .where((p) => p.status == 'in progress')
-                              .length
-                              .toString(),
-                          subtitle: 'Ongoing tasks',
-                          trend: '+5.0%',
-                          trendUp: true,
-                          color: Colors.blue.shade400,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildEnhancedStatCard(
-                          icon: PhosphorIcons.checkCircle(
-                              PhosphorIconsStyle.fill),
-                          title: 'Completed',
-                          value: projects
-                              .where((p) => p.status == 'completed')
-                              .length
-                              .toString(),
-                          subtitle: 'Finished projects',
-                          trend: '+12.5%',
-                          trendUp: true,
-                          color: Colors.green.shade400,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildEnhancedStatCard(
-                          icon: PhosphorIcons.warning(PhosphorIconsStyle.fill),
-                          title: 'On Hold',
-                          value: projects
-                              .where((p) => p.status == 'on hold')
-                              .length
-                              .toString(),
-                          subtitle: 'Paused projects',
-                          trend: '-3.0%',
-                          trendUp: false,
-                          color: Colors.orange.shade400,
-                        ),
-                      ],
-                    ),
-                  ),
-                  secondChild: _showChart
-                      ? Container(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                          child: Row(
-                            children: [
-                              // Quick stats in more compact form
-                              Expanded(
-                                flex: 4,
-                                child: Row(
-                                  children: [
-                                    _buildMiniStat(
-                                      value: projects.length.toString(),
-                                      label: 'Total',
-                                      color: AppColors.accent,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildMiniStat(
-                                      value: projects
-                                          .where(
-                                              (p) => p.status == 'in progress')
-                                          .length
-                                          .toString(),
-                                      label: 'Active',
-                                      color: Colors.blue.shade400,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildMiniStat(
-                                      value: projects
-                                          .where((p) => p.status == 'completed')
-                                          .length
-                                          .toString(),
-                                      label: 'Done',
-                                      color: Colors.green.shade400,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Mini pie chart
-                              SizedBox(
-                                height: 40,
-                                width: 40,
-                                child: _buildMiniPieChart(),
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox(height: 0),
-                ),
-              ],
-            ),
-          ),
-
-          // Content section
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+    return Scaffold(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Column(
+          children: [
+            // Header section
+            Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                 ),
               ),
-              child: Column(
-                children: [
-                  // Table Header
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          width: 24,
-                          child: showArchived
-                              ? Tooltip(
-                                  message: 'Restore all archived projects',
-                                  child: IconButton(
-                                    icon: Icon(
-                                      PhosphorIcons.arrowCounterClockwise(
-                                          PhosphorIconsStyle.bold),
-                                      size: 18,
-                                      color: AppColors.accent,
-                                    ),
-                                    onPressed: _handleRestoreAll,
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                )
-                              : Tooltip(
-                                  message: 'Select all projects',
-                                  child: Checkbox(
-                                    value: checkedProjects
-                                        .every((checked) => checked),
-                                    onChanged: _toggleAllProjects,
-                                    tristate: true,
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            'Project Name',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            'Start Date',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            'Due Date',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Tasks',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
+                        Text(
+                          'Projects',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Priority',
-                                    style: TextStyle(
-                                      color: selectedPriority != null
-                                          ? selectedPriority == 'high'
-                                              ? Colors.red.shade400
-                                              : selectedPriority == 'medium'
-                                                  ? Colors.orange.shade400
-                                                  : Colors.green.shade400
-                                          : null,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 14,
-                                    color: selectedPriority != null
-                                        ? selectedPriority == 'high'
-                                            ? Colors.red.shade400
-                                            : selectedPriority == 'medium'
-                                                ? Colors.orange.shade400
-                                                : Colors.green.shade400
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'all',
-                                  child: Text('All Priority'),
-                                ),
-                                const PopupMenuDivider(),
-                                ...['high', 'medium', 'low'].map(
-                                  (priority) => PopupMenuItem(
-                                    value: priority,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: priority == 'high'
-                                                ? Colors.red.shade400
-                                                : priority == 'medium'
-                                                    ? Colors.orange.shade400
-                                                    : Colors.green.shade400,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(priority.toUpperCase()),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedPriority =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
                         ),
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Status',
-                                    style: TextStyle(
-                                      color: selectedStatus != null
-                                          ? selectedStatus == 'not started'
-                                              ? Colors.grey.shade400
-                                              : selectedStatus == 'in progress'
-                                                  ? Colors.blue.shade400
-                                                  : selectedStatus == 'on hold'
-                                                      ? Colors.orange.shade400
-                                                      : Colors.green.shade400
-                                          : null,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    PhosphorIcons.caretDown(
-                                        PhosphorIconsStyle.bold),
-                                    size: 14,
-                                    color: selectedStatus != null
-                                        ? selectedStatus == 'not started'
-                                            ? Colors.grey.shade400
-                                            : selectedStatus == 'in progress'
-                                                ? Colors.blue.shade400
-                                                : selectedStatus == 'on hold'
-                                                    ? Colors.orange.shade400
-                                                    : Colors.green.shade400
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: 'all',
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 6),
-                                    child: const Text('All Status'),
-                                  ),
-                                ),
-                                const PopupMenuDivider(),
-                                ...{
-                                  'not started': Colors.grey.shade400,
-                                  'in progress': Colors.blue.shade400,
-                                  'on hold': Colors.orange.shade400,
-                                  'completed': Colors.green.shade400,
-                                }.entries.map(
-                                      (entry) => PopupMenuItem(
-                                        value: entry.key,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: entry.value,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                entry.key.toUpperCase(),
-                                                style: TextStyle(
-                                                  color: entry.value,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                              ],
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedStatus =
-                                      value == 'all' ? null : value;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 100,
-                          child: Text(
-                            'Actions',
-                            style: TextStyle(fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                        _buildAddProjectButton(),
                       ],
                     ),
-                  ),
-                  const Divider(height: 1),
-                  // Project List
-                  Expanded(
-                    child: !isListView
-                        ? GridView.builder(
-                            padding: const EdgeInsets.all(12),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              childAspectRatio: 0.85,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            itemCount: showArchived
-                                ? archivedProjects.length
-                                : projects.length,
-                            itemBuilder: (context, index) {
-                              // Check if the list is empty
-                              if ((showArchived && archivedProjects.isEmpty) ||
-                                  (!showArchived && projects.isEmpty)) {
-                                return const Center(
-                                  child: Text('No projects found'),
-                                );
-                              }
-
-                              if (!_filterProject(index))
-                                return const SizedBox.shrink();
-                              final project = showArchived
-                                  ? archivedProjects[index]
-                                  : projects[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: ProjectGridItem(
-                                  project: project,
-                                  isChecked: showArchived
-                                      ? true
-                                      : checkedProjects[index],
-                                  onCheckChanged: (value) =>
-                                      _handleCheckboxChange(index, value),
-                                  onEdit: showArchived
-                                      ? () {}
-                                      : () => _handleEdit(index),
-                                  onDelete: showArchived
-                                      ? () {}
-                                      : () => _handleDelete(index),
-                                  onRestore: showArchived
-                                      ? () => _handleRestore(index)
-                                      : null,
-                                  isHovered: hoveredIndex == index,
-                                ),
-                              );
-                            },
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(12),
-                            itemCount: showArchived
-                                ? archivedProjects.length
-                                : projects.length,
-                            itemBuilder: (context, index) {
-                              // Check if the list is empty
-                              if ((showArchived && archivedProjects.isEmpty) ||
-                                  (!showArchived && projects.isEmpty)) {
-                                return const Center(
-                                  child: Text('No projects found'),
-                                );
-                              }
-
-                              if (!_filterProject(index))
-                                return const SizedBox.shrink();
-                              final project = showArchived
-                                  ? archivedProjects[index]
-                                  : projects[index];
-                              return MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => hoveredIndex = index),
-                                onExit: (_) =>
-                                    setState(() => hoveredIndex = null),
-                                child: ProjectListItem(
-                                  project: project,
-                                  isChecked: showArchived
-                                      ? true
-                                      : checkedProjects[index],
-                                  onCheckChanged: (value) =>
-                                      _handleCheckboxChange(index, value),
-                                  onEdit: showArchived
-                                      ? () {}
-                                      : () => _handleEdit(index),
-                                  onDelete: showArchived
-                                      ? () {}
-                                      : () => _handleDelete(index),
-                                  onRestore: showArchived
-                                      ? () => _handleRestore(index)
-                                      : null,
-                                  isHovered: hoveredIndex == index,
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                  if (checkedProjects.contains(true))
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.1),
-                        border: Border(
-                          top:
-                              BorderSide(color: Theme.of(context).dividerColor),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${checkedProjects.where((c) => c).length} projects selected',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const Spacer(),
-                          FilledButton.icon(
-                            onPressed: _handleCompleteSelected,
-                            icon: Icon(PhosphorIcons.checkCircle(
-                                PhosphorIconsStyle.bold)),
-                            label: const Text('Complete Selected'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.green.shade400,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          FilledButton.icon(
-                            onPressed: _handleDeleteSelected,
-                            icon: Icon(
-                                PhosphorIcons.trash(PhosphorIconsStyle.bold)),
-                            label: const Text('Delete Selected'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.red.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 24),
+                    // Filter bar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildFilterButtons(),
+                        _buildRightSideControls(),
+                      ],
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+            // Content section
+            Expanded(
+              child: _buildProjectsList(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFilterButton(
-      String label, IconData icon, bool isActive, VoidCallback onPressed,
-      {String? tooltip}) {
-    return Tooltip(
-      message: tooltip ?? label,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppColors.accent.withOpacity(0.1)
-              : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? AppColors.accent : Colors.transparent,
-            width: 1,
-          ),
+  Widget _buildAddProjectButton() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.accent,
+            Color.lerp(AppColors.accent, Colors.purple, 0.6) ??
+                AppColors.accent,
+          ],
         ),
-        child: TextButton.icon(
-          onPressed: onPressed,
-          icon: Icon(
-            icon,
-            size: 18,
-            color: isActive ? AppColors.accent : null,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accent.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          label: Text(
-            label,
-            style: TextStyle(
-              color: isActive ? AppColors.accent : null,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleAddProject,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    PhosphorIcons.plus(PhosphorIconsStyle.bold),
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Add Project',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterButtons() {
+    return Row(
+      children: [
+        _buildFilterButton(
+          'All Projects',
+          PhosphorIcons.folder(PhosphorIconsStyle.bold),
+          showAllProjects,
+          () => setState(() {
+            showAllProjects = true;
+            showArchived = false;
+            showRecycleBin = false;
+          }),
+          tooltip: 'Show all active projects',
+        ),
+        const SizedBox(width: 8),
+        _buildFilterButton(
+          'Archived',
+          PhosphorIcons.archive(PhosphorIconsStyle.bold),
+          showArchived,
+          () => setState(() {
+            showArchived = true;
+            showAllProjects = false;
+            showRecycleBin = false;
+          }),
+          tooltip: 'Show completed projects',
+        ),
+        const SizedBox(width: 8),
+        _buildFilterButton(
+          'Recycle Bin',
+          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+          showRecycleBin,
+          () => setState(() {
+            showRecycleBin = true;
+            showAllProjects = false;
+            showArchived = false;
+          }),
+          badge:
+              deletedProjects.isNotEmpty ? '${deletedProjects.length}' : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterButton(
+    String label,
+    IconData icon,
+    bool isActive,
+    VoidCallback onPressed, {
+    String? tooltip,
+    String? badge,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      child: Tooltip(
+        message: tooltip ?? label,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.accent.withOpacity(0.1)
+                : Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? AppColors.accent : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: isActive ? AppColors.accent : null),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(color: isActive ? AppColors.accent : null),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    badge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRightSideControls() {
+    return Row(
+      children: [
+        // Search
+        if (hasActiveFilters) ...[
+          Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.red.shade300,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextButton.icon(
+              onPressed: _clearAllFilters,
+              icon: Icon(
+                PhosphorIcons.x(PhosphorIconsStyle.bold),
+                size: 18,
+                color: Colors.red.shade400,
+              ),
+              label: Text(
+                'Clear Filters',
+                style: TextStyle(
+                  color: Colors.red.shade400,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Container(
+          width: 240,
+          height: 40,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            color: Theme.of(context).cardColor,
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Icon(
+                  PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.bold),
+                  size: 18,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search projects...',
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).hintColor,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              if (searchQuery.isNotEmpty)
+                IconButton(
+                  icon: Icon(
+                    PhosphorIcons.x(PhosphorIconsStyle.bold),
+                    size: 18,
+                    color: Theme.of(context).hintColor,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      searchQuery = '';
+                      searchController.clear();
+                    });
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Category Filter
+        Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: PopupMenuButton<String>(
+            offset: const Offset(0, 40),
+            child: Row(
+              children: [
+                Icon(
+                  PhosphorIcons.funnel(PhosphorIconsStyle.bold),
+                  size: 18,
+                  color: selectedCategory != null ? AppColors.accent : null,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  selectedCategory?.capitalize() ?? 'All Categories',
+                  style: TextStyle(
+                    color: selectedCategory != null ? AppColors.accent : null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
+                  size: 18,
+                  color: selectedCategory != null ? AppColors.accent : null,
+                ),
+              ],
+            ),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'all',
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: const Text('All Categories'),
+                ),
+              ),
+              const PopupMenuDivider(),
+              ...{
+                'school': (
+                  PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
+                  AppColors.accent
+                ),
+                'personal': (
+                  PhosphorIcons.user(PhosphorIconsStyle.fill),
+                  Colors.purple.shade400
+                ),
+                'work': (
+                  PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
+                  Colors.blue.shade400
+                ),
+                'online work': (
+                  PhosphorIcons.globe(PhosphorIconsStyle.fill),
+                  Colors.green.shade400
+                ),
+                'other': (
+                  PhosphorIcons.folder(PhosphorIconsStyle.fill),
+                  Colors.grey.shade400
+                ),
+              }.entries.map(
+                    (entry) => PopupMenuItem(
+                      value: entry.key,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
+                        child: Row(
+                          children: [
+                            Icon(entry.value.$1,
+                                size: 16, color: entry.value.$2),
+                            const SizedBox(width: 8),
+                            Text(entry.key.capitalize()),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+            ],
+            onSelected: (value) {
+              setState(() {
+                selectedCategory = value == 'all' ? null : value;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        // View Toggle
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              _buildViewToggleButton(
+                icon: PhosphorIcons.list(PhosphorIconsStyle.bold),
+                isActive: isListView,
+                onPressed: () => setState(() => isListView = true),
+              ),
+              Container(
+                width: 1,
+                height: 20,
+                color: Theme.of(context).dividerColor,
+              ),
+              _buildViewToggleButton(
+                icon: PhosphorIcons.squaresFour(PhosphorIconsStyle.bold),
+                isActive: !isListView,
+                onPressed: () => setState(() => isListView = false),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -2152,7 +1563,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _handleRestoreAll() async {
-    // Check if archived list is empty
     if (archivedProjects.isEmpty) {
       showDialog(
         context: context,
@@ -2188,7 +1598,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       return;
     }
 
-    // If there are archived projects, show the regular confirmation dialog
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2205,6 +1614,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ),
         content: Text(
           'Are you sure you want to restore all ${archivedProjects.length} archived projects?',
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
         actions: [
           TextButton(
@@ -2229,36 +1641,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     if (confirmed == true) {
       try {
-        // Restore each project with its original status
+        // Restore each project
         for (int i = archivedProjects.length - 1; i >= 0; i--) {
-          final restoredProject = Project(
-            id: archivedProjects[i].id,
-            name: archivedProjects[i].name,
-            description: archivedProjects[i].description,
-            startDate: archivedProjects[i].startDate,
-            dueDate: archivedProjects[i].dueDate,
-            tasks: archivedProjects[i].tasks,
-            completedTasks: archivedProjects[i].completedTasks,
-            priority: archivedProjects[i].priority,
-            status: originalStatuses[i] ?? 'in progress',
-            category: archivedProjects[i].category,
-          );
-
-          // Save to database
-          await _projectDatabaseService.updateProject(restoredProject);
-
-          // Update local state
-          setState(() {
-            projects.add(restoredProject);
-            archivedProjects.removeAt(i);
-          });
+          if (archivedProjects[i].id != null) {
+            await _projectDatabaseService
+                .restoreFromRecycleBin(archivedProjects[i].id!);
+          }
         }
 
-        // Reset checked projects
-        setState(() {
-          checkedProjects = List.generate(projects.length, (_) => false);
-          originalStatuses.clear();
-        });
+        // Reload projects
+        await _loadProjects();
 
         _showSuccessMessage(
           message: 'All projects have been restored',
@@ -2404,5 +1796,153 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         _showError('Failed to delete projects: $e');
       }
     }
+  }
+
+  Widget _buildProjectsList() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Table Header
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: showArchived
+                      ? Tooltip(
+                          message: 'Restore all archived projects',
+                          child: IconButton(
+                            icon: Icon(
+                              PhosphorIcons.arrowCounterClockwise(
+                                  PhosphorIconsStyle.bold),
+                              size: 18,
+                              color: AppColors.accent,
+                            ),
+                            onPressed: _handleRestoreAll,
+                            padding: EdgeInsets.zero,
+                          ),
+                        )
+                      : Tooltip(
+                          message: 'Select all projects',
+                          child: Checkbox(
+                            value: checkedProjects.every((checked) => checked),
+                            onChanged: _toggleAllProjects,
+                            tristate: true,
+                          ),
+                        ),
+                ),
+                // Rest of your table header...
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Project List
+          Expanded(
+            child: !isListView
+                ? GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: showArchived
+                        ? archivedProjects.length
+                        : showRecycleBin
+                            ? deletedProjects.length
+                            : projects.length,
+                    itemBuilder: (context, index) {
+                      if (!_filterProject(index)) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final project = showArchived
+                          ? archivedProjects[index]
+                          : showRecycleBin
+                              ? deletedProjects[index]
+                              : projects[index];
+
+                      return MouseRegion(
+                        onEnter: (_) => setState(() => hoveredIndex = index),
+                        onExit: (_) => setState(() => hoveredIndex = null),
+                        child: ProjectGridItem(
+                          project: project,
+                          isChecked: showArchived || showRecycleBin
+                              ? true
+                              : checkedProjects[index],
+                          onCheckChanged: (value) =>
+                              _handleCheckboxChange(index, value),
+                          onEdit: showArchived || showRecycleBin
+                              ? () {}
+                              : () => _handleEdit(index),
+                          onDelete: showArchived || showRecycleBin
+                              ? () {}
+                              : () => _handleDelete(index),
+                          onRestore: showArchived || showRecycleBin
+                              ? () => _handleRestore(index)
+                              : null,
+                          isHovered: hoveredIndex == index,
+                        ),
+                      );
+                    },
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: showArchived
+                        ? archivedProjects.length
+                        : showRecycleBin
+                            ? deletedProjects.length
+                            : projects.length,
+                    itemBuilder: (context, index) {
+                      if (!_filterProject(index)) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final project = showArchived
+                          ? archivedProjects[index]
+                          : showRecycleBin
+                              ? deletedProjects[index]
+                              : projects[index];
+
+                      return MouseRegion(
+                        onEnter: (_) => setState(() => hoveredIndex = index),
+                        onExit: (_) => setState(() => hoveredIndex = null),
+                        child: ProjectListItem(
+                          project: project,
+                          isChecked: showArchived || showRecycleBin
+                              ? true
+                              : checkedProjects[index],
+                          onCheckChanged: (value) =>
+                              _handleCheckboxChange(index, value),
+                          onEdit: showArchived || showRecycleBin
+                              ? () {}
+                              : () => _handleEdit(index),
+                          onDelete: showArchived || showRecycleBin
+                              ? () {}
+                              : () => _handleDelete(index),
+                          onRestore: showArchived || showRecycleBin
+                              ? () => _handleRestore(index)
+                              : null,
+                          isHovered: hoveredIndex == index,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 }

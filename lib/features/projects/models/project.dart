@@ -34,6 +34,9 @@ class Project {
   @HiveField(9)
   final String category;
 
+  @HiveField(10)
+  final DateTime? deletedAt;
+
   Project({
     this.id,
     required this.name,
@@ -45,6 +48,7 @@ class Project {
     required this.priority,
     required this.status,
     required this.category,
+    this.deletedAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -59,6 +63,7 @@ class Project {
       'priority': priority,
       'status': status,
       'category': category,
+      'deletedAt': deletedAt,
     };
   }
 
@@ -74,6 +79,7 @@ class Project {
       priority: map['priority'],
       status: map['status'],
       category: map['category'],
+      deletedAt: map['deletedAt'],
     );
   }
 

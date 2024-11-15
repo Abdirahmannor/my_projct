@@ -17,6 +17,9 @@ void main() async {
 
   Hive.registerAdapter(ProjectAdapter());
 
+  await Hive.openBox<Project>('projects');
+  await Hive.openBox<Project>('deleted_projects');
+
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     doWhenWindowReady(() {
       const initialSize = Size(1200, 700);
