@@ -756,9 +756,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               color: Colors.white,
             ),
             label: const Text('Complete Selected'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green.shade400,
-            ),
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
@@ -784,6 +781,20 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 color: Colors.red.shade300,
               ),
               borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextButton.icon(
+              onPressed: _clearAllFilters,
+              icon: Icon(
+                PhosphorIcons.funnel(PhosphorIconsStyle.bold),
+                size: 18,
+                color: Colors.red.shade400,
+              ),
+              label: Text(
+                'Clear Filters',
+                style: TextStyle(
+                  color: Colors.red.shade400,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -952,111 +963,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 selectedCategory = value == 'all' ? null : value;
               });
             },
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Priority Filter - Add after Category filter and before View Toggle
-        Visibility(
-          visible: false, // This hides the widget but keeps its functionality
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).dividerColor,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: PopupMenuButton<String>(
-              offset: const Offset(0, 40),
-              child: Row(
-                children: [
-                  Icon(
-                    PhosphorIcons.warning(PhosphorIconsStyle.bold),
-                    size: 18,
-                    color: selectedPriority != null ? AppColors.accent : null,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    selectedPriority?.capitalize() ?? 'Priority',
-                    style: TextStyle(
-                      color: selectedPriority != null ? AppColors.accent : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
-                    size: 18,
-                    color: selectedPriority != null ? AppColors.accent : null,
-                  ),
-                ],
-              ),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'all',
-                  child: Row(
-                    children: [
-                      Icon(
-                        PhosphorIcons.warning(PhosphorIconsStyle.bold),
-                        size: 16,
-                        color:
-                            selectedPriority == null ? AppColors.accent : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'All Priorities',
-                        style: TextStyle(
-                          color: selectedPriority == null
-                              ? AppColors.accent
-                              : null,
-                          fontWeight:
-                              selectedPriority == null ? FontWeight.w600 : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
-                ...{
-                  'high': Colors.red.shade400,
-                  'medium': Colors.orange.shade400,
-                  'low': Colors.green.shade400,
-                }.entries.map(
-                      (entry) => PopupMenuItem(
-                        value: entry.key,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: entry.value,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              entry.key.capitalize(),
-                              style: TextStyle(
-                                color: selectedPriority == entry.key
-                                    ? AppColors.accent
-                                    : null,
-                                fontWeight: selectedPriority == entry.key
-                                    ? FontWeight.w600
-                                    : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-              ],
-              onSelected: (value) {
-                setState(() {
-                  selectedPriority = value == 'all' ? null : value;
-                });
-              },
-            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -2493,12 +2399,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
 
-                // Actions
+                // Actions column
                 SizedBox(
                   width: ProjectListLayout.actionsWidth,
                   child: Text(
                     'Actions',
-                    style: TextStyle(fontSize: 12),
+                    style: Theme.of(context).textTheme.titleSmall,
                     textAlign: TextAlign.center,
                   ),
                 ),
