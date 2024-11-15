@@ -486,10 +486,62 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     required String message,
     required IconData icon,
   }) {
+    // Determine color based on the icon/action
+    Color backgroundColor;
+    if (icon == PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)) {
+      backgroundColor = Colors.green.shade400; // Complete actions
+    } else if (icon == PhosphorIcons.trash(PhosphorIconsStyle.fill)) {
+      backgroundColor = Colors.red.shade400; // Delete actions
+    } else if (icon ==
+        PhosphorIcons.arrowCounterClockwise(PhosphorIconsStyle.fill)) {
+      backgroundColor = AppColors.accent; // Restore actions
+    } else if (icon == PhosphorIcons.funnel(PhosphorIconsStyle.fill)) {
+      backgroundColor = Colors.purple.shade400; // Filter actions
+    } else {
+      backgroundColor = AppColors.accent; // Default color
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
       ),
     );
   }
@@ -497,9 +549,45 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                PhosphorIcons.warning(PhosphorIconsStyle.fill),
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.red.shade400,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
       ),
     );
   }
@@ -556,14 +644,58 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Projects',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          // Added this Row to group title and refresh button
+                          children: [
+                            Text(
+                              'Projects',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(width: 12),
+                            IconButton(
+                              onPressed: () async {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                                await _loadProjects();
+                                await _loadDeletedProjects();
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                                _showSuccessMessage(
+                                  message: 'Projects refreshed',
+                                  icon: PhosphorIcons.arrowClockwise(
+                                      PhosphorIconsStyle.fill),
+                                );
+                              },
+                              icon: _isLoading
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.accent,
+                                      ),
+                                    )
+                                  : Icon(
+                                      PhosphorIcons.arrowClockwise(
+                                          PhosphorIconsStyle.bold),
+                                      size: 20,
+                                      color: AppColors.accent,
+                                    ),
+                              tooltip: 'Refresh projects',
+                              style: IconButton.styleFrom(
+                                padding: const EdgeInsets.all(8),
+                                backgroundColor:
+                                    AppColors.accent.withOpacity(0.1),
                               ),
+                            ),
+                          ],
                         ),
                         _buildAddProjectButton(),
                       ],
@@ -1844,6 +1976,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 completedTasks: p.completedTasks,
                 priority: p.priority,
                 status: 'completed',
+                originalStatus: p.status, // Store original status here too
                 category: p.category,
                 archivedDate: DateTime.now(),
               )));
