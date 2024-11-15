@@ -19,7 +19,7 @@ class ProjectsScreen extends StatefulWidget {
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
   String? selectedPriority;
-  String? selectedStatus;
+  String? selectedCategory; // Add this back
   List<bool> checkedProjects = [];
   bool showArchived = false;
   bool showAllProjects = true;
@@ -46,7 +46,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   final _projectDatabaseService = ProjectDatabaseService();
   List<Project> projects = [];
   final Map<int, String> originalStatuses = {};
-  String? selectedCategory;
   bool showRecycleBin = false;
   List<Project> deletedProjects = [];
   Timer? _cleanupTimer;
@@ -296,20 +295,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     // Priority filter
     if (selectedPriority != null && selectedPriority != 'all') {
       if (project.priority != selectedPriority) {
-        return false;
-      }
-    }
-
-    // Status filter
-    if (selectedStatus != null && selectedStatus != 'all') {
-      if (project.status != selectedStatus) {
-        return false;
-      }
-    }
-
-    // Category filter
-    if (selectedCategory != null && selectedCategory != 'all') {
-      if (project.category != selectedCategory) {
         return false;
       }
     }
@@ -608,8 +593,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   bool get hasActiveFilters =>
       searchQuery.isNotEmpty ||
       selectedPriority != null ||
-      selectedStatus != null ||
-      selectedCategory != null ||
       _selectedDateRange != null;
 
   // Add this method to clear all filters
@@ -618,8 +601,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       searchQuery = '';
       searchController.clear();
       selectedPriority = null;
-      selectedStatus = null;
-      selectedCategory = null;
       _selectedDateRange = null;
     });
 
@@ -951,97 +932,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
             ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Category Filter
-        Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: PopupMenuButton<String>(
-            offset: const Offset(0, 40),
-            child: Row(
-              children: [
-                Icon(
-                  PhosphorIcons.funnel(PhosphorIconsStyle.bold),
-                  size: 18,
-                  color: selectedCategory != null ? AppColors.accent : null,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  selectedCategory?.capitalize() ?? 'All Categories',
-                  style: TextStyle(
-                    color: selectedCategory != null ? AppColors.accent : null,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
-                  size: 18,
-                  color: selectedCategory != null ? AppColors.accent : null,
-                ),
-              ],
-            ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'all',
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: const Text('All Categories'),
-                ),
-              ),
-              const PopupMenuDivider(),
-              ...{
-                'school': (
-                  PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
-                  AppColors.accent
-                ),
-                'personal': (
-                  PhosphorIcons.user(PhosphorIconsStyle.fill),
-                  Colors.purple.shade400
-                ),
-                'work': (
-                  PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
-                  Colors.blue.shade400
-                ),
-                'online work': (
-                  PhosphorIcons.globe(PhosphorIconsStyle.fill),
-                  Colors.green.shade400
-                ),
-                'other': (
-                  PhosphorIcons.folder(PhosphorIconsStyle.fill),
-                  Colors.grey.shade400
-                ),
-              }.entries.map(
-                    (entry) => PopupMenuItem(
-                      value: entry.key,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 6),
-                        child: Row(
-                          children: [
-                            Icon(entry.value.$1,
-                                size: 16, color: entry.value.$2),
-                            const SizedBox(width: 8),
-                            Text(entry.key.capitalize()),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-            ],
-            onSelected: (value) {
-              setState(() {
-                selectedCategory = value == 'all' ? null : value;
-              });
-            },
           ),
         ),
         const SizedBox(width: 8),
@@ -2273,81 +2163,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
           ),
           const Divider(height: 1),
-          // Add this after the header section and before Expanded widget
-          if (isListView) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 24), // Checkbox space
-                  const SizedBox(width: 16), // Spacing
-                  Expanded(
-                    flex: 3,
-                    child: _buildColumnHeader(
-                      context,
-                      'Project Name',
-                      PhosphorIcons.folder(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: _buildColumnHeader(
-                      context,
-                      'Start Date',
-                      PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: _buildColumnHeader(
-                      context,
-                      'Due Date',
-                      PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildColumnHeader(
-                      context,
-                      'Tasks',
-                      PhosphorIcons.listChecks(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildColumnHeader(
-                      context,
-                      'Priority',
-                      PhosphorIcons.warning(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildColumnHeader(
-                      context,
-                      'Status',
-                      PhosphorIcons.clockClockwise(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                  Container(
-                    width: 100,
-                    child: _buildColumnHeader(
-                      context,
-                      'Actions',
-                      PhosphorIcons.dotsThree(PhosphorIconsStyle.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-          ],
           // Project List/Grid
           Expanded(
             child: isListView
@@ -2656,257 +2471,5 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         _showError('Failed to move projects to recycle bin: $e');
       }
     }
-  }
-
-  Widget _buildColumnHeader(BuildContext context, String title, IconData icon) {
-    bool isFilterable =
-        title == 'Project Name' || title == 'Priority' || title == 'Status';
-
-    return InkWell(
-      onTap: isFilterable ? () => _showFilterDropdown(context, title) : null,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          border: isFilterable
-              ? Border.all(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
-                )
-              : null,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withOpacity(0.7),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withOpacity(0.7),
-                  ),
-            ),
-            if (isFilterable) ...[
-              const SizedBox(width: 4),
-              Icon(
-                PhosphorIcons.caretDown(PhosphorIconsStyle.bold),
-                size: 12,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.7),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFilterDropdown(BuildContext context, String columnTitle) {
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    // Get the position relative to the screen
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
-
-    // Calculate dropdown position
-    final dropdownTop =
-        position.dy + size.height; // Position right below the header
-    final dropdownLeft = position.dx - 16; // Adjust for padding
-    final dropdownWidth = 200.0;
-
-    List<PopupMenuItem<String>> menuItems = [];
-
-    // Add items based on column title
-    switch (columnTitle) {
-      case 'Project Name':
-        menuItems = [
-          _buildMenuItem(
-            'a-z',
-            'A-Z',
-            PhosphorIcons.sortAscending(PhosphorIconsStyle.bold),
-            Colors.blue.shade400,
-          ),
-          _buildMenuItem(
-            'z-a',
-            'Z-A',
-            PhosphorIcons.sortDescending(PhosphorIconsStyle.bold),
-            Colors.purple.shade400,
-          ),
-        ];
-        break;
-
-      case 'Priority':
-        menuItems = [
-          _buildMenuItem(
-            'all',
-            'All Priorities',
-            PhosphorIcons.listBullets(PhosphorIconsStyle.bold),
-            Colors.grey.shade600,
-            isSelected: selectedPriority == null,
-          ),
-          _buildMenuItem(
-            'high',
-            'High Priority',
-            PhosphorIcons.warning(PhosphorIconsStyle.fill),
-            Colors.red.shade400,
-            isSelected: selectedPriority == 'high',
-          ),
-          _buildMenuItem(
-            'medium',
-            'Medium Priority',
-            PhosphorIcons.warning(PhosphorIconsStyle.fill),
-            Colors.orange.shade400,
-            isSelected: selectedPriority == 'medium',
-          ),
-          _buildMenuItem(
-            'low',
-            'Low Priority',
-            PhosphorIcons.warning(PhosphorIconsStyle.fill),
-            Colors.green.shade400,
-            isSelected: selectedPriority == 'low',
-          ),
-        ];
-        break;
-
-      case 'Status':
-        menuItems = [
-          _buildMenuItem(
-            'all',
-            'All Status',
-            PhosphorIcons.listBullets(PhosphorIconsStyle.bold),
-            Colors.grey.shade600,
-            isSelected: selectedStatus == null,
-          ),
-          _buildMenuItem(
-            'not started',
-            'Not Started',
-            PhosphorIcons.pause(PhosphorIconsStyle.fill),
-            Colors.grey.shade400,
-            isSelected: selectedStatus == 'not started',
-          ),
-          _buildMenuItem(
-            'in progress',
-            'In Progress',
-            PhosphorIcons.play(PhosphorIconsStyle.fill),
-            Colors.blue.shade400,
-            isSelected: selectedStatus == 'in progress',
-          ),
-          _buildMenuItem(
-            'on hold',
-            'On Hold',
-            PhosphorIcons.clock(PhosphorIconsStyle.fill),
-            Colors.orange.shade400,
-            isSelected: selectedStatus == 'on hold',
-          ),
-          _buildMenuItem(
-            'completed',
-            'Completed',
-            PhosphorIcons.check(PhosphorIconsStyle.fill),
-            Colors.green.shade400,
-            isSelected: selectedStatus == 'completed',
-          ),
-        ];
-        break;
-    }
-
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        dropdownLeft, // Left position
-        dropdownTop, // Top position
-        dropdownLeft + dropdownWidth, // Right position
-        dropdownTop + 4, // Bottom position (add small gap)
-      ),
-      constraints: BoxConstraints(
-        minWidth: dropdownWidth,
-        maxWidth: dropdownWidth,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 8,
-      items: menuItems,
-    ).then((String? value) {
-      if (value != null) {
-        setState(() {
-          switch (columnTitle) {
-            case 'Project Name':
-              projects.sort((a, b) => value == 'a-z'
-                  ? a.name.compareTo(b.name)
-                  : b.name.compareTo(a.name));
-              break;
-            case 'Priority':
-              selectedPriority = value == 'all' ? null : value;
-              break;
-            case 'Status':
-              selectedStatus = value == 'all' ? null : value;
-              break;
-          }
-        });
-      }
-    });
-  }
-
-  // Helper method to build menu items
-  PopupMenuItem<String> _buildMenuItem(
-    String value,
-    String label,
-    IconData icon,
-    Color color, {
-    bool isSelected = false,
-  }) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(
-                icon,
-                size: 16,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? AppColors.accent : null,
-                fontWeight: isSelected ? FontWeight.w600 : null,
-              ),
-            ),
-            if (isSelected) ...[
-              const Spacer(),
-              Icon(
-                PhosphorIcons.check(PhosphorIconsStyle.bold),
-                size: 16,
-                color: AppColors.accent,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 }
