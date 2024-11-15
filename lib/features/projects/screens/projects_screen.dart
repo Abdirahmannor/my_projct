@@ -756,9 +756,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               color: Colors.white,
             ),
             label: const Text('Complete Selected'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green.shade400,
-            ),
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
@@ -768,9 +765,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               color: Colors.white,
             ),
             label: const Text('Delete Selected'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade400,
-            ),
           ),
           const SizedBox(width: 16),
         ],
@@ -2158,8 +2152,33 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 SizedBox(
                   width: ProjectListLayout.checkboxWidth,
                   child: Checkbox(
-                    value: checkedProjects.every((checked) => checked),
-                    onChanged: _toggleAllProjects,
+                    value: showArchived
+                        ? archivedCheckedProjects.every((checked) => checked)
+                        : showRecycleBin
+                            ? recycleBinCheckedProjects
+                                .every((checked) => checked)
+                            : checkedProjects.every((checked) => checked),
+                    onChanged: (value) {
+                      if (showArchived) {
+                        setState(() {
+                          archivedCheckedProjects = List.generate(
+                            archivedProjects.length,
+                            (_) => value ?? false,
+                          );
+                          archivedSelectAll = value ?? false;
+                        });
+                      } else if (showRecycleBin) {
+                        setState(() {
+                          recycleBinCheckedProjects = List.generate(
+                            deletedProjects.length,
+                            (_) => value ?? false,
+                          );
+                          recycleBinSelectAll = value ?? false;
+                        });
+                      } else {
+                        _toggleAllProjects(value);
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: ProjectListLayout.iconSpacing),
