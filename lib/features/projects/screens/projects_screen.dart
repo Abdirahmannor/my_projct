@@ -413,9 +413,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
       if (confirmed == true) {
         try {
-          // Store original status before completing
-          originalStatuses[index] = projects[index].status;
-
           // Create completed project
           final updatedProject = Project(
             id: projects[index].id,
@@ -428,17 +425,25 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             priority: projects[index].priority,
             status: 'completed',
             category: projects[index].category,
+            archivedDate: DateTime.now(), // Add archive date
           );
 
           // Save to database
-          await _projectDatabaseService.updateProject(updatedProject);
+          await _projectDatabaseService.archiveProject(updatedProject);
 
           setState(() {
             // Move to archived list
             archivedProjects.add(updatedProject);
             // Remove from active projects
             projects.removeAt(index);
-            checkedProjects.removeAt(index);
+
+            // Update checkbox arrays
+            checkedProjects = List.generate(projects.length, (_) => false);
+            archivedCheckedProjects =
+                List.generate(archivedProjects.length, (_) => false);
+
+            // Reset select all states
+            archivedSelectAll = false;
           });
 
           _showSuccessMessage(

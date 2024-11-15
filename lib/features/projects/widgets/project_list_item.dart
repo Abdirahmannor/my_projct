@@ -78,6 +78,17 @@ class ProjectListItem extends StatelessWidget {
                                   ),
                         ),
                         const SizedBox(height: 4),
+                        if (project.archivedDate != null) ...[
+                          Text(
+                            'Archived on ${_formatDate(project.archivedDate!)}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.orange.shade400,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                         Text(
                           project.description ?? '',
                           style:
@@ -177,28 +188,26 @@ class ProjectListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (onRestore != null) ...[
-                    Tooltip(
-                      message: 'Restore project back to active list',
-                      child: IconButton(
-                        onPressed: onRestore,
-                        icon: Icon(
-                          PhosphorIcons.arrowCounterClockwise(
-                              PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: AppColors.accent,
-                        ),
+                    IconButton(
+                      onPressed: onRestore,
+                      icon: Icon(
+                        PhosphorIcons.arrowCounterClockwise(
+                            PhosphorIconsStyle.bold),
+                        size: 18,
+                        color: AppColors.accent,
                       ),
+                      tooltip: 'Restore',
                     ),
-                    Tooltip(
-                      message: 'Permanently delete project',
-                      child: IconButton(
-                        onPressed: onDelete,
-                        icon: Icon(
-                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: Colors.red.shade400,
-                        ),
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: Icon(
+                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                        size: 18,
+                        color: Colors.red,
                       ),
+                      tooltip: project.status == 'completed'
+                          ? 'Move to Recycle Bin'
+                          : 'Delete Permanently',
                     ),
                   ] else ...[
                     IconButton(

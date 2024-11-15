@@ -127,17 +127,37 @@ class ProjectGridItem extends StatelessWidget {
                     _buildCategoryIcon(context, project.category),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        project.name,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   decoration: onRestore != null
                                       ? TextDecoration.lineThrough
                                       : TextDecoration.none,
                                 ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (project.archivedDate != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Archived on ${_formatDate(project.archivedDate!)}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.orange.shade400,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
