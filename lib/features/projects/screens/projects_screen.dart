@@ -2417,17 +2417,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             child: isListView
                 ? ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: showArchived
-                        ? archivedProjects.length
-                        : showRecycleBin
-                            ? deletedProjects.length
-                            : projects.length,
+                    itemCount: _getFilteredProjects().length,
                     itemBuilder: (context, index) {
-                      final project = showArchived
-                          ? archivedProjects[index]
-                          : showRecycleBin
-                              ? deletedProjects[index]
-                              : projects[index];
+                      final project = _getFilteredProjects()[index];
                       return MouseRegion(
                         onEnter: (_) => setState(() => hoveredIndex = index),
                         onExit: (_) => setState(() => hoveredIndex = null),
@@ -2482,17 +2474,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemCount: showArchived
-                        ? archivedProjects.length
-                        : showRecycleBin
-                            ? deletedProjects.length
-                            : projects.length,
+                    itemCount: _getFilteredProjects()
+                        .length, // Use filtered projects length
                     itemBuilder: (context, index) {
-                      final project = showArchived
-                          ? archivedProjects[index]
-                          : showRecycleBin
-                              ? deletedProjects[index]
-                              : projects[index];
+                      final project =
+                          _getFilteredProjects()[index]; // Use filtered project
                       return MouseRegion(
                         onEnter: (_) => setState(() => hoveredIndex = index),
                         onExit: (_) => setState(() => hoveredIndex = null),
@@ -2720,5 +2706,51 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         _showError('Failed to move projects to recycle bin: $e');
       }
     }
+  }
+
+  List<Project> _getFilteredProjects() {
+    final List<Project> currentProjects = showArchived
+        ? archivedProjects
+        : showRecycleBin
+            ? deletedProjects
+            : projects;
+
+    return currentProjects.where((project) {
+      // Search filter
+      if (searchQuery.isNotEmpty) {
+        final String projectName = project.name.toLowerCase();
+        final String projectDescription =
+            (project.description ?? '').toLowerCase();
+        final String query = searchQuery.toLowerCase();
+        if (!projectName.contains(query) &&
+            !projectDescription.contains(query)) {
+          return false;
+        }
+      }
+
+      // Priority filter
+      if (selectedPriority != null && selectedPriority != 'all') {
+        if (project.priority != selectedPriority) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (selectedStatus != null && selectedStatus != 'all') {
+        if (project.status != selectedStatus) {
+          return false;
+        }
+      }
+
+      // Date range filter
+      if (_selectedDateRange != null) {
+        if (project.startDate.isBefore(_selectedDateRange!.start) ||
+            project.dueDate.isAfter(_selectedDateRange!.end)) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
   }
 }
