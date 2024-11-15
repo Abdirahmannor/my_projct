@@ -52,7 +52,7 @@ class ProjectListItem extends StatelessWidget {
             SizedBox(
               width: 24,
               child: Checkbox(
-                value: onRestore != null ? true : isChecked,
+                value: isChecked,
                 onChanged: onCheckChanged,
               ),
             ),
