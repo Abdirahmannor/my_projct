@@ -1,178 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../constants/app_colors.dart';
-import 'base_item.dart';
+import 'base_validators.dart';
 
-abstract class BaseDialog<T extends BaseItem> extends StatefulWidget {
+abstract class BaseDialog extends StatefulWidget {
   final bool isEditing;
-  final T? item;
 
   const BaseDialog({
     super.key,
     this.isEditing = false,
-    this.item,
   });
 
   @override
-  BaseDialogState<T, BaseDialog<T>> createState();
+  BaseDialogState createState();
 }
 
-abstract class BaseDialogState<T extends BaseItem, S extends BaseDialog<T>>
-    extends State<S> {
+abstract class BaseDialogState<T extends BaseDialog> extends State<T> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _dueDate;
-  String _priority = 'medium';
-  String _status = 'not started';
+  bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isEditing && widget.item != null) {
-      _initializeWithItem(widget.item!);
-    } else {
-      _initializeDefaults();
-    }
-  }
-
-  // Methods to be implemented by subclasses
-  void _initializeWithItem(T item);
-  void _initializeDefaults();
-  T createItem();
+  // Abstract methods to be implemented by subclasses
+  Widget buildForm();
+  Future<void> handleSubmit();
+  String get dialogTitle;
+  String get submitButtonText;
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 600,
-        constraints: const BoxConstraints(maxHeight: 700),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: buildForm(context),
-                ),
-              ),
-            ),
-            _buildActions(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Template method to be implemented by subclasses
-  Widget buildForm(BuildContext context);
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accent,
-            Color.lerp(AppColors.accent, Colors.purple, 0.6) ??
-                AppColors.accent,
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: Row(
+    return AlertDialog(
+      title: Row(
         children: [
           Icon(
             widget.isEditing
                 ? PhosphorIcons.pencilSimple(PhosphorIconsStyle.fill)
-                : PhosphorIcons.plusCircle(PhosphorIconsStyle.fill),
-            color: Colors.white,
-            size: 20,
+                : PhosphorIcons.plus(PhosphorIconsStyle.fill),
+            color: AppColors.accent,
+            size: 24,
           ),
           const SizedBox(width: 12),
-          Text(
-            widget.isEditing ? 'Edit Item' : 'Add New Item',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(
-              PhosphorIcons.x(PhosphorIconsStyle.bold),
-              color: Colors.white,
-              size: 20,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-          ),
+          Text(dialogTitle),
         ],
       ),
-    );
-  }
-
-  Widget _buildActions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor,
-          ),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: buildForm(),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          const SizedBox(width: 16),
-          FilledButton(
-            onPressed: _handleSubmit,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
-            child: Text(widget.isEditing ? 'Update' : 'Create'),
           ),
-        ],
+        ),
+        FilledButton(
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    setState(() => _isLoading = true);
+                    try {
+                      await handleSubmit();
+                      if (mounted) Navigator.pop(context);
+                    } catch (e) {
+                      if (mounted) {
+                        await BaseValidators.showErrorDialog(
+                          context: context,
+                          message: 'Failed to save: $e',
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isLoading = false);
+                      }
+                    }
+                  }
+                },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.accent,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(submitButtonText),
+        ),
+      ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      actionsPadding: const EdgeInsets.all(16),
     );
-  }
-
-  void _handleSubmit() {
-    if (_validateForm()) {
-      Navigator.pop(context, createItem());
-    }
-  }
-
-  bool _validateForm() {
-    return _formKey.currentState?.validate() ?? false;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

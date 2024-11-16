@@ -1,48 +1,84 @@
 import 'package:flutter/material.dart';
+import 'base_view_manager.dart';
 import 'base_item.dart';
-import 'base_database.dart';
+import 'base_state.dart';
+import 'base_filter_methods.dart';
+import 'base_state_methods.dart';
 
 abstract class BaseListScreen<T extends BaseItem> extends StatefulWidget {
   const BaseListScreen({super.key});
 
   @override
-  State<BaseListScreen<T>> createState();
+  BaseListScreenState<T> createState();
 }
 
-abstract class BaseListScreenState<T extends BaseItem,
-    S extends BaseListScreen<T>> extends State<S> {
-  // Common state variables
-  String? selectedPriority;
-  String? selectedStatus;
-  List<bool> checkedItems = [];
-  bool showArchived = false;
-  bool showAllItems = true;
-  bool isListView = true;
-  int? hoveredIndex;
-  TextEditingController searchController = TextEditingController();
-  String searchQuery = '';
-  bool _isLoading = false;
-  List<T> archivedItems = [];
-  List<bool> archivedCheckedItems = [];
-  bool archivedSelectAll = false;
-  List<T> items = [];
-  final Map<int, String> originalStatuses = {};
-  bool showRecycleBin = false;
-  List<T> deletedItems = [];
-  List<bool> recycleBinCheckedItems = [];
-  bool recycleBinSelectAll = false;
+abstract class BaseListScreenState<T extends BaseItem>
+    extends State<BaseListScreen<T>>
+    with BaseFilterMethods<T>, BaseStateMethods<T> {
+  // Core managers
+  final viewManager = BaseViewManager();
+  late final BaseState<T> state;
 
-  // Abstract methods that subclasses must implement
-  BaseDatabase<T> get database;
-  String get screenTitle;
-  Widget buildListItem(T item, int index);
-  Widget buildGridItem(T item, int index);
+  // Abstract methods to be implemented by subclasses
+  Widget buildListView(List<T> items);
+  Widget buildGridView(List<T> items);
+  Widget buildHeader();
+  Widget buildFilterBar();
+
+  // Lifecycle methods
+  @override
+  void initState() {
+    super.initState();
+    initializeState();
+    loadItems();
+  }
+
+  // Initialize state
+  void initializeState() {
+    state = createState();
+  }
+
+  // Abstract method to create state
+  BaseState<T> createState();
+
+  // Load items
+  Future<void> loadItems();
 
   @override
   Widget build(BuildContext context) {
-    // Will implement shared UI structure
-    return Container();
+    return Scaffold(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Column(
+          children: [
+            buildHeader(),
+            buildFilterBar(),
+            Expanded(
+              child: viewManager.buildView(
+                listView: buildListView(getFilteredItems()),
+                gridView: buildGridView(getFilteredItems()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // Common functionality methods will go here
+  // Get filtered items based on current state
+  List<T> getFilteredItems() {
+    return filterItems(
+      items: state.showArchived
+          ? state.archivedItems
+          : state.showRecycleBin
+              ? state.deletedItems
+              : state.items,
+      searchQuery: state.searchQuery,
+      priority: state.selectedPriority,
+      status: state.selectedStatus,
+      dateRange: state.selectedDateRange,
+      nameSort: state.selectedNameSort,
+      dateSort: state.selectedStartDateSort,
+    );
+  }
 }
