@@ -1,32 +1,14 @@
-import 'package:hive/hive.dart';
+import 'package:flutter/material.dart';
 
-@HiveType(typeId: 0)
 abstract class BaseItem {
-  @HiveField(0)
   final String? id;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
   final String? description;
-
-  @HiveField(3)
   final DateTime dueDate;
-
-  @HiveField(4)
   final String priority;
-
-  @HiveField(5)
   final String status;
-
-  @HiveField(6)
   final bool? isPinned;
-
-  @HiveField(7)
   final DateTime? deletedAt;
-
-  @HiveField(8)
   final DateTime? lastRestoredDate;
 
   BaseItem({
@@ -41,6 +23,7 @@ abstract class BaseItem {
     this.lastRestoredDate,
   });
 
+  // Abstract method that must be implemented by subclasses
   BaseItem copyWith({
     String? id,
     String? name,

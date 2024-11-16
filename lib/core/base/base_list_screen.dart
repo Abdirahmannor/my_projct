@@ -6,7 +6,7 @@ abstract class BaseListScreen<T extends BaseItem> extends StatefulWidget {
   const BaseListScreen({super.key});
 
   @override
-  abstract State<BaseListScreen<T>> createState();
+  State<BaseListScreen<T>> createState();
 }
 
 abstract class BaseListScreenState<T extends BaseItem,
