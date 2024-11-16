@@ -74,6 +74,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int _newlyActiveCount = 0;
   bool _hasVisitedArchived = false;
   bool _hasVisitedActive = false;
+  bool _isProjectNameHeaderHovered = false;
+  String? _selectedNameSort; // null: no sort, 'asc': A-Z, 'desc': Z-A
+  bool _isStartDateHeaderHovered = false;
+  bool _isDueDateHeaderHovered = false;
+  String?
+      _selectedStartDateSort; // null: no sort, 'asc': oldest first, 'desc': newest first
+  String? _selectedDueDateSort;
+  bool _isTasksHeaderHovered = false;
+  String?
+      _selectedTasksSort; // null: no sort, 'most': most tasks first, 'least': least tasks first, 'completed': most completed %, 'incomplete': least completed %
 
   @override
   void initState() {
@@ -598,7 +608,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       selectedPriority != null ||
       selectedStatus != null ||
       selectedCategory != null ||
-      _selectedDateRange != null;
+      _selectedDateRange != null ||
+      _selectedNameSort != null ||
+      _selectedStartDateSort != null ||
+      _selectedDueDateSort != null ||
+      _selectedTasksSort != null; // Add this line
 
   // Add this method to clear all filters
   void _clearAllFilters() {
@@ -609,6 +623,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       selectedStatus = null;
       selectedCategory = null;
       _selectedDateRange = null;
+      _selectedNameSort = null;
+      _selectedStartDateSort = null;
+      _selectedDueDateSort = null;
+      _selectedTasksSort = null; // Add this line
     });
 
     _showSuccessMessage(
@@ -2374,32 +2392,441 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 ),
                 const SizedBox(width: ProjectListLayout.iconSpacing),
 
-                // Project Name
+                // Project Name with filter
                 Expanded(
                   flex: ProjectListLayout.nameColumnFlex,
-                  child: Text(
-                    'Project Name',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                  child: PopupMenuButton<String>(
+                    offset: const Offset(0, 40),
+                    child: MouseRegion(
+                      onEnter: (_) =>
+                          setState(() => _isProjectNameHeaderHovered = true),
+                      onExit: (_) =>
+                          setState(() => _isProjectNameHeaderHovered = false),
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isProjectNameHeaderHovered
+                              ? Theme.of(context).hoverColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
                         ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Project Name',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedNameSort != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              _selectedNameSort == 'asc'
+                                  ? PhosphorIcons.sortAscending(
+                                      PhosphorIconsStyle.fill)
+                                  : _selectedNameSort == 'desc'
+                                      ? PhosphorIcons.sortDescending(
+                                          PhosphorIconsStyle.fill)
+                                      : PhosphorIcons.caretDown(
+                                          PhosphorIconsStyle.bold),
+                              size: 14,
+                              color: _selectedNameSort != null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'none',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.textT(PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedNameSort == null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'No Sort',
+                              style: TextStyle(
+                                color: _selectedNameSort == null
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedNameSort == null
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'asc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortAscending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedNameSort == 'asc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Sort A to Z',
+                              style: TextStyle(
+                                color: _selectedNameSort == 'asc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedNameSort == 'asc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'desc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortDescending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedNameSort == 'desc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Sort Z to A',
+                              style: TextStyle(
+                                color: _selectedNameSort == 'desc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedNameSort == 'desc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedNameSort = value == 'none' ? null : value;
+                      });
+                    },
                   ),
                 ),
 
                 // Start Date
                 Expanded(
                   flex: ProjectListLayout.dateColumnFlex,
-                  child: Text(
-                    'Start Date',
-                    style: Theme.of(context).textTheme.titleSmall,
+                  child: PopupMenuButton<String>(
+                    offset: const Offset(0, 40),
+                    child: MouseRegion(
+                      onEnter: (_) =>
+                          setState(() => _isStartDateHeaderHovered = true),
+                      onExit: (_) =>
+                          setState(() => _isStartDateHeaderHovered = false),
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isStartDateHeaderHovered
+                              ? Theme.of(context).hoverColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Start Date',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    color: _selectedStartDateSort != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              _selectedStartDateSort == 'asc'
+                                  ? PhosphorIcons.sortAscending(
+                                      PhosphorIconsStyle.fill)
+                                  : _selectedStartDateSort == 'desc'
+                                      ? PhosphorIcons.sortDescending(
+                                          PhosphorIconsStyle.fill)
+                                      : PhosphorIcons.caretDown(
+                                          PhosphorIconsStyle.bold),
+                              size: 14,
+                              color: _selectedStartDateSort != null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'none',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.calendar(PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedStartDateSort == null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'No Sort',
+                              style: TextStyle(
+                                color: _selectedStartDateSort == null
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedStartDateSort == null
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'asc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortAscending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedStartDateSort == 'asc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Oldest First',
+                              style: TextStyle(
+                                color: _selectedStartDateSort == 'asc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedStartDateSort == 'asc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'desc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortDescending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedStartDateSort == 'desc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Newest First',
+                              style: TextStyle(
+                                color: _selectedStartDateSort == 'desc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedStartDateSort == 'desc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedStartDateSort = value == 'none' ? null : value;
+                        // Clear due date sort if start date sort is selected
+                        if (_selectedStartDateSort != null) {
+                          _selectedDueDateSort = null;
+                        }
+                      });
+                    },
                   ),
                 ),
 
                 // Due Date
                 Expanded(
                   flex: ProjectListLayout.dateColumnFlex,
-                  child: Text(
-                    'Due Date',
-                    style: Theme.of(context).textTheme.titleSmall,
+                  child: PopupMenuButton<String>(
+                    offset: const Offset(0, 40),
+                    child: MouseRegion(
+                      onEnter: (_) =>
+                          setState(() => _isDueDateHeaderHovered = true),
+                      onExit: (_) =>
+                          setState(() => _isDueDateHeaderHovered = false),
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isDueDateHeaderHovered
+                              ? Theme.of(context).hoverColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Due Date',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    color: _selectedDueDateSort != null
+                                        ? AppColors.accent
+                                        : null,
+                                  ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              _selectedDueDateSort == 'asc'
+                                  ? PhosphorIcons.sortAscending(
+                                      PhosphorIconsStyle.fill)
+                                  : _selectedDueDateSort == 'desc'
+                                      ? PhosphorIcons.sortDescending(
+                                          PhosphorIconsStyle.fill)
+                                      : PhosphorIcons.caretDown(
+                                          PhosphorIconsStyle.bold),
+                              size: 14,
+                              color: _selectedDueDateSort != null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'none',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.calendar(PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedDueDateSort == null
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'No Sort',
+                              style: TextStyle(
+                                color: _selectedDueDateSort == null
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedDueDateSort == null
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'asc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortAscending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedDueDateSort == 'asc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Due First',
+                              style: TextStyle(
+                                color: _selectedDueDateSort == 'asc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedDueDateSort == 'asc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'desc',
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIcons.sortDescending(
+                                  PhosphorIconsStyle.bold),
+                              size: 16,
+                              color: _selectedDueDateSort == 'desc'
+                                  ? AppColors.accent
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Due Last',
+                              style: TextStyle(
+                                color: _selectedDueDateSort == 'desc'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _selectedDueDateSort == 'desc'
+                                    ? FontWeight.w600
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedDueDateSort = value == 'none' ? null : value;
+                        // Clear start date sort if due date sort is selected
+                        if (_selectedDueDateSort != null) {
+                          _selectedStartDateSort = null;
+                        }
+                      });
+                    },
                   ),
                 ),
 
@@ -2409,10 +2836,193 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       right: ProjectListLayout.columnPadding),
                   child: SizedBox(
                     width: ProjectListLayout.tasksWidth,
-                    child: Text(
-                      'Tasks',
-                      style: Theme.of(context).textTheme.titleSmall,
-                      textAlign: TextAlign.center,
+                    child: PopupMenuButton<String>(
+                      offset: const Offset(0, 40),
+                      child: MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _isTasksHeaderHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isTasksHeaderHovered = false),
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isTasksHeaderHovered
+                                ? Theme.of(context).hoverColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Tasks',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: _selectedTasksSort != null
+                                          ? AppColors.accent
+                                          : null,
+                                    ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                _selectedTasksSort != null
+                                    ? PhosphorIcons.sortAscending(
+                                        PhosphorIconsStyle.fill)
+                                    : PhosphorIcons.caretDown(
+                                        PhosphorIconsStyle.bold),
+                                size: 14,
+                                color: _selectedTasksSort != null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'none',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.listChecks(
+                                    PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: _selectedTasksSort == null
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'No Sort',
+                                style: TextStyle(
+                                  color: _selectedTasksSort == null
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: _selectedTasksSort == null
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: 'most',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.listPlus(PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: _selectedTasksSort == 'most'
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Most Tasks First',
+                                style: TextStyle(
+                                  color: _selectedTasksSort == 'most'
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: _selectedTasksSort == 'most'
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'least',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.list(PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: _selectedTasksSort == 'least'
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Least Tasks First',
+                                style: TextStyle(
+                                  color: _selectedTasksSort == 'least'
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: _selectedTasksSort == 'least'
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'completed',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.checkSquare(
+                                    PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: _selectedTasksSort == 'completed'
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Most Completed First',
+                                style: TextStyle(
+                                  color: _selectedTasksSort == 'completed'
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: _selectedTasksSort == 'completed'
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'incomplete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.square(PhosphorIconsStyle.bold),
+                                size: 16,
+                                color: _selectedTasksSort == 'incomplete'
+                                    ? AppColors.accent
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Least Completed First',
+                                style: TextStyle(
+                                  color: _selectedTasksSort == 'incomplete'
+                                      ? AppColors.accent
+                                      : null,
+                                  fontWeight: _selectedTasksSort == 'incomplete'
+                                      ? FontWeight.w600
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedTasksSort = value == 'none' ? null : value;
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -2978,7 +3588,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ? deletedProjects
             : projects;
 
-    return currentProjects.where((project) {
+    List<Project> filteredProjects = currentProjects.where((project) {
       // Search filter
       if (searchQuery.isNotEmpty) {
         final String projectName = project.name.toLowerCase();
@@ -3022,5 +3632,44 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
       return true;
     }).toList();
+
+    // Add sorting logic
+    if (_selectedNameSort != null) {
+      filteredProjects.sort((a, b) {
+        final comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return _selectedNameSort == 'asc' ? comparison : -comparison;
+      });
+    } else if (_selectedStartDateSort != null) {
+      filteredProjects.sort((a, b) {
+        final comparison = a.startDate.compareTo(b.startDate);
+        return _selectedStartDateSort == 'asc' ? comparison : -comparison;
+      });
+    } else if (_selectedDueDateSort != null) {
+      filteredProjects.sort((a, b) {
+        final comparison = a.dueDate.compareTo(b.dueDate);
+        return _selectedDueDateSort == 'asc' ? comparison : -comparison;
+      });
+    } else if (_selectedTasksSort != null) {
+      filteredProjects.sort((a, b) {
+        switch (_selectedTasksSort) {
+          case 'most':
+            return b.tasks.compareTo(a.tasks);
+          case 'least':
+            return a.tasks.compareTo(b.tasks);
+          case 'completed':
+            final aPercentage = a.completedTasks / a.tasks;
+            final bPercentage = b.completedTasks / b.tasks;
+            return bPercentage.compareTo(aPercentage);
+          case 'incomplete':
+            final aPercentage = a.completedTasks / a.tasks;
+            final bPercentage = b.completedTasks / b.tasks;
+            return aPercentage.compareTo(bPercentage);
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filteredProjects;
   }
 }
