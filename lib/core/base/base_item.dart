@@ -41,5 +41,17 @@ abstract class BaseItem {
     this.lastRestoredDate,
   });
 
+  BaseItem copyWith({
+    String? id,
+    String? name,
+    String? description,
+    DateTime? dueDate,
+    String? priority,
+    String? status,
+    bool? isPinned,
+    DateTime? deletedAt,
+    DateTime? lastRestoredDate,
+  });
+
   Map<String, dynamic> toMap();
 }
