@@ -150,7 +150,11 @@ class ProjectDatabaseService {
   // Update
   Future<void> updateProject(Project project) async {
     final box = await _box;
-    await box.put(project.id, project);
+    final existingProject = await box.get(project.id);
+    final updatedProject = project.copyWith(
+      isPinned: project.isPinned ?? existingProject?.isPinned ?? false,
+    );
+    await box.put(project.id, updatedProject);
   }
 
   // Delete

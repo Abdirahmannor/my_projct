@@ -28,7 +28,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   String _priority = 'medium';
   String _status = 'not started';
   int _tasks = 0;
-  String _category = 'personal';
+  String? _category = 'personal';
   final _projectDatabaseService = ProjectDatabaseService();
 
   @override
@@ -264,7 +264,8 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                                           PhosphorIconsStyle.regular)
                                     ),
                                   },
-                                  value: _category,
+                                  value: _category ??
+                                      'other', // Provide default value
                                   onChanged: (value) =>
                                       setState(() => _category = value),
                                 ),

@@ -126,40 +126,22 @@ class ProjectGridItem extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _buildCategoryIcon(context, project.category),
-                    const SizedBox(width: 12),
+                    if (project.isPinned ?? false)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Icon(
+                          PhosphorIcons.pushPin(PhosphorIconsStyle.fill),
+                          size: 14,
+                          color: AppColors.accent,
+                        ),
+                      ),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            project.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
+                      child: Text(
+                        project.name,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  decoration: onRestore != null
-                                      ? TextDecoration.lineThrough
-                                      : TextDecoration.none,
                                 ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (project.archivedDate != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Archived on ${_formatDate(project.archivedDate!)}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.orange.shade400,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
-                          ],
-                        ],
                       ),
                     ),
                   ],

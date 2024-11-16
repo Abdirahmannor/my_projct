@@ -32,19 +32,22 @@ class Project {
   final String status;
 
   @HiveField(9)
-  final String category;
+  final String? category;
 
   @HiveField(10)
   final DateTime? archivedDate;
 
   @HiveField(11)
-  final DateTime? lastRestoredDate;
+  final String? originalStatus;
 
   @HiveField(12)
-  final DateTime? deletedAt;
+  final bool? isPinned;
 
   @HiveField(13)
-  final String? originalStatus;
+  final DateTime? deletedAt;
+
+  @HiveField(14)
+  final DateTime? lastRestoredDate;
 
   Project({
     this.id,
@@ -56,11 +59,12 @@ class Project {
     this.completedTasks = 0,
     required this.priority,
     required this.status,
-    required this.category,
+    this.category,
     this.archivedDate,
-    this.lastRestoredDate,
-    this.deletedAt,
     this.originalStatus,
+    this.isPinned,
+    this.deletedAt,
+    this.lastRestoredDate,
   });
 
   Map<String, dynamic> toMap() {
@@ -68,17 +72,18 @@ class Project {
       'id': id,
       'name': name,
       'description': description,
-      'startDate': _formatDate(startDate),
-      'dueDate': _formatDate(dueDate),
+      'startDate': startDate.toIso8601String(),
+      'dueDate': dueDate.toIso8601String(),
       'tasks': tasks,
       'completedTasks': completedTasks,
       'priority': priority,
       'status': status,
       'category': category,
       'archivedDate': archivedDate?.toIso8601String(),
-      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
-      'deletedAt': deletedAt?.toIso8601String(),
       'originalStatus': originalStatus,
+      'isPinned': isPinned,
+      'deletedAt': deletedAt?.toIso8601String(),
+      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
     };
   }
 
@@ -87,8 +92,8 @@ class Project {
       id: map['id'],
       name: map['name'],
       description: map['description'],
-      startDate: _parseDate(map['startDate']),
-      dueDate: _parseDate(map['dueDate']),
+      startDate: DateTime.parse(map['startDate']),
+      dueDate: DateTime.parse(map['dueDate']),
       tasks: map['tasks'],
       completedTasks: map['completedTasks'],
       priority: map['priority'],
@@ -97,12 +102,13 @@ class Project {
       archivedDate: map['archivedDate'] != null
           ? DateTime.parse(map['archivedDate'])
           : null,
+      originalStatus: map['originalStatus'],
+      isPinned: map['isPinned'] as bool?,
+      deletedAt:
+          map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
       lastRestoredDate: map['lastRestoredDate'] != null
           ? DateTime.parse(map['lastRestoredDate'])
           : null,
-      deletedAt:
-          map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
-      originalStatus: map['originalStatus'],
     );
   }
 
@@ -148,5 +154,41 @@ class Project {
       'Dec'
     ];
     return months.indexOf(monthName) + 1;
+  }
+
+  Project copyWith({
+    String? id,
+    String? name,
+    String? description,
+    DateTime? startDate,
+    DateTime? dueDate,
+    int? tasks,
+    int? completedTasks,
+    String? priority,
+    String? status,
+    String? category,
+    DateTime? archivedDate,
+    String? originalStatus,
+    bool? isPinned,
+    DateTime? deletedAt,
+    DateTime? lastRestoredDate,
+  }) {
+    return Project(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      startDate: startDate ?? this.startDate,
+      dueDate: dueDate ?? this.dueDate,
+      tasks: tasks ?? this.tasks,
+      completedTasks: completedTasks ?? this.completedTasks,
+      priority: priority ?? this.priority,
+      status: status ?? this.status,
+      category: category ?? this.category,
+      archivedDate: archivedDate ?? this.archivedDate,
+      originalStatus: originalStatus ?? this.originalStatus,
+      isPinned: isPinned ?? this.isPinned,
+      deletedAt: deletedAt ?? this.deletedAt,
+      lastRestoredDate: lastRestoredDate ?? this.lastRestoredDate,
+    );
   }
 }

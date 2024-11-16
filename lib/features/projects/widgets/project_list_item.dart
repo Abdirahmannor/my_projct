@@ -61,11 +61,20 @@ class ProjectListItem extends StatelessWidget {
               ),
             ),
             SizedBox(width: ProjectListLayout.iconSpacing),
+            if (project.isPinned ?? false)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  PhosphorIcons.pushPin(PhosphorIconsStyle.fill),
+                  size: 14,
+                  color: AppColors.accent,
+                ),
+              ),
             Expanded(
               flex: ProjectListLayout.nameColumnFlex,
               child: Row(
                 children: [
-                  _buildCategoryIcon(context, project.category),
+                  _buildCategoryIcon(context, project.category ?? ''),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -74,7 +83,7 @@ class ProjectListItem extends StatelessWidget {
                         Text(
                           project.name,
                           style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     decoration: onRestore != null
                                         ? TextDecoration.lineThrough
@@ -82,17 +91,6 @@ class ProjectListItem extends StatelessWidget {
                                   ),
                         ),
                         const SizedBox(height: 4),
-                        if (project.archivedDate != null) ...[
-                          Text(
-                            'Archived on ${_formatDate(project.archivedDate!)}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.orange.shade400,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
                         Text(
                           project.description ?? '',
                           style:

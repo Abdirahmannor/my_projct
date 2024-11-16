@@ -105,10 +105,49 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     try {
       final loadedProjects = await _projectDatabaseService.getAllProjects();
       setState(() {
-        projects =
-            loadedProjects.where((p) => p.status != 'completed').toList();
-        archivedProjects =
-            loadedProjects.where((p) => p.status == 'completed').toList();
+        // Preserve isPinned state when filtering projects
+        projects = loadedProjects
+            .where((p) => p.status != 'completed')
+            .map((p) => Project(
+                  id: p.id,
+                  name: p.name,
+                  description: p.description,
+                  startDate: p.startDate,
+                  dueDate: p.dueDate,
+                  tasks: p.tasks,
+                  completedTasks: p.completedTasks,
+                  priority: p.priority,
+                  status: p.status,
+                  category: p.category,
+                  isPinned: p.isPinned, // Explicitly preserve pin state
+                  archivedDate: p.archivedDate,
+                  originalStatus: p.originalStatus,
+                  deletedAt: p.deletedAt,
+                  lastRestoredDate: p.lastRestoredDate,
+                ))
+            .toList();
+
+        archivedProjects = loadedProjects
+            .where((p) => p.status == 'completed')
+            .map((p) => Project(
+                  // Same mapping for archived projects
+                  id: p.id,
+                  name: p.name,
+                  description: p.description,
+                  startDate: p.startDate,
+                  dueDate: p.dueDate,
+                  tasks: p.tasks,
+                  completedTasks: p.completedTasks,
+                  priority: p.priority,
+                  status: p.status,
+                  category: p.category,
+                  isPinned: p.isPinned, // Explicitly preserve pin state
+                  archivedDate: p.archivedDate,
+                  originalStatus: p.originalStatus,
+                  deletedAt: p.deletedAt,
+                  lastRestoredDate: p.lastRestoredDate,
+                ))
+            .toList();
 
         // Initialize checkbox lists
         checkedProjects = List.generate(projects.length, (_) => false);
@@ -116,10 +155,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             List.generate(archivedProjects.length, (_) => false);
         recycleBinCheckedProjects =
             List.generate(deletedProjects.length, (_) => false);
-
-        // Reset select all states
-        archivedSelectAll = false;
-        recycleBinSelectAll = false;
       });
     } catch (e) {
       print('Error loading projects: $e');
@@ -680,11 +715,49 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 setState(() {
                                   _isLoading = true;
                                 });
+
+                                // Store current filter states
+                                final currentFilters = {
+                                  'nameSort': _selectedNameSort,
+                                  'startDateSort': _selectedStartDateSort,
+                                  'dueDateSort': _selectedDueDateSort,
+                                  'tasksSort': _selectedTasksSort,
+                                  'priority': selectedPriority,
+                                  'status': selectedStatus,
+                                  'category': selectedCategory,
+                                  'dateRange': _selectedDateRange,
+                                  'search': searchQuery,
+                                };
+
+                                // Refresh data
                                 await _loadProjects();
                                 await _loadDeletedProjects();
+
+                                // Restore filter states
                                 setState(() {
                                   _isLoading = false;
+                                  _selectedNameSort =
+                                      currentFilters['nameSort'] as String?;
+                                  _selectedStartDateSort =
+                                      currentFilters['startDateSort']
+                                          as String?;
+                                  _selectedDueDateSort =
+                                      currentFilters['dueDateSort'] as String?;
+                                  _selectedTasksSort =
+                                      currentFilters['tasksSort'] as String?;
+                                  selectedPriority =
+                                      currentFilters['priority'] as String?;
+                                  selectedStatus =
+                                      currentFilters['status'] as String?;
+                                  selectedCategory =
+                                      currentFilters['category'] as String?;
+                                  _selectedDateRange =
+                                      currentFilters['dateRange']
+                                          as DateTimeRange?;
+                                  searchQuery =
+                                      currentFilters['search'] as String;
                                 });
+
                                 _showSuccessMessage(
                                   message: 'Projects refreshed',
                                   icon: PhosphorIcons.arrowClockwise(
@@ -1280,6 +1353,31 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return PopupMenuButton<String>(
       initialValue: _selectedTimeframe,
       offset: const Offset(0, 40),
+      itemBuilder: (BuildContext context) => _timeframes.map((timeframe) {
+        return PopupMenuItem<String>(
+          value: timeframe,
+          child: Row(
+            children: [
+              Icon(
+                timeframe == _selectedTimeframe
+                    ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)
+                    : PhosphorIcons.circle(PhosphorIconsStyle.regular),
+                size: 16,
+                color:
+                    timeframe == _selectedTimeframe ? AppColors.accent : null,
+              ),
+              const SizedBox(width: 8),
+              Text(timeframe),
+            ],
+          ),
+        );
+      }).toList(),
+      onSelected: (String value) {
+        setState(() {
+          _selectedTimeframe = value;
+          _updateStatistics(value);
+        });
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -1309,31 +1407,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ],
         ),
       ),
-      itemBuilder: (BuildContext context) => _timeframes.map((timeframe) {
-        return PopupMenuItem<String>(
-          value: timeframe,
-          child: Row(
-            children: [
-              Icon(
-                timeframe == _selectedTimeframe
-                    ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)
-                    : PhosphorIcons.circle(PhosphorIconsStyle.regular),
-                size: 16,
-                color:
-                    timeframe == _selectedTimeframe ? AppColors.accent : null,
-              ),
-              const SizedBox(width: 8),
-              Text(timeframe),
-            ],
-          ),
-        );
-      }).toList(),
-      onSelected: (String value) {
-        setState(() {
-          _selectedTimeframe = value;
-          _updateStatistics(value);
-        });
-      },
     );
   }
 
@@ -1381,7 +1454,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   decoration: BoxDecoration(
                     color:
                         (trendUp ? Colors.green : Colors.red).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1599,16 +1672,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    text,
-                    style: const TextStyle(fontSize: 10),
-                  ),
+                  child: Text(text, style: const TextStyle(fontSize: 10)),
                 );
               },
             ),
           ),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
+        backgroundColor: Colors.transparent,
         borderData: FlBorderData(show: false),
+        groupsSpace: 20,
         barGroups: [
           BarChartGroupData(
             x: 0,
@@ -1789,7 +1862,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final listToRestore = isRecycleBin ? deletedProjects : archivedProjects;
 
     if (listToRestore.isEmpty) {
-      showDialog(
+      await showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Row(
@@ -3293,47 +3366,90 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     itemCount: _getFilteredProjects().length,
                     itemBuilder: (context, index) {
                       final project = _getFilteredProjects()[index];
-                      return MouseRegion(
-                        onEnter: (_) => setState(() => hoveredIndex = index),
-                        onExit: (_) => setState(() => hoveredIndex = null),
-                        child: ProjectListItem(
-                          project: project,
-                          isChecked: showArchived
-                              ? archivedCheckedProjects[index]
-                              : showRecycleBin
-                                  ? recycleBinCheckedProjects[index]
-                                  : checkedProjects[index],
-                          onCheckChanged: showArchived
-                              ? (value) {
-                                  setState(() {
-                                    archivedCheckedProjects[index] =
-                                        value ?? false;
-                                    archivedSelectAll = archivedCheckedProjects
-                                        .every((checked) => checked);
-                                  });
-                                }
-                              : showRecycleBin
-                                  ? (value) {
-                                      setState(() {
-                                        recycleBinCheckedProjects[index] =
-                                            value ?? false;
-                                        recycleBinSelectAll =
-                                            recycleBinCheckedProjects
-                                                .every((checked) => checked);
-                                      });
-                                    }
-                                  : (value) =>
-                                      _handleCheckboxChange(index, value),
-                          onEdit: showRecycleBin || showArchived
-                              ? () {}
-                              : () => _handleEdit(index),
-                          onDelete: showRecycleBin
-                              ? () => _handlePermanentDelete(index)
-                              : () => _handleDelete(index),
-                          onRestore: (showRecycleBin || showArchived)
-                              ? () => _handleRestore(index)
-                              : null,
-                          isHovered: hoveredIndex == index,
+                      return GestureDetector(
+                        onSecondaryTapUp: (details) {
+                          if (showArchived || showRecycleBin) return;
+
+                          final RenderBox overlay = Overlay.of(context)
+                              .context
+                              .findRenderObject() as RenderBox;
+
+                          showMenu(
+                            context: context,
+                            position: RelativeRect.fromRect(
+                              details.globalPosition & const Size(48, 48),
+                              Offset.zero & overlay.size,
+                            ),
+                            items: [
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      (project.isPinned ?? false)
+                                          ? PhosphorIcons.pushPin(
+                                              PhosphorIconsStyle.fill)
+                                          : PhosphorIcons.pushPin(
+                                              PhosphorIconsStyle.bold),
+                                      size: 16,
+                                      color: (project.isPinned ?? false)
+                                          ? AppColors.accent
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text((project.isPinned ?? false)
+                                        ? 'Unpin Project'
+                                        : 'Pin Project'),
+                                  ],
+                                ),
+                                onTap: () => _handlePinProject(project),
+                              ),
+                              // Add other context menu items here if needed
+                            ],
+                          );
+                        },
+                        child: MouseRegion(
+                          onEnter: (_) => setState(() => hoveredIndex = index),
+                          onExit: (_) => setState(() => hoveredIndex = null),
+                          child: ProjectListItem(
+                            project: project,
+                            isChecked: showArchived
+                                ? archivedCheckedProjects[index]
+                                : showRecycleBin
+                                    ? recycleBinCheckedProjects[index]
+                                    : checkedProjects[index],
+                            onCheckChanged: showArchived
+                                ? (value) {
+                                    setState(() {
+                                      archivedCheckedProjects[index] =
+                                          value ?? false;
+                                      archivedSelectAll =
+                                          archivedCheckedProjects
+                                              .every((checked) => checked);
+                                    });
+                                  }
+                                : showRecycleBin
+                                    ? (value) {
+                                        setState(() {
+                                          recycleBinCheckedProjects[index] =
+                                              value ?? false;
+                                          recycleBinSelectAll =
+                                              recycleBinCheckedProjects
+                                                  .every((checked) => checked);
+                                        });
+                                      }
+                                    : (value) =>
+                                        _handleCheckboxChange(index, value),
+                            onEdit: showRecycleBin || showArchived
+                                ? () {}
+                                : () => _handleEdit(index),
+                            onDelete: showRecycleBin
+                                ? () => _handlePermanentDelete(index)
+                                : () => _handleDelete(index),
+                            onRestore: (showRecycleBin || showArchived)
+                                ? () => _handleRestore(index)
+                                : null,
+                            isHovered: hoveredIndex == index,
+                          ),
                         ),
                       );
                     },
@@ -3352,47 +3468,90 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     itemBuilder: (context, index) {
                       final project =
                           _getFilteredProjects()[index]; // Use filtered project
-                      return MouseRegion(
-                        onEnter: (_) => setState(() => hoveredIndex = index),
-                        onExit: (_) => setState(() => hoveredIndex = null),
-                        child: ProjectGridItem(
-                          project: project,
-                          isChecked: showArchived
-                              ? archivedCheckedProjects[index]
-                              : showRecycleBin
-                                  ? recycleBinCheckedProjects[index]
-                                  : checkedProjects[index],
-                          onCheckChanged: showArchived
-                              ? (value) {
-                                  setState(() {
-                                    archivedCheckedProjects[index] =
-                                        value ?? false;
-                                    archivedSelectAll = archivedCheckedProjects
-                                        .every((checked) => checked);
-                                  });
-                                }
-                              : showRecycleBin
-                                  ? (value) {
-                                      setState(() {
-                                        recycleBinCheckedProjects[index] =
-                                            value ?? false;
-                                        recycleBinSelectAll =
-                                            recycleBinCheckedProjects
-                                                .every((checked) => checked);
-                                      });
-                                    }
-                                  : (value) =>
-                                      _handleCheckboxChange(index, value),
-                          onEdit: showRecycleBin || showArchived
-                              ? () {}
-                              : () => _handleEdit(index),
-                          onDelete: showRecycleBin
-                              ? () => _handlePermanentDelete(index)
-                              : () => _handleDelete(index),
-                          onRestore: (showRecycleBin || showArchived)
-                              ? () => _handleRestore(index)
-                              : null,
-                          isHovered: hoveredIndex == index,
+                      return GestureDetector(
+                        onSecondaryTapUp: (details) {
+                          if (showArchived || showRecycleBin) return;
+
+                          final RenderBox overlay = Overlay.of(context)
+                              .context
+                              .findRenderObject() as RenderBox;
+
+                          showMenu(
+                            context: context,
+                            position: RelativeRect.fromRect(
+                              details.globalPosition & const Size(48, 48),
+                              Offset.zero & overlay.size,
+                            ),
+                            items: [
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      (project.isPinned ?? false)
+                                          ? PhosphorIcons.pushPin(
+                                              PhosphorIconsStyle.fill)
+                                          : PhosphorIcons.pushPin(
+                                              PhosphorIconsStyle.bold),
+                                      size: 16,
+                                      color: (project.isPinned ?? false)
+                                          ? AppColors.accent
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text((project.isPinned ?? false)
+                                        ? 'Unpin Project'
+                                        : 'Pin Project'),
+                                  ],
+                                ),
+                                onTap: () => _handlePinProject(project),
+                              ),
+                              // Add other context menu items here if needed
+                            ],
+                          );
+                        },
+                        child: MouseRegion(
+                          onEnter: (_) => setState(() => hoveredIndex = index),
+                          onExit: (_) => setState(() => hoveredIndex = null),
+                          child: ProjectGridItem(
+                            project: project,
+                            isChecked: showArchived
+                                ? archivedCheckedProjects[index]
+                                : showRecycleBin
+                                    ? recycleBinCheckedProjects[index]
+                                    : checkedProjects[index],
+                            onCheckChanged: showArchived
+                                ? (value) {
+                                    setState(() {
+                                      archivedCheckedProjects[index] =
+                                          value ?? false;
+                                      archivedSelectAll =
+                                          archivedCheckedProjects
+                                              .every((checked) => checked);
+                                    });
+                                  }
+                                : showRecycleBin
+                                    ? (value) {
+                                        setState(() {
+                                          recycleBinCheckedProjects[index] =
+                                              value ?? false;
+                                          recycleBinSelectAll =
+                                              recycleBinCheckedProjects
+                                                  .every((checked) => checked);
+                                        });
+                                      }
+                                    : (value) =>
+                                        _handleCheckboxChange(index, value),
+                            onEdit: showRecycleBin || showArchived
+                                ? () {}
+                                : () => _handleEdit(index),
+                            onDelete: showRecycleBin
+                                ? () => _handlePermanentDelete(index)
+                                : () => _handleDelete(index),
+                            onRestore: (showRecycleBin || showArchived)
+                                ? () => _handleRestore(index)
+                                : null,
+                            isHovered: hoveredIndex == index,
+                          ),
                         ),
                       );
                     },
@@ -3633,43 +3792,43 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       return true;
     }).toList();
 
-    // Add sorting logic
-    if (_selectedNameSort != null) {
-      filteredProjects.sort((a, b) {
+    // Always sort pinned projects first
+    filteredProjects.sort((a, b) {
+      if ((a.isPinned ?? false) && !(b.isPinned ?? false)) return -1;
+      if (!(a.isPinned ?? false) && (b.isPinned ?? false)) return 1;
+      // Then apply other sorting
+      if (_selectedNameSort != null) {
         final comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
         return _selectedNameSort == 'asc' ? comparison : -comparison;
-      });
-    } else if (_selectedStartDateSort != null) {
-      filteredProjects.sort((a, b) {
-        final comparison = a.startDate.compareTo(b.startDate);
-        return _selectedStartDateSort == 'asc' ? comparison : -comparison;
-      });
-    } else if (_selectedDueDateSort != null) {
-      filteredProjects.sort((a, b) {
-        final comparison = a.dueDate.compareTo(b.dueDate);
-        return _selectedDueDateSort == 'asc' ? comparison : -comparison;
-      });
-    } else if (_selectedTasksSort != null) {
-      filteredProjects.sort((a, b) {
-        switch (_selectedTasksSort) {
-          case 'most':
-            return b.tasks.compareTo(a.tasks);
-          case 'least':
-            return a.tasks.compareTo(b.tasks);
-          case 'completed':
-            final aPercentage = a.completedTasks / a.tasks;
-            final bPercentage = b.completedTasks / b.tasks;
-            return bPercentage.compareTo(aPercentage);
-          case 'incomplete':
-            final aPercentage = a.completedTasks / a.tasks;
-            final bPercentage = b.completedTasks / b.tasks;
-            return aPercentage.compareTo(bPercentage);
-          default:
-            return 0;
-        }
-      });
-    }
+      } else if (_selectedStartDateSort != null) {
+        // ... rest of existing sorting logic ...
+      }
+      return 0;
+    });
 
     return filteredProjects;
+  }
+
+  // Add this method to handle pinning/unpinning
+  Future<void> _handlePinProject(Project project) async {
+    try {
+      final updatedProject = project.copyWith(
+        isPinned: !(project.isPinned ?? false), // Handle nullable
+      );
+      await _projectDatabaseService.updateProject(updatedProject);
+
+      await _loadProjects();
+
+      _showSuccessMessage(
+        message: (updatedProject.isPinned ?? false) // Handle nullable
+            ? 'Project "${project.name}" has been pinned'
+            : 'Project "${project.name}" has been unpinned',
+        icon: (updatedProject.isPinned ?? false) // Handle nullable
+            ? PhosphorIcons.pushPin(PhosphorIconsStyle.fill)
+            : PhosphorIcons.pushPin(PhosphorIconsStyle.bold),
+      );
+    } catch (e) {
+      _showError('Failed to update project: $e');
+    }
   }
 }
