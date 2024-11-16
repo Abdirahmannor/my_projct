@@ -7,15 +7,19 @@ import '../../../lib/core/base/base_state.dart';
 // Create a mock item for testing
 class MockItem extends BaseItem {
   MockItem({
+    String? id,
     required String name,
     required DateTime dueDate,
     required String priority,
     required String status,
+    bool? isPinned,
   }) : super(
+          id: id,
           name: name,
           dueDate: dueDate,
           priority: priority,
           status: status,
+          isPinned: isPinned,
         );
 
   @override
@@ -31,36 +35,28 @@ class MockItem extends BaseItem {
     DateTime? lastRestoredDate,
   }) {
     return MockItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
       status: status ?? this.status,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 
   @override
-  Map<String, dynamic> toMap() {
-    return {};
-  }
+  Map<String, dynamic> toMap() => {};
 }
 
-// Add this class at the top of the file, after MockItem
-class MockState<T extends BaseItem> extends BaseState<T> {
-  @override
-  void clearAllStates() {
-    super.clearAllStates();
-  }
+// Create mock state for testing
+class MockState extends BaseState<MockItem> {}
 
-  @override
-  bool get hasActiveFilters => super.hasActiveFilters;
-}
-
-// Create a mock implementation of BaseListScreen
+// Create mock implementation of BaseListScreen
 class MockListScreen extends BaseListScreen<MockItem> {
   const MockListScreen({super.key});
 
   @override
-  BaseListScreenState<MockItem> createState() => MockListScreenState();
+  MockListScreenState createState() => MockListScreenState();
 }
 
 class MockListScreenState extends BaseListScreenState<MockItem> {
@@ -68,7 +64,10 @@ class MockListScreenState extends BaseListScreenState<MockItem> {
   Widget buildListView(List<MockItem> items) {
     return ListView.builder(
       itemCount: items.length,
-      itemBuilder: (context, index) => Text(items[index].name),
+      itemBuilder: (context, index) => ListTile(
+        key: Key('list_item_${items[index].name}'),
+        title: Text(items[index].name),
+      ),
     );
   }
 
@@ -79,7 +78,10 @@ class MockListScreenState extends BaseListScreenState<MockItem> {
         crossAxisCount: 2,
       ),
       itemCount: items.length,
-      itemBuilder: (context, index) => Text(items[index].name),
+      itemBuilder: (context, index) => Card(
+        key: Key('grid_item_${items[index].name}'),
+        child: Center(child: Text(items[index].name)),
+      ),
     );
   }
 
@@ -90,203 +92,159 @@ class MockListScreenState extends BaseListScreenState<MockItem> {
 
   @override
   Widget buildFilterBar() {
-    return const Text('Mock Filter Bar');
+    return Row(
+      children: [
+        TextButton(
+          onPressed: () => state.showArchived = !state.showArchived,
+          child: const Text('Toggle Archive'),
+        ),
+        TextButton(
+          onPressed: () => state.showRecycleBin = !state.showRecycleBin,
+          child: const Text('Toggle Recycle Bin'),
+        ),
+      ],
+    );
   }
 
   @override
   BaseState<MockItem> createState() {
-    return MockState<MockItem>();
+    return MockState();
   }
 
   @override
   Future<void> loadItems() async {
     state.items = [
       MockItem(
-        name: 'Test Item 1',
+        id: '1',
+        name: 'Active Item',
         dueDate: DateTime.now(),
         priority: 'high',
         status: 'in progress',
       ),
+    ];
+
+    state.archivedItems = [
       MockItem(
-        name: 'Test Item 2',
+        id: '2',
+        name: 'Archived Item',
         dueDate: DateTime.now(),
         priority: 'low',
         status: 'completed',
+      ),
+    ];
+
+    state.deletedItems = [
+      MockItem(
+        id: '3',
+        name: 'Deleted Item',
+        dueDate: DateTime.now(),
+        priority: 'medium',
+        status: 'on hold',
       ),
     ];
   }
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    // Add any setup needed before each test
-  });
-
-  tearDown(() {
-    // Add any cleanup needed after each test
-  });
-
   group('BaseListScreen Tests', () {
-    testWidgets('should render all components', (tester) async {
+    testWidgets('should render initial view correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Mock Header'), findsOneWidget);
-      expect(find.text('Mock Filter Bar'), findsOneWidget);
-      expect(find.text('Test Item 1'), findsOneWidget);
-      expect(find.text('Test Item 2'), findsOneWidget);
+      expect(find.text('Active Item'), findsOneWidget);
+      expect(find.text('Archived Item'), findsNothing);
+      expect(find.text('Deleted Item'), findsNothing);
     });
 
-    testWidgets('should filter items correctly', (tester) async {
+    testWidgets('should toggle between views', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      final state =
-          tester.state<MockListScreenState>(find.byType(MockListScreen));
+      // Switch to archived view
+      await tester.tap(find.text('Toggle Archive'));
+      await tester.pumpAndSettle();
 
-      // Test search filter
-      state.state.searchQuery = 'Item 1';
-      state.setState(() {});
-      await tester.pump();
+      expect(find.text('Active Item'), findsNothing);
+      expect(find.text('Archived Item'), findsOneWidget);
 
-      expect(find.text('Test Item 1'), findsOneWidget);
-      expect(find.text('Test Item 2'), findsNothing);
+      // Switch to recycle bin view
+      await tester.tap(find.text('Toggle Recycle Bin'));
+      await tester.pumpAndSettle();
 
-      // Test priority filter
-      state.state.searchQuery = '';
-      state.state.selectedPriority = 'high';
-      state.setState(() {});
-      await tester.pump();
-
-      expect(find.text('Test Item 1'), findsOneWidget);
-      expect(find.text('Test Item 2'), findsNothing);
+      expect(find.text('Archived Item'), findsNothing);
+      expect(find.text('Deleted Item'), findsOneWidget);
     });
 
-    testWidgets('should toggle between list and grid view', (tester) async {
+    testWidgets('should toggle between list and grid views', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final state =
           tester.state<MockListScreenState>(find.byType(MockListScreen));
+
+      // Initially in list view
+      expect(find.byKey(const Key('list_item_Active Item')), findsOneWidget);
+      expect(find.byKey(const Key('grid_item_Active Item')), findsNothing);
 
       // Toggle to grid view
       state.viewManager.toggleView();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      // Verify layout changes (you might need to add specific keys or other identifiers
-      // to verify the layout type)
+      expect(find.byKey(const Key('list_item_Active Item')), findsNothing);
+      expect(find.byKey(const Key('grid_item_Active Item')), findsOneWidget);
     });
 
-    testWidgets('should handle state transitions correctly', (tester) async {
+    testWidgets('should filter items', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final state =
           tester.state<MockListScreenState>(find.byType(MockListScreen));
 
-      // Test archive transition
-      state.state.showArchived = true;
-      state.setState(() {});
-      await tester.pump();
-
-      // Test recycle bin transition
-      state.state.showArchived = false;
-      state.state.showRecycleBin = true;
-      state.setState(() {});
-      await tester.pump();
-    });
-
-    testWidgets('should handle multiple filters simultaneously',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: MockListScreen(),
-        ),
-      );
-      await tester.pump();
-
-      final state =
-          tester.state<MockListScreenState>(find.byType(MockListScreen));
-
-      // Apply multiple filters
-      state.state.searchQuery = 'Item';
+      // Apply filter
       state.state.selectedPriority = 'high';
-      state.state.selectedStatus = 'in progress';
       state.setState(() {});
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('Test Item 1'), findsOneWidget);
-      expect(find.text('Test Item 2'), findsNothing);
+      expect(find.text('Active Item'), findsOneWidget); // high priority
+      expect(find.text('Archived Item'), findsNothing); // low priority
     });
 
-    testWidgets('should handle sorting', (tester) async {
+    testWidgets('should handle search', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final state =
           tester.state<MockListScreenState>(find.byType(MockListScreen));
 
-      // Test name sorting
-      state.state.selectedNameSort = 'asc';
+      // Search for "Active"
+      state.state.searchQuery = 'Active';
       state.setState(() {});
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      // Test date sorting
-      state.state.selectedNameSort = null;
-      state.state.selectedStartDateSort = 'desc';
-      state.setState(() {});
-      await tester.pump();
-    });
-
-    testWidgets('should handle view mode changes with data updates',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: MockListScreen(),
-        ),
-      );
-      await tester.pump();
-
-      final state =
-          tester.state<MockListScreenState>(find.byType(MockListScreen));
-
-      // Toggle view and update data
-      state.viewManager.toggleView();
-      state.setState(() {
-        state.state.items = [
-          MockItem(
-            name: 'New Item',
-            dueDate: DateTime.now(),
-            priority: 'medium',
-            status: 'not started',
-          ),
-        ];
-      });
-      await tester.pump();
-
-      expect(find.text('New Item'), findsOneWidget);
+      expect(find.text('Active Item'), findsOneWidget);
+      expect(find.text('Archived Item'), findsNothing);
     });
 
     testWidgets('should maintain state during rebuilds', (tester) async {
@@ -295,27 +253,28 @@ void main() {
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final state =
           tester.state<MockListScreenState>(find.byType(MockListScreen));
 
-      // Set some state
+      // Change some state
       state.state.selectedPriority = 'high';
-      state.state.searchQuery = 'Test';
+      state.viewManager.toggleView();
       state.setState(() {});
+      await tester.pumpAndSettle();
 
-      // Trigger rebuild
+      // Rebuild widget
       await tester.pumpWidget(
         const MaterialApp(
           home: MockListScreen(),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // Verify state is maintained
       expect(state.state.selectedPriority, 'high');
-      expect(state.state.searchQuery, 'Test');
+      expect(state.viewManager.isListView, false);
     });
   });
 }

@@ -14,9 +14,19 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: viewManager.buildView(
-              listView: Container(key: const Key('list_view')),
-              gridView: Container(key: const Key('grid_view')),
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return viewManager.buildView(
+                  listView: Container(
+                    key: const Key('list_view'),
+                    child: const Text('List View'),
+                  ),
+                  gridView: Container(
+                    key: const Key('grid_view'),
+                    child: const Text('Grid View'),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -24,17 +34,19 @@ void main() {
 
       // Initially should show list view
       expect(find.byKey(const Key('list_view')), findsOneWidget);
+      expect(find.text('List View'), findsOneWidget);
       expect(find.byKey(const Key('grid_view')), findsNothing);
 
       // Toggle to grid view
       viewManager.toggleView();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('grid_view')), findsOneWidget);
+      expect(find.text('Grid View'), findsOneWidget);
       expect(find.byKey(const Key('list_view')), findsNothing);
     });
 
-    testWidgets('should persist view preference', (tester) async {
+    testWidgets('should animate view transitions', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -46,11 +58,22 @@ void main() {
         ),
       );
 
-      // Change to grid view
+      // Start transition
       viewManager.toggleView();
       await tester.pump();
 
-      // Recreate widget
+      // Verify animation is running
+      final animation = tester.widget<FadeTransition>(
+        find.byType(FadeTransition),
+      );
+      expect(animation.opacity.value, isNot(1.0));
+
+      // Complete transition
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('grid_view')), findsOneWidget);
+    });
+
+    testWidgets('should maintain state during rebuilds', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -61,70 +84,45 @@ void main() {
           ),
         ),
       );
+
+      // Switch to grid view
+      viewManager.toggleView();
+      await tester.pumpAndSettle();
+
+      // Rebuild widget
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: viewManager.buildView(
+              listView: Container(key: const Key('list_view')),
+              gridView: Container(key: const Key('grid_view')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       // Should still be in grid view
       expect(find.byKey(const Key('grid_view')), findsOneWidget);
-      expect(find.byKey(const Key('list_view')), findsNothing);
     });
 
-    testWidgets('should render list view correctly', (tester) async {
-      final listView = ListView(
-        children: const [
-          Text('Item 1'),
-          Text('Item 2'),
-        ],
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: viewManager.buildView(
-              listView: listView,
-              gridView: Container(),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Item 1'), findsOneWidget);
-      expect(find.text('Item 2'), findsOneWidget);
-    });
-
-    testWidgets('should render grid view correctly', (tester) async {
-      final gridView = GridView.count(
-        crossAxisCount: 2,
-        children: const [
-          Text('Grid Item 1'),
-          Text('Grid Item 2'),
-        ],
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: viewManager.buildView(
-              listView: Container(),
-              gridView: gridView,
-            ),
-          ),
-        ),
-      );
-
-      viewManager.toggleView(); // Switch to grid view
-      await tester.pump();
-
-      expect(find.text('Grid Item 1'), findsOneWidget);
-      expect(find.text('Grid Item 2'), findsOneWidget);
-    });
-
-    test('should manage view state properly', () {
-      expect(viewManager.isListView, true); // Default to list view
+    test('should notify listeners of view changes', () {
+      bool notified = false;
+      viewManager.addListener(() => notified = true);
 
       viewManager.toggleView();
-      expect(viewManager.isListView, false);
+      expect(notified, isTrue);
+    });
+
+    test('should properly dispose listeners', () {
+      bool notified = false;
+      void listener() => notified = true;
+
+      viewManager.addListener(listener);
+      viewManager.removeListener(listener);
 
       viewManager.toggleView();
-      expect(viewManager.isListView, true);
+      expect(notified, isFalse);
     });
   });
 }

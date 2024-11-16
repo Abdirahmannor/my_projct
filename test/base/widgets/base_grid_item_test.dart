@@ -6,12 +6,14 @@ import '../../../lib/core/base/base_item.dart';
 // Create a mock item for testing
 class MockItem extends BaseItem {
   MockItem({
+    String? id,
     required String name,
     required DateTime dueDate,
     required String priority,
     required String status,
     bool? isPinned,
   }) : super(
+          id: id,
           name: name,
           dueDate: dueDate,
           priority: priority,
@@ -32,6 +34,7 @@ class MockItem extends BaseItem {
     DateTime? lastRestoredDate,
   }) {
     return MockItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
@@ -44,9 +47,10 @@ class MockItem extends BaseItem {
   Map<String, dynamic> toMap() => {};
 }
 
-// Create a mock implementation of BaseGridItem
+// Create mock implementation of BaseGridItem
 class MockGridItem extends BaseGridItem<MockItem> {
   const MockGridItem({
+    super.key,
     required super.item,
     required super.isChecked,
     required super.isHovered,
@@ -83,6 +87,7 @@ void main() {
 
     setUp(() {
       mockItem = MockItem(
+        id: '1',
         name: 'Test Item',
         dueDate: DateTime.now(),
         priority: 'high',
@@ -113,6 +118,7 @@ void main() {
       expect(find.text('Test Item'), findsOneWidget);
       expect(find.text('High'), findsOneWidget);
       expect(find.text('In Progress'), findsOneWidget);
+      expect(find.byType(Checkbox), findsOneWidget);
     });
 
     testWidgets('should show pin indicator when item is pinned',
@@ -135,6 +141,28 @@ void main() {
       );
 
       expect(find.byIcon(Icons.push_pin), findsOneWidget);
+    });
+
+    testWidgets('should handle checkbox changes', (tester) async {
+      bool? checkValue;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MockGridItem(
+              item: mockItem,
+              isChecked: false,
+              isHovered: false,
+              onCheckChanged: (value) => checkValue = value,
+              onEdit: mockOnEdit,
+              onDelete: mockOnDelete,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(Checkbox));
+      expect(checkValue, isTrue);
     });
 
     testWidgets(
@@ -161,8 +189,30 @@ void main() {
       expect(find.byTooltip('Delete'), findsNothing);
     });
 
-    testWidgets('should handle checkbox changes', (tester) async {
-      bool? checkValue;
+    testWidgets('should apply hover styles', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MouseRegion(
+              child: MockGridItem(
+                item: mockItem,
+                isChecked: false,
+                isHovered: true,
+                onCheckChanged: mockOnCheckChanged,
+                onEdit: mockOnEdit,
+                onDelete: mockOnDelete,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final container = tester.widget<Container>(find.byType(Container).first);
+      expect(container.decoration, isNotNull);
+    });
+
+    testWidgets('should handle edit action', (tester) async {
+      bool editCalled = false;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -171,36 +221,38 @@ void main() {
               item: mockItem,
               isChecked: false,
               isHovered: false,
-              onCheckChanged: (value) => checkValue = value,
-              onEdit: mockOnEdit,
+              onCheckChanged: mockOnCheckChanged,
+              onEdit: () => editCalled = true,
               onDelete: mockOnDelete,
             ),
           ),
         ),
       );
 
-      await tester.tap(find.byType(Checkbox));
-      expect(checkValue, isTrue);
+      await tester.tap(find.byTooltip('Edit'));
+      expect(editCalled, isTrue);
     });
 
-    testWidgets('should apply hover styles', (tester) async {
+    testWidgets('should handle delete action', (tester) async {
+      bool deleteCalled = false;
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: MockGridItem(
               item: mockItem,
               isChecked: false,
-              isHovered: true,
+              isHovered: false,
               onCheckChanged: mockOnCheckChanged,
               onEdit: mockOnEdit,
-              onDelete: mockOnDelete,
+              onDelete: () => deleteCalled = true,
             ),
           ),
         ),
       );
 
-      final container = tester.widget<Container>(find.byType(Container).first);
-      expect(container.decoration, isNotNull);
+      await tester.tap(find.byTooltip('Delete'));
+      expect(deleteCalled, isTrue);
     });
   });
 }

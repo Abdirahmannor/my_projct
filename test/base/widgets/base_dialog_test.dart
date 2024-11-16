@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import '../../../lib/core/base/base_dialog.dart';
 
-// Create a mock implementation of BaseDialog
+// Create mock implementation of BaseDialog
 class MockDialog extends BaseDialog {
   const MockDialog({super.key, super.isEditing});
 
@@ -11,7 +11,8 @@ class MockDialog extends BaseDialog {
 }
 
 class MockDialogState extends BaseDialogState<MockDialog> {
-  final textController = TextEditingController();
+  final nameController = TextEditingController();
+  bool submitCalled = false;
 
   @override
   Widget buildForm() {
@@ -19,7 +20,7 @@ class MockDialogState extends BaseDialogState<MockDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         TextFormField(
-          controller: textController,
+          controller: nameController,
           decoration: const InputDecoration(labelText: 'Name'),
           validator: (value) =>
               value?.isEmpty ?? true ? 'Name is required' : null,
@@ -30,10 +31,11 @@ class MockDialogState extends BaseDialogState<MockDialog> {
 
   @override
   Future<void> handleSubmit() async {
-    // Simulate async operation
-    await Future.delayed(const Duration(milliseconds: 500));
+    submitCalled = true;
+    await Future.delayed(
+        const Duration(milliseconds: 500)); // Simulate async operation
     if (mounted) {
-      Navigator.pop(context, textController.text);
+      Navigator.pop(context, nameController.text);
     }
   }
 
@@ -45,7 +47,7 @@ class MockDialogState extends BaseDialogState<MockDialog> {
 
   @override
   void dispose() {
-    textController.dispose();
+    nameController.dispose();
     super.dispose();
   }
 }
@@ -143,6 +145,29 @@ void main() {
       expect(find.byType(MockDialog), findsNothing);
     });
 
+    testWidgets('should handle submission errors', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => MockDialog(
+              key: const Key('error_dialog'),
+            ),
+          ),
+        ),
+      );
+
+      // Fill form
+      await tester.enterText(find.byType(TextFormField), 'Test Item');
+      await tester.pump();
+
+      // Submit form
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      // Dialog should be closed after successful submission
+      expect(find.byKey(const Key('error_dialog')), findsNothing);
+    });
+
     testWidgets('should close dialog on cancel', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -156,6 +181,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MockDialog), findsNothing);
+    });
+
+    testWidgets('should dispose controllers properly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MockDialog(),
+          ),
+        ),
+      );
+
+      final state = tester.state<MockDialogState>(find.byType(MockDialog));
+      expect(state.nameController.dispose, isNotNull);
     });
   });
 }

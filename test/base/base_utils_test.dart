@@ -14,6 +14,12 @@ void main() {
         final date = DateTime(2024, 3, 15);
         expect(BaseUtils.formatCompactDate(date), '15 Mar');
       });
+
+      test('should handle single digit days', () {
+        final date = DateTime(2024, 3, 5);
+        expect(BaseUtils.formatDate(date), '5 Mar, 2024');
+        expect(BaseUtils.formatCompactDate(date), '5 Mar');
+      });
     });
 
     group('Time Formatting', () {
@@ -25,6 +31,11 @@ void main() {
       test('should format time correctly for PM', () {
         final time = DateTime(2024, 3, 15, 15, 30);
         expect(BaseUtils.formatTime(time), '15:30');
+      });
+
+      test('should handle midnight', () {
+        final time = DateTime(2024, 3, 15, 0, 0);
+        expect(BaseUtils.formatTime(time), '00:00');
       });
     });
 
@@ -46,22 +57,19 @@ void main() {
     });
 
     group('Color Utilities', () {
-      test('should get correct status color', () {
+      test('should get correct status colors', () {
         expect(BaseUtils.getStatusColor('not started'), Colors.grey.shade400);
         expect(BaseUtils.getStatusColor('in progress'), Colors.blue.shade400);
         expect(BaseUtils.getStatusColor('completed'), Colors.green.shade400);
         expect(BaseUtils.getStatusColor('on hold'), Colors.orange.shade400);
+        expect(BaseUtils.getStatusColor('unknown'), Colors.grey);
       });
 
-      test('should get correct priority color', () {
+      test('should get correct priority colors', () {
         expect(BaseUtils.getPriorityColor('critical'), Colors.red.shade600);
         expect(BaseUtils.getPriorityColor('high'), Colors.red.shade400);
         expect(BaseUtils.getPriorityColor('medium'), Colors.orange.shade400);
         expect(BaseUtils.getPriorityColor('low'), Colors.green.shade400);
-      });
-
-      test('should handle unknown status/priority', () {
-        expect(BaseUtils.getStatusColor('unknown'), Colors.grey);
         expect(BaseUtils.getPriorityColor('unknown'), Colors.grey);
       });
     });
@@ -71,6 +79,8 @@ void main() {
         expect(BaseUtils.capitalize('hello'), 'Hello');
         expect(BaseUtils.capitalize('WORLD'), 'WORLD');
         expect(BaseUtils.capitalize(''), '');
+        expect(BaseUtils.capitalize('a'), 'A');
+        expect(BaseUtils.capitalize('hello world'), 'Hello world');
       });
     });
 
@@ -81,8 +91,10 @@ void main() {
         expect(BaseUtils.calculateProgress(3, 3), 1.0);
       });
 
-      test('should handle zero total', () {
+      test('should handle edge cases', () {
         expect(BaseUtils.calculateProgress(0, 0), 0.0);
+        expect(BaseUtils.calculateProgress(1, 0), 0.0);
+        expect(BaseUtils.calculateProgress(10, 5), 1.0);
       });
     });
   });

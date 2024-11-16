@@ -13,7 +13,7 @@ void main() {
         expect(BaseValidators.validateName(''), 'Name is required');
       });
 
-      test('should reject name with only spaces', () {
+      test('should reject whitespace only name', () {
         expect(BaseValidators.validateName('   '), 'Name is required');
       });
 
@@ -23,7 +23,8 @@ void main() {
       });
 
       test('should accept valid name', () {
-        expect(BaseValidators.validateName('Valid Name'), null);
+        expect(BaseValidators.validateName('Valid Name'), isNull);
+        expect(BaseValidators.validateName('Bob'), isNull);
       });
     });
 
@@ -39,62 +40,61 @@ void main() {
       });
 
       test('should reject too short description', () {
-        expect(BaseValidators.validateDescription('Short'),
-            'Description must be at least 10 characters');
+        expect(
+          BaseValidators.validateDescription('Too short'),
+          'Description must be at least 10 characters',
+        );
       });
 
       test('should accept valid description', () {
         expect(
-            BaseValidators.validateDescription('This is a valid description'),
-            null);
+          BaseValidators.validateDescription('This is a valid description'),
+          isNull,
+        );
       });
     });
 
     group('Date Validation', () {
-      test('should reject null start date', () {
-        expect(BaseValidators.validateDates(null, DateTime.now()),
-            'Start date is required');
-      });
+      final now = DateTime.now();
+      final tomorrow = now.add(const Duration(days: 1));
+      final yesterday = now.subtract(const Duration(days: 1));
 
-      test('should reject null due date', () {
-        expect(BaseValidators.validateDates(DateTime.now(), null),
-            'Due date is required');
+      test('should reject null dates', () {
+        expect(BaseValidators.validateDates(null, tomorrow),
+            'Start date is required');
+        expect(BaseValidators.validateDates(now, null), 'Due date is required');
       });
 
       test('should reject due date before start date', () {
-        final now = DateTime.now();
-        final yesterday = now.subtract(const Duration(days: 1));
-
-        expect(BaseValidators.validateDates(now, yesterday),
-            'Due date cannot be before start date');
+        expect(
+          BaseValidators.validateDates(now, yesterday),
+          'Due date cannot be before start date',
+        );
       });
 
       test('should accept valid date range', () {
-        final now = DateTime.now();
-        final tomorrow = now.add(const Duration(days: 1));
-
-        expect(BaseValidators.validateDates(now, tomorrow), null);
+        expect(BaseValidators.validateDates(now, tomorrow), isNull);
+        expect(BaseValidators.validateDates(now, now),
+            isNull); // Same day should be valid
       });
     });
 
     group('Tasks Validation', () {
-      test('should reject zero tasks', () {
+      test('should reject zero or negative tasks', () {
         expect(
             BaseValidators.validateTasks(0), 'At least one task is required');
-      });
-
-      test('should reject negative tasks', () {
         expect(
             BaseValidators.validateTasks(-1), 'At least one task is required');
       });
 
       test('should accept positive number of tasks', () {
-        expect(BaseValidators.validateTasks(1), null);
+        expect(BaseValidators.validateTasks(1), isNull);
+        expect(BaseValidators.validateTasks(10), isNull);
       });
     });
 
     group('Error Dialog', () {
-      testWidgets('should show error dialog with correct message',
+      testWidgets('should show error dialog with correct content',
           (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -118,7 +118,7 @@ void main() {
         expect(find.text('OK'), findsOneWidget);
       });
 
-      testWidgets('should close error dialog on OK', (tester) async {
+      testWidgets('should close dialog on OK press', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Builder(
@@ -141,6 +141,47 @@ void main() {
 
         expect(find.text('Error'), findsNothing);
         expect(find.text('Test error message'), findsNothing);
+      });
+
+      testWidgets('should handle multiple error dialogs', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Column(
+                children: [
+                  TextButton(
+                    onPressed: () => BaseValidators.showErrorDialog(
+                      context: context,
+                      message: 'Error 1',
+                    ),
+                    child: const Text('Show Error 1'),
+                  ),
+                  TextButton(
+                    onPressed: () => BaseValidators.showErrorDialog(
+                      context: context,
+                      message: 'Error 2',
+                    ),
+                    child: const Text('Show Error 2'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        // Show first error
+        await tester.tap(find.text('Show Error 1'));
+        await tester.pumpAndSettle();
+        expect(find.text('Error 1'), findsOneWidget);
+
+        // Close first error
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        // Show second error
+        await tester.tap(find.text('Show Error 2'));
+        await tester.pumpAndSettle();
+        expect(find.text('Error 2'), findsOneWidget);
       });
     });
   });

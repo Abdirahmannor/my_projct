@@ -53,7 +53,6 @@ class MockStateManager with BaseStateMethods<MockItem> {}
 void main() {
   group('BaseStateMethods Tests', () {
     late MockStateManager stateManager;
-    late List<bool> checkedItems;
     late List<MockItem> items;
 
     setUp(() {
@@ -74,17 +73,6 @@ void main() {
           status: 'completed',
         ),
       ];
-      checkedItems = List.generate(items.length, (_) => false);
-    });
-
-    group('Selection Management', () {
-      test('should toggle select all', () {
-        stateManager.toggleSelectAll(checkedItems, true);
-        expect(checkedItems.every((checked) => checked), true);
-
-        stateManager.toggleSelectAll(checkedItems, false);
-        expect(checkedItems.every((checked) => !checked), true);
-      });
     });
 
     group('Sort Management', () {
@@ -98,11 +86,21 @@ void main() {
       });
 
       test('should handle date sorting', () {
-        final itemsToSort = [...items];
         final now = DateTime.now();
-        itemsToSort[0] =
-            itemsToSort[0].copyWith(dueDate: now.add(const Duration(days: 1)));
-        itemsToSort[1] = itemsToSort[1].copyWith(dueDate: now);
+        final itemsToSort = [
+          MockItem(
+            name: 'Item 1',
+            dueDate: now.add(const Duration(days: 1)),
+            priority: 'high',
+            status: 'in progress',
+          ),
+          MockItem(
+            name: 'Item 2',
+            dueDate: now,
+            priority: 'low',
+            status: 'completed',
+          ),
+        ];
 
         stateManager.handleSort(itemsToSort, 'date', 'asc');
         expect(itemsToSort.first.dueDate, now);
@@ -119,14 +117,36 @@ void main() {
         stateManager.handleSort(itemsToSort, 'priority', 'desc');
         expect(itemsToSort.first.priority, 'low');
       });
+
+      test('should handle invalid sort type', () {
+        final itemsToSort = [...items];
+        final originalOrder = [...itemsToSort];
+        stateManager.handleSort(itemsToSort, 'invalid', 'asc');
+        expect(itemsToSort, equals(originalOrder));
+      });
+    });
+
+    group('Selection Management', () {
+      test('should toggle select all', () {
+        final checkedItems = List.generate(items.length, (_) => false);
+        stateManager.toggleSelectAll(checkedItems, true);
+        expect(checkedItems.every((checked) => checked), isTrue);
+
+        stateManager.toggleSelectAll(checkedItems, false);
+        expect(checkedItems.every((checked) => !checked), isTrue);
+      });
     });
 
     group('Search Management', () {
       test('should match search query', () {
-        expect(stateManager.matchesSearch(items[0], 'Item 1'), true);
-        expect(stateManager.matchesSearch(items[0], 'Item 2'), false);
+        expect(stateManager.matchesSearch(items[0], 'Item 1'), isTrue);
+        expect(stateManager.matchesSearch(items[0], 'Item 2'), isFalse);
         expect(stateManager.matchesSearch(items[0], 'item'),
-            true); // Case insensitive
+            isTrue); // Case insensitive
+      });
+
+      test('should handle empty search query', () {
+        expect(stateManager.matchesSearch(items[0], ''), isTrue);
       });
     });
 

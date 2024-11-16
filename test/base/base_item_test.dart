@@ -82,13 +82,16 @@ void main() {
       );
     });
 
-    test('should create item with correct values', () {
+    test('should create item with required fields', () {
       expect(testItem.id, '1');
       expect(testItem.name, 'Test Item');
-      expect(testItem.description, 'Test Description');
       expect(testItem.dueDate, now);
       expect(testItem.priority, 'high');
       expect(testItem.status, 'in progress');
+    });
+
+    test('should create item with optional fields', () {
+      expect(testItem.description, 'Test Description');
       expect(testItem.isPinned, false);
       expect(testItem.deletedAt, null);
       expect(testItem.lastRestoredDate, null);
@@ -98,21 +101,36 @@ void main() {
       final newDate = DateTime.now().add(const Duration(days: 1));
       final copiedItem = testItem.copyWith(
         name: 'New Name',
+        description: 'New Description',
         dueDate: newDate,
         priority: 'low',
+        status: 'completed',
         isPinned: true,
       );
 
       expect(copiedItem.id, '1'); // Unchanged
       expect(copiedItem.name, 'New Name');
-      expect(copiedItem.description, 'Test Description'); // Unchanged
+      expect(copiedItem.description, 'New Description');
       expect(copiedItem.dueDate, newDate);
       expect(copiedItem.priority, 'low');
-      expect(copiedItem.status, 'in progress'); // Unchanged
+      expect(copiedItem.status, 'completed');
       expect(copiedItem.isPinned, true);
     });
 
-    test('should convert to map correctly', () {
+    test('should copy with partial values', () {
+      final copiedItem = testItem.copyWith(
+        name: 'New Name',
+      );
+
+      expect(copiedItem.name, 'New Name');
+      expect(copiedItem.description, 'Test Description'); // Unchanged
+      expect(copiedItem.dueDate, now); // Unchanged
+      expect(copiedItem.priority, 'high'); // Unchanged
+      expect(copiedItem.status, 'in progress'); // Unchanged
+      expect(copiedItem.isPinned, false); // Unchanged
+    });
+
+    test('should convert to map', () {
       final map = testItem.toMap();
 
       expect(map['id'], '1');
@@ -126,32 +144,19 @@ void main() {
       expect(map['lastRestoredDate'], null);
     });
 
-    test('should handle null values correctly', () {
-      final itemWithNulls = TestItem(
-        name: 'Test Item',
-        dueDate: now,
-        priority: 'high',
-        status: 'in progress',
-      );
+    test('should handle deletion dates', () {
+      final deletedAt = DateTime.now();
+      final deletedItem = testItem.copyWith(deletedAt: deletedAt);
+      final map = deletedItem.toMap();
 
-      expect(itemWithNulls.id, null);
-      expect(itemWithNulls.description, null);
-      expect(itemWithNulls.isPinned, null);
-      expect(itemWithNulls.deletedAt, null);
-      expect(itemWithNulls.lastRestoredDate, null);
+      expect(map['deletedAt'], deletedAt.toIso8601String());
     });
 
-    test('should handle date conversions in map', () {
-      final deletedAt = DateTime.now();
-      final restoredAt = DateTime.now().add(const Duration(hours: 1));
+    test('should handle restoration dates', () {
+      final restoredAt = DateTime.now();
+      final restoredItem = testItem.copyWith(lastRestoredDate: restoredAt);
+      final map = restoredItem.toMap();
 
-      final itemWithDates = testItem.copyWith(
-        deletedAt: deletedAt,
-        lastRestoredDate: restoredAt,
-      );
-
-      final map = itemWithDates.toMap();
-      expect(map['deletedAt'], deletedAt.toIso8601String());
       expect(map['lastRestoredDate'], restoredAt.toIso8601String());
     });
   });

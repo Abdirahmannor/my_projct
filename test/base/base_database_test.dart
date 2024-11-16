@@ -41,13 +41,7 @@ class MockItem extends BaseItem {
   }
 
   @override
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'dueDate': dueDate.toIso8601String(),
-        'priority': priority,
-        'status': status,
-      };
+  Map<String, dynamic> toMap() => {};
 }
 
 // Create mock implementation of BaseDatabase
@@ -266,7 +260,5 @@ void main() {
       final deletedItems = await database.getDeleted();
       expect(deletedItems.length, equals(0));
     });
-
-    // Add more tests...
   });
 }
