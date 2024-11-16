@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'base_item.dart';
 import '../constants/app_colors.dart';
+import 'base_item.dart';
+import 'base_styles.dart';
+import 'base_utils.dart';
 
 abstract class BaseGridItem<T extends BaseItem> extends StatelessWidget {
   final T item;
@@ -25,73 +27,96 @@ abstract class BaseGridItem<T extends BaseItem> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildContainer(
-      context: context,
-      child: Column(
+    return Container(
+      decoration: BaseStyles.getItemDecoration(
+        context,
+        isHovered: isHovered,
+        isSelected: isChecked,
+      ),
+      child: Stack(
         children: [
-          buildHeader(context),
-          buildContent(context),
-          buildFooter(context),
+          // Checkbox
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Checkbox(
+              value: isChecked,
+              onChanged: onCheckChanged,
+            ),
+          ),
+          // Pin indicator if applicable
+          if (item.isPinned ?? false)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Icon(
+                PhosphorIcons.pushPin(PhosphorIconsStyle.fill),
+                size: 16,
+                color: AppColors.accent,
+              ),
+            ),
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24), // Space for checkbox
+                buildMainContent(context),
+                const Spacer(),
+                buildFooter(context),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // Template methods to be implemented by subclasses
-  Widget buildContent(BuildContext context);
+  // Abstract methods to be implemented by subclasses
+  Widget buildMainContent(BuildContext context);
+  Widget buildFooter(BuildContext context);
 
   // Shared methods that can be used by subclasses
-  Widget buildContainer(
-      {required BuildContext context, required Widget child}) {
+  Widget buildPriorityIndicator() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isHovered
-            ? Theme.of(context).hoverColor
-            : Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: 1,
-        ),
-        boxShadow: [
-          if (isHovered)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-        ],
+        color: BaseStyles.getPriorityColor(item.priority).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
       ),
-      child: child,
+      child: Text(
+        BaseUtils.capitalize(item.priority),
+        style: TextStyle(
+          color: BaseStyles.getPriorityColor(item.priority),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
-  Widget buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isChecked,
-                  onChanged: onCheckChanged,
-                ),
-              ),
-            ],
-          ),
-          buildActions(context),
-        ],
+  Widget buildStatusIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: BaseStyles.getStatusColor(item.status).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        BaseUtils.capitalize(item.status),
+        style: TextStyle(
+          color: BaseStyles.getStatusColor(item.status),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 
   Widget buildActions(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (onRestore != null)
           IconButton(
@@ -125,9 +150,5 @@ abstract class BaseGridItem<T extends BaseItem> extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  Widget buildFooter(BuildContext context) {
-    return const SizedBox.shrink(); // Can be overridden by subclasses
   }
 }
