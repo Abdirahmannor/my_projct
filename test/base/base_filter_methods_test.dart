@@ -6,6 +6,7 @@ import '../../lib/core/base/base_item.dart';
 // Create a mock item for testing
 class MockItem extends BaseItem {
   MockItem({
+    String? id,
     required String name,
     String? description,
     required DateTime dueDate,
@@ -13,6 +14,7 @@ class MockItem extends BaseItem {
     required String status,
     bool? isPinned,
   }) : super(
+          id: id,
           name: name,
           description: description,
           dueDate: dueDate,
@@ -34,6 +36,7 @@ class MockItem extends BaseItem {
     DateTime? lastRestoredDate,
   }) {
     return MockItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       dueDate: dueDate ?? this.dueDate,
@@ -54,81 +57,103 @@ void main() {
   group('BaseFilterMethods Tests', () {
     late MockFilter filter;
     late List<MockItem> items;
+    final now = DateTime.now();
 
     setUp(() {
       filter = MockFilter();
       items = [
         MockItem(
-          name: 'Test Item 1',
+          id: '1',
+          name: 'First Item',
           description: 'Description 1',
-          dueDate: DateTime(2024, 3, 15),
+          dueDate: now,
           priority: 'high',
           status: 'in progress',
+          isPinned: true,
         ),
         MockItem(
-          name: 'Test Item 2',
+          id: '2',
+          name: 'Second Item',
           description: 'Description 2',
-          dueDate: DateTime(2024, 3, 20),
+          dueDate: now.add(const Duration(days: 1)),
           priority: 'low',
           status: 'completed',
-          isPinned: true,
+          isPinned: false,
         ),
       ];
     });
 
     group('Search Filtering', () {
       test('should filter by name', () {
-        expect(filter.matchesSearch(items[0], 'Item 1'), true);
-        expect(filter.matchesSearch(items[0], 'Item 2'), false);
+        expect(filter.matchesSearch(items[0], 'First'), isTrue);
+        expect(filter.matchesSearch(items[0], 'Second'), isFalse);
       });
 
       test('should filter by description', () {
-        expect(filter.matchesSearch(items[0], 'Description 1'), true);
-        expect(filter.matchesSearch(items[0], 'Description 2'), false);
+        expect(filter.matchesSearch(items[0], 'Description 1'), isTrue);
+        expect(filter.matchesSearch(items[0], 'Description 2'), isFalse);
       });
 
       test('should be case insensitive', () {
-        expect(filter.matchesSearch(items[0], 'TEST'), true);
-        expect(filter.matchesSearch(items[0], 'description'), true);
+        expect(filter.matchesSearch(items[0], 'FIRST'), isTrue);
+        expect(filter.matchesSearch(items[0], 'description'), isTrue);
+      });
+
+      test('should handle null description', () {
+        final itemWithoutDesc = MockItem(
+          name: 'Test',
+          dueDate: now,
+          priority: 'high',
+          status: 'in progress',
+        );
+        expect(filter.matchesSearch(itemWithoutDesc, 'description'), isFalse);
       });
     });
 
     group('Priority Filtering', () {
       test('should filter by priority', () {
-        expect(filter.matchesPriority(items[0], 'high'), true);
-        expect(filter.matchesPriority(items[0], 'low'), false);
+        expect(filter.matchesPriority(items[0], 'high'), isTrue);
+        expect(filter.matchesPriority(items[0], 'low'), isFalse);
       });
 
-      test('should accept null priority as all', () {
-        expect(filter.matchesPriority(items[0], null), true);
-        expect(filter.matchesPriority(items[0], 'all'), true);
+      test('should handle null/all priority', () {
+        expect(filter.matchesPriority(items[0], null), isTrue);
+        expect(filter.matchesPriority(items[0], 'all'), isTrue);
       });
     });
 
     group('Status Filtering', () {
       test('should filter by status', () {
-        expect(filter.matchesStatus(items[0], 'in progress'), true);
-        expect(filter.matchesStatus(items[0], 'completed'), false);
+        expect(filter.matchesStatus(items[0], 'in progress'), isTrue);
+        expect(filter.matchesStatus(items[0], 'completed'), isFalse);
       });
 
-      test('should accept null status as all', () {
-        expect(filter.matchesStatus(items[0], null), true);
-        expect(filter.matchesStatus(items[0], 'all'), true);
+      test('should handle null/all status', () {
+        expect(filter.matchesStatus(items[0], null), isTrue);
+        expect(filter.matchesStatus(items[0], 'all'), isTrue);
       });
     });
 
     group('Date Range Filtering', () {
       test('should filter by date range', () {
         final dateRange = DateTimeRange(
-          start: DateTime(2024, 3, 14),
-          end: DateTime(2024, 3, 16),
+          start: now.subtract(const Duration(days: 1)),
+          end: now.add(const Duration(days: 2)),
         );
-        expect(filter.matchesDateRange(items[0], dateRange), true);
-        expect(filter.matchesDateRange(items[1], dateRange), false);
+        expect(filter.matchesDateRange(items[0], dateRange), isTrue);
+        expect(filter.matchesDateRange(items[1], dateRange), isTrue);
       });
 
-      test('should accept null date range', () {
-        expect(filter.matchesDateRange(items[0], null), true);
+      test('should handle null date range', () {
+        expect(filter.matchesDateRange(items[0], null), isTrue);
+      });
+
+      test('should exclude items outside range', () {
+        final dateRange = DateTimeRange(
+          start: now.subtract(const Duration(days: 2)),
+          end: now.subtract(const Duration(days: 1)),
+        );
+        expect(filter.matchesDateRange(items[0], dateRange), isFalse);
       });
     });
 
@@ -136,19 +161,19 @@ void main() {
       test('should sort by name', () {
         final itemsToSort = [...items];
         filter.sortByName(itemsToSort, 'asc');
-        expect(itemsToSort.first.name, 'Test Item 1');
+        expect(itemsToSort.first.name, 'First Item');
 
         filter.sortByName(itemsToSort, 'desc');
-        expect(itemsToSort.first.name, 'Test Item 2');
+        expect(itemsToSort.first.name, 'Second Item');
       });
 
       test('should sort by date', () {
         final itemsToSort = [...items];
         filter.sortByDate(itemsToSort, 'asc');
-        expect(itemsToSort.first.dueDate, DateTime(2024, 3, 15));
+        expect(itemsToSort.first.dueDate, now);
 
         filter.sortByDate(itemsToSort, 'desc');
-        expect(itemsToSort.first.dueDate, DateTime(2024, 3, 20));
+        expect(itemsToSort.first.dueDate, now.add(const Duration(days: 1)));
       });
 
       test('should sort by priority', () {
@@ -163,7 +188,7 @@ void main() {
       test('should sort pinned items first', () {
         final itemsToSort = [...items];
         filter.sortByPin(itemsToSort);
-        expect(itemsToSort.first.isPinned, true);
+        expect(itemsToSort.first.isPinned, isTrue);
       });
     });
 
@@ -171,17 +196,26 @@ void main() {
       test('should apply multiple filters', () {
         final filtered = filter.filterItems(
           items: items,
-          searchQuery: 'Item 1',
+          searchQuery: 'First',
           priority: 'high',
           status: 'in progress',
           dateRange: DateTimeRange(
-            start: DateTime(2024, 3, 14),
-            end: DateTime(2024, 3, 16),
+            start: now.subtract(const Duration(days: 1)),
+            end: now.add(const Duration(days: 1)),
           ),
         );
 
         expect(filtered.length, 1);
-        expect(filtered.first.name, 'Test Item 1');
+        expect(filtered.first.name, 'First Item');
+      });
+
+      test('should handle empty results', () {
+        final filtered = filter.filterItems(
+          items: items,
+          searchQuery: 'Nonexistent',
+        );
+
+        expect(filtered.isEmpty, isTrue);
       });
     });
   });
