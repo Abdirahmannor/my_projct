@@ -3,7 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:flutter/gestures.dart';
 import '../models/project.dart';
-import '../services/project_database_service.dart';
+import 'package:uuid/uuid.dart';
 
 class AddProjectDialog extends StatefulWidget {
   final bool isEditing;
@@ -29,7 +29,6 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   String _status = 'not started';
   int _tasks = 0;
   String _category = 'personal';
-  final _projectDatabaseService = ProjectDatabaseService();
 
   @override
   void initState() {
@@ -595,6 +594,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     if (!_validateForm()) return;
 
     final project = Project(
+      id: widget.project?.id ?? const Uuid().v4(),
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
       startDate: _startDate!,

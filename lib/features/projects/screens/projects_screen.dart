@@ -7,7 +7,6 @@ import '../../../core/utils/string_extensions.dart';
 import '../widgets/project_grid_item.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/project.dart';
-import '../services/project_database_service.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -40,7 +39,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   DateTimeRange? _selectedDateRange;
   bool _showChart = true;
   List<Project> archivedProjects = [];
-  final _projectDatabaseService = ProjectDatabaseService();
   List<Project> projects = [];
   final Map<int, String> originalStatuses = {};
 
@@ -53,16 +51,25 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   // Add this method to load projects from database
   Future<void> _loadProjects() async {
-    try {
-      final loadedProjects = await _projectDatabaseService.getAllProjects();
-      setState(() {
-        projects = loadedProjects;
-        checkedProjects = List.generate(projects.length, (_) => false);
-      });
-    } catch (e) {
-      print('Error loading projects: $e');
-      // Optionally show error message to user
-    }
+    // For demo purposes, you can add some sample projects
+    setState(() {
+      projects = [
+        Project(
+          id: '1',
+          name: 'Sample Project 1',
+          description: 'This is a sample project',
+          startDate: DateTime.now(),
+          dueDate: DateTime.now().add(const Duration(days: 7)),
+          priority: 'high',
+          status: 'in progress',
+          category: 'school',
+          tasks: 5,
+          completedTasks: 2,
+        ),
+        // Add more sample projects as needed
+      ];
+      checkedProjects = List.generate(projects.length, (_) => false);
+    });
   }
 
   void _handleAddProject() async {
@@ -72,19 +79,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
 
     if (result != null && result is Project) {
-      try {
-        // Only save to database, don't add to local state
-        await _projectDatabaseService.addProject(result);
-        // Reload all projects from database
-        await _loadProjects();
+      setState(() {
+        projects.add(result);
+        checkedProjects.add(false);
+      });
 
-        _showSuccessMessage(
-          message: 'Project "${result.name}" has been created successfully',
-          icon: PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
-        );
-      } catch (e) {
-        _showError('Failed to save project: $e');
-      }
+      _showSuccessMessage(
+        message: 'Project "${result.name}" has been created successfully',
+        icon: PhosphorIcons.folderPlus(PhosphorIconsStyle.fill),
+      );
     }
   }
 
@@ -174,25 +177,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     // If user confirmed, delete the project
     if (confirm == true) {
-      try {
-        if (projectId != null) {
-          // Delete from database first
-          await _projectDatabaseService.deleteProject(projectId);
-        }
+      setState(() {
+        projects.removeAt(index);
+        checkedProjects.removeAt(index);
+      });
 
-        // Then update local state
-        setState(() {
-          projects.removeAt(index);
-          checkedProjects = List.generate(projects.length, (_) => false);
-        });
-
-        _showSuccessMessage(
-          message: 'Project "$projectName" has been deleted successfully',
-          icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
-        );
-      } catch (e) {
-        _showError('Failed to delete project: $e');
-      }
+      _showSuccessMessage(
+        message: 'Project "$projectName" has been deleted successfully',
+        icon: PhosphorIcons.trash(PhosphorIconsStyle.fill),
+      );
     }
   }
 
