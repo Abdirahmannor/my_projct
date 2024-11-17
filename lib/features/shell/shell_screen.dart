@@ -3,8 +3,8 @@ import '../../shared/widgets/sidebar/collapsible_sidebar.dart';
 import '../../shared/widgets/custom_window_bar.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../school/screens/school_screen.dart';
-import '../projects/screens/projects_screen.dart';
-import '../tasks/screens/tasks_screen.dart';
+import '../projects/screens/project_screen.dart';
+import '../tasks/screens/task_screen.dart';
 import '../calendar/screens/calendar_screen.dart';
 import '../resources/screens/resources_screen.dart';
 import '../settings/screens/settings_screen.dart';
@@ -20,15 +20,25 @@ class _ShellScreenState extends State<ShellScreen> {
   bool _isCollapsed = false;
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const SchoolScreen(),
-    const ProjectsScreen(),
-    const TasksScreen(),
-    const CalendarScreen(),
-    const ResourcesScreen(),
-    const SettingsScreen(),
-  ];
+  // For now, we'll use a dummy project ID for tasks
+  // Later this should be handled properly based on selected project
+  final String _dummyProjectId = 'all_tasks';
+
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const DashboardScreen(),
+      const SchoolScreen(),
+      const ProjectScreen(),
+      TaskScreen(projectId: _dummyProjectId), // Pass the project ID
+      const CalendarScreen(),
+      const ResourcesScreen(),
+      const SettingsScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

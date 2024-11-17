@@ -1,30 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/base/base_grid_item.dart';
+import '../../../core/base/base_utils.dart';
 import '../models/project.dart';
-import '../../../core/utils/string_extensions.dart';
 
-class ProjectGridItem extends StatelessWidget {
-  final Project project;
-  final bool isChecked;
-  final bool isHovered;
-  final Function(bool?) onCheckChanged;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback? onRestore;
-
+class ProjectGridItem extends BaseGridItem<Project> {
   const ProjectGridItem({
     super.key,
-    required this.project,
-    required this.isChecked,
-    required this.isHovered,
-    required this.onCheckChanged,
-    required this.onEdit,
-    required this.onDelete,
-    this.onRestore,
+    required super.item,
+    required super.isChecked,
+    required super.isHovered,
+    required super.onCheckChanged,
+    required super.onEdit,
+    required super.onDelete,
+    super.onRestore,
   });
 
   @override
+<<<<<<< HEAD
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -281,206 +273,149 @@ class ProjectGridItem extends StatelessWidget {
             ? Colors.green.shade400
             : Theme.of(context).hintColor;
 
+=======
+  Widget buildMainContent(BuildContext context) {
+>>>>>>> 4bcc1dd96e70ceefa4cbf56552da0566cd5a6bab
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Title and Pin
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: dateColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                icon,
-                size: 14,
-                color: dateColor,
-              ),
-            ),
-            const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).hintColor,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatDate(date),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+              child: Text(
+                item.name,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      decoration:
+                          item.isCompleted ? TextDecoration.lineThrough : null,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (item.isPinned ?? false) const Icon(Icons.push_pin, size: 16),
           ],
         ),
-        if (label == 'Due') ...[
-          const SizedBox(height: 4),
+        const SizedBox(height: 4),
+
+        // Description
+        if (item.description != null) ...[
           Text(
-            isOverdue
-                ? '${daysRemaining.abs()} days overdue'
-                : daysRemaining == 0
-                    ? 'Due today'
-                    : '$daysRemaining days remaining',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: dateColor,
+            item.description!,
+            style: Theme.of(context).textTheme.bodySmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Status Row
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            // Priority
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color:
+                    BaseUtils.getPriorityColor(item.priority).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                BaseUtils.capitalize(item.priority),
+                style: TextStyle(
+                  color: BaseUtils.getPriorityColor(item.priority),
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
-          ),
-        ],
+              ),
+            ),
+
+            // Status
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: BaseUtils.getStatusColor(item.status).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                BaseUtils.capitalize(item.status),
+                style: TextStyle(
+                  color: BaseUtils.getStatusColor(item.status),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+            // Category if exists
+            if (item.category != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  BaseUtils.capitalize(item.category!),
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${date.day} ${months[date.month - 1]}, ${date.year}';
-  }
-
-  Widget _buildPriorityBadge(BuildContext context, String priority) {
-    final colors = {
-      'high': Colors.red.shade400,
-      'medium': Colors.orange.shade400,
-      'low': Colors.green.shade400,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors[priority]?.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colors[priority]?.withOpacity(0.3) ?? Colors.transparent,
-        ),
-      ),
-      child: Text(
-        priority.capitalize(),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colors[priority],
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(BuildContext context, String status) {
-    final colors = {
-      'not started': Colors.grey.shade400,
-      'in progress': Colors.blue.shade400,
-      'on hold': Colors.orange.shade400,
-      'completed': Colors.green.shade400,
-    };
-
-    IconData getStatusIcon() {
-      switch (status) {
-        case 'not started':
-          return PhosphorIcons.pause(PhosphorIconsStyle.fill);
-        case 'in progress':
-          return PhosphorIcons.play(PhosphorIconsStyle.fill);
-        case 'on hold':
-          return PhosphorIcons.clock(PhosphorIconsStyle.fill);
-        case 'completed':
-          return PhosphorIcons.check(PhosphorIconsStyle.fill);
-        default:
-          return PhosphorIcons.circle(PhosphorIconsStyle.fill);
-      }
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: colors[status]?.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: colors[status]?.withOpacity(0.3) ?? Colors.transparent,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            getStatusIcon(),
-            size: 14,
-            color: colors[status],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            status.capitalize(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors[status],
-                  fontWeight: FontWeight.w600,
+  @override
+  Widget buildFooter(BuildContext context) {
+    return Column(
+      children: [
+        // Progress Row
+        if (item.tasks?.isNotEmpty ?? false) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  value: item.progress,
+                  strokeWidth: 2,
+                  backgroundColor: Colors.grey.withOpacity(0.2),
+                  valueColor: AlwaysStoppedAnimation(
+                    item.isCompleted
+                        ? Colors.green
+                        : Theme.of(context).primaryColor,
+                  ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${item.tasks?.length ?? 0} tasks',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ),
+          const SizedBox(height: 8),
         ],
-      ),
-    );
-  }
 
-  Widget _buildCategoryIcon(BuildContext context, String category) {
-    final categoryInfo = {
-      'school': (
-        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
-        AppColors.accent,
-        'School Project'
-      ),
-      'personal': (
-        PhosphorIcons.user(PhosphorIconsStyle.fill),
-        Colors.purple.shade400,
-        'Personal Project'
-      ),
-      'work': (
-        PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
-        Colors.blue.shade400,
-        'Work Project'
-      ),
-      'online work': (
-        PhosphorIcons.globe(PhosphorIconsStyle.fill),
-        Colors.green.shade400,
-        'Online Work Project'
-      ),
-      'other': (
-        PhosphorIcons.folder(PhosphorIconsStyle.fill),
-        Colors.grey.shade400,
-        'Other Project'
-      ),
-    };
-
-    final (icon, color, tooltip) =
-        categoryInfo[category] ?? categoryInfo['other']!;
-
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
+        // Due Date
+        Text(
+          BaseUtils.getDueStatus(item.dueDate),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: color,
-        ),
-      ),
+        const SizedBox(height: 8),
+
+        // Actions
+        buildActions(context),
+      ],
     );
   }
 }
