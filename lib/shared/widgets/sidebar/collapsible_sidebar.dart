@@ -178,11 +178,11 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   }
 
   Widget _buildProfileInfo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
             'John Doe',
             style: TextStyle(
@@ -206,9 +206,9 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
   Widget _buildCollapseButton() {
     return InkWell(
       onTap: () => widget.onToggle(!widget.isCollapsed),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: const Text(
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
           'Collapse',
           style: TextStyle(
             color: Colors.white70,

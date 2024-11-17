@@ -58,8 +58,8 @@ class AppTheme {
 
     // Checkbox theme
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return AppColors.accent;
         }
         return const Color.fromARGB(255, 236, 235, 235);
@@ -85,15 +85,15 @@ class AppTheme {
     // Button themes
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(AppColors.accent),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
+        backgroundColor: WidgetStateProperty.all(AppColors.accent),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all(const Color(0xFF64748B)),
+        foregroundColor: WidgetStateProperty.all(const Color(0xFF64748B)),
         overlayColor:
-            MaterialStateProperty.all(AppColors.accent.withOpacity(0.1)),
+            WidgetStateProperty.all(AppColors.accent.withOpacity(0.1)),
       ),
     ),
 
@@ -111,7 +111,6 @@ class AppTheme {
       primary: AppColors.accent,
       secondary: const Color(0xFF64748B),
       surface: Colors.white,
-      background: const Color(0xFFF8FAFC),
       error: Colors.red.shade400,
     ),
 
@@ -170,7 +169,7 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.accent),
+        borderSide: const BorderSide(color: AppColors.accent),
       ),
       labelStyle: const TextStyle(color: Colors.white70),
       hintStyle: const TextStyle(color: Colors.white54),
@@ -178,8 +177,8 @@ class AppTheme {
 
     // Checkbox theme
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return AppColors.accent;
         }
         return AppColors.darkSurface;
@@ -205,15 +204,15 @@ class AppTheme {
     // Button themes
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(AppColors.accent),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
+        backgroundColor: WidgetStateProperty.all(AppColors.accent),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all(Colors.white70),
+        foregroundColor: WidgetStateProperty.all(Colors.white70),
         overlayColor:
-            MaterialStateProperty.all(AppColors.accent.withOpacity(0.1)),
+            WidgetStateProperty.all(AppColors.accent.withOpacity(0.1)),
       ),
     ),
 
@@ -231,7 +230,6 @@ class AppTheme {
       primary: AppColors.accent,
       secondary: AppColors.secondary,
       surface: AppColors.darkSurface,
-      background: AppColors.darkBackground,
       error: Colors.red.shade400,
     ),
 

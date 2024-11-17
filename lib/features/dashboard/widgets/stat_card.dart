@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../core/constants/app_colors.dart';
 
 class StatCard extends StatelessWidget {
   final String title;

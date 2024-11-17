@@ -103,19 +103,19 @@ class CalendarEvent {
 }
 
 final List<CalendarEvent> _upcomingEvents = [
-  CalendarEvent(
+  const CalendarEvent(
     title: 'Math Exam',
     time: 'Tomorrow, 9:00 AM',
     icon: PhosphorIcons.exam,
     color: Colors.red,
   ),
-  CalendarEvent(
+  const CalendarEvent(
     title: 'Project Meeting',
     time: 'Thursday, 2:30 PM',
     icon: PhosphorIcons.users,
     color: Colors.blue,
   ),
-  CalendarEvent(
+  const CalendarEvent(
     title: 'Physics Lab',
     time: 'Friday, 11:00 AM',
     icon: PhosphorIcons.atom,

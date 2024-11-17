@@ -100,25 +100,25 @@ class Subject {
 }
 
 final List<Subject> _demoSubjects = [
-  Subject(
+  const Subject(
     name: 'Mathematics',
     grade: '2.0',
     icon: PhosphorIcons.function,
     color: Colors.blue,
   ),
-  Subject(
+  const Subject(
     name: 'Physics',
     grade: '1.7',
     icon: PhosphorIcons.atom,
     color: Colors.purple,
   ),
-  Subject(
+  const Subject(
     name: 'Programming',
     grade: '1.3',
     icon: PhosphorIcons.code,
     color: Colors.green,
   ),
-  Subject(
+  const Subject(
     name: 'English',
     grade: '2.3',
     icon: PhosphorIcons.translate,

@@ -542,7 +542,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                         Container(
                                           width: 8,
                                           height: 8,
-                                          decoration: BoxDecoration(
+                                          decoration: const BoxDecoration(
                                             color: AppColors.accent,
                                             shape: BoxShape.circle,
                                           ),
@@ -649,7 +649,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 80,
                           child: Text(
                             'Actions',

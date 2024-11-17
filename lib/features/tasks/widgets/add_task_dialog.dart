@@ -562,7 +562,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
+            child: const Text(
               'OK',
               style: TextStyle(color: AppColors.accent),
             ),

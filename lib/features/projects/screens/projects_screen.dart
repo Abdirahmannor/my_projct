@@ -44,7 +44,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   String searchQuery = '';
   bool _isLoading = false;
   String _selectedTimeframe = 'This Month';
-  List<String> _timeframes = [
+  final List<String> _timeframes = [
     'Today',
     'This Week',
     'This Month',
@@ -52,9 +52,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     'This Year',
     'All Time'
   ];
-  bool _isStatisticsExpanded = false;
+  final bool _isStatisticsExpanded = false;
   DateTimeRange? _selectedDateRange;
-  bool _showChart = true;
+  final bool _showChart = true;
   List<Project> archivedProjects = [];
   List<bool> archivedCheckedProjects = [];
   bool archivedSelectAll = false;
@@ -302,8 +302,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     // First check if the index is valid for the current list
     if (showArchived && index >= archivedProjects.length) return false;
     if (showRecycleBin && index >= deletedProjects.length) return false;
-    if (!showArchived && !showRecycleBin && index >= projects.length)
+    if (!showArchived && !showRecycleBin && index >= projects.length) {
       return false;
+    }
 
     // Get the correct project based on current view
     final project = showArchived
@@ -692,7 +693,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 );
                               },
                               icon: _isLoading
-                                  ? SizedBox(
+                                  ? const SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
@@ -1579,8 +1580,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,

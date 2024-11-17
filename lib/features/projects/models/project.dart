@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 
-part 'project.g.dart'; // This will be auto-generated
+part 'project.g.dart';
 
 @HiveType(typeId: 0)
 class Project {
@@ -38,13 +38,16 @@ class Project {
   final DateTime? archivedDate;
 
   @HiveField(11)
-  final DateTime? lastRestoredDate;
+  final String? originalStatus;
 
   @HiveField(12)
-  final DateTime? deletedAt;
+  final bool? isPinned;
 
   @HiveField(13)
-  final String? originalStatus;
+  final DateTime? deletedAt;
+
+  @HiveField(14)
+  final DateTime? lastRestoredDate;
 
   Project({
     this.id,
@@ -58,9 +61,10 @@ class Project {
     required this.status,
     required this.category,
     this.archivedDate,
-    this.lastRestoredDate,
-    this.deletedAt,
     this.originalStatus,
+    this.isPinned,
+    this.deletedAt,
+    this.lastRestoredDate,
   });
 
   Map<String, dynamic> toMap() {
@@ -68,41 +72,43 @@ class Project {
       'id': id,
       'name': name,
       'description': description,
-      'startDate': _formatDate(startDate),
-      'dueDate': _formatDate(dueDate),
+      'startDate': startDate.toIso8601String(),
+      'dueDate': dueDate.toIso8601String(),
       'tasks': tasks,
       'completedTasks': completedTasks,
       'priority': priority,
       'status': status,
       'category': category,
       'archivedDate': archivedDate?.toIso8601String(),
-      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
-      'deletedAt': deletedAt?.toIso8601String(),
       'originalStatus': originalStatus,
+      'isPinned': isPinned,
+      'deletedAt': deletedAt?.toIso8601String(),
+      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
     };
   }
 
   factory Project.fromMap(Map<String, dynamic> map) {
     return Project(
       id: map['id'],
-      name: map['name'],
+      name: map['name'] ?? 'Untitled Project',
       description: map['description'],
-      startDate: _parseDate(map['startDate']),
-      dueDate: _parseDate(map['dueDate']),
-      tasks: map['tasks'],
-      completedTasks: map['completedTasks'],
-      priority: map['priority'],
-      status: map['status'],
-      category: map['category'],
+      startDate: DateTime.tryParse(map['startDate']) ?? DateTime.now(),
+      dueDate: DateTime.tryParse(map['dueDate']) ?? DateTime.now(),
+      tasks: map['tasks'] ?? 0,
+      completedTasks: map['completedTasks'] ?? 0,
+      priority: map['priority'] ?? 'Medium',
+      status: map['status'] ?? 'Not Started',
+      category: map['category'] ?? 'Other',
       archivedDate: map['archivedDate'] != null
           ? DateTime.parse(map['archivedDate'])
           : null,
+      originalStatus: map['originalStatus'],
+      isPinned: map['isPinned'],
+      deletedAt:
+          map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
       lastRestoredDate: map['lastRestoredDate'] != null
           ? DateTime.parse(map['lastRestoredDate'])
           : null,
-      deletedAt:
-          map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
-      originalStatus: map['originalStatus'],
     );
   }
 
@@ -148,5 +154,32 @@ class Project {
       'Dec'
     ];
     return months.indexOf(monthName) + 1;
+  }
+
+  void validate() {
+    print('=== Validating Project ===');
+    print('Name: $name');
+    print('Start Date: $startDate');
+    print('Due Date: $dueDate');
+    print('Status: $status');
+    print('Priority: $priority');
+
+    if (name.isEmpty) {
+      throw ArgumentError('Project name cannot be empty');
+    }
+    if (dueDate.isBefore(startDate)) {
+      throw ArgumentError('Due date cannot be before start date');
+    }
+    if (status.isEmpty) {
+      throw ArgumentError('Project status cannot be empty');
+    }
+    if (priority.isEmpty) {
+      throw ArgumentError('Project priority cannot be empty');
+    }
+    if (category.isEmpty) {
+      throw ArgumentError('Project category cannot be empty');
+    }
+
+    print('Validation passed');
   }
 }

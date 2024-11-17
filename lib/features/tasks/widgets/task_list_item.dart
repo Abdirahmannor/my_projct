@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/utils/string_extensions.dart';
 
 class TaskListItem extends StatelessWidget {
   final Map<String, dynamic> task;

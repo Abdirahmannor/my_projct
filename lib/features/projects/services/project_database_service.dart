@@ -7,14 +7,36 @@ class ProjectDatabaseService {
   static const String deletedBoxName = 'deleted_projects';
   final _uuid = const Uuid();
 
-  // Get box instances
-  Future<Box<Project>> get _box async => await Hive.openBox<Project>(boxName);
-  Future<Box<Project>> get _deletedBox async =>
+  // Single method to get box
+  Box<Project> getBox() {
+    if (!Hive.isBoxOpen(boxName)) {
+      throw Exception('Box is not open. Please initialize first.');
+    }
+    return Hive.box<Project>(boxName);
+  }
+
+  Box<Project> getDeletedBox() {
+    if (!Hive.isBoxOpen(deletedBoxName)) {
+      throw Exception('Deleted box is not open. Please initialize first.');
+    }
+    return Hive.box<Project>(deletedBoxName);
+  }
+
+  Future<void> init() async {
+    try {
+      await Hive.openBox<Project>(boxName);
       await Hive.openBox<Project>(deletedBoxName);
+      print('ProjectDatabaseService initialized');
+      print('Projects in box: ${getBox().length}');
+    } catch (e) {
+      print('Error initializing ProjectDatabaseService: $e');
+      rethrow;
+    }
+  }
 
   // Create
   Future<void> addProject(Project project) async {
-    final box = await _box;
+    final box = getBox();
     final id = _uuid.v4();
     final newProject = Project(
       id: id,
@@ -33,7 +55,7 @@ class ProjectDatabaseService {
 
   // Archive project
   Future<void> archiveProject(Project project) async {
-    final box = await _box;
+    final box = getBox();
     final archivedProject = Project(
       id: project.id,
       name: project.name,
@@ -52,8 +74,8 @@ class ProjectDatabaseService {
 
   // Move archived to recycle bin
   Future<void> moveArchivedToRecycleBin(Project project) async {
-    final box = await _box;
-    final deletedBox = await _deletedBox;
+    final box = getBox();
+    final deletedBox = getDeletedBox();
 
     final deletedProject = Project(
       id: project.id,
@@ -76,10 +98,10 @@ class ProjectDatabaseService {
 
   // Restore from recycle bin to archived
   Future<void> restoreToArchived(String projectId) async {
-    final box = await _box;
-    final deletedBox = await _deletedBox;
+    final box = getBox();
+    final deletedBox = getDeletedBox();
 
-    final project = await deletedBox.get(projectId);
+    final project = deletedBox.get(projectId);
     if (project != null) {
       final restoredProject = Project(
         id: project.id,
@@ -103,7 +125,7 @@ class ProjectDatabaseService {
 
   // Clean up old archived projects (move to recycle bin after 2 months)
   Future<void> cleanupOldArchivedProjects() async {
-    final box = await _box;
+    final box = getBox();
     final now = DateTime.now();
     final projects = box.values.where((p) => p.status == 'completed').toList();
 
@@ -119,7 +141,7 @@ class ProjectDatabaseService {
 
   // Update existing cleanup method for recycle bin
   Future<void> cleanupOldProjects() async {
-    final deletedBox = await _deletedBox;
+    final deletedBox = getDeletedBox();
     final now = DateTime.now();
     final deletedProjects = deletedBox.values.toList();
 
@@ -138,31 +160,36 @@ class ProjectDatabaseService {
 
   // Read
   Future<List<Project>> getAllProjects() async {
-    final box = await _box;
+    final box = getBox();
     return box.values.toList();
   }
 
-  Future<Project?> getProject(String id) async {
-    final box = await _box;
-    return box.get(id);
+  Project? getProject(String id) {
+    try {
+      final box = getBox();
+      return box.get(id);
+    } catch (e) {
+      print('Error getting project: $e');
+      return null;
+    }
   }
 
   // Update
   Future<void> updateProject(Project project) async {
-    final box = await _box;
+    final box = getBox();
     await box.put(project.id, project);
   }
 
   // Delete
   Future<void> deleteProject(String id) async {
-    final box = await _box;
+    final box = getBox();
     await box.delete(id);
   }
 
   // Move project to recycle bin
   Future<void> moveToRecycleBin(Project project) async {
-    final box = await _box;
-    final deletedBox = await _deletedBox;
+    final box = getBox();
+    final deletedBox = getDeletedBox();
 
     final projectWithDeleteDate = Project(
       id: project.id,
@@ -184,16 +211,16 @@ class ProjectDatabaseService {
 
   // Get all deleted projects
   Future<List<Project>> getDeletedProjects() async {
-    final deletedBox = await _deletedBox;
+    final deletedBox = getDeletedBox();
     return deletedBox.values.toList();
   }
 
   // Restore project from recycle bin
   Future<void> restoreFromRecycleBin(String projectId) async {
-    final box = await _box;
-    final deletedBox = await _deletedBox;
+    final box = getBox();
+    final deletedBox = getDeletedBox();
 
-    final project = await deletedBox.get(projectId);
+    final project = deletedBox.get(projectId);
     if (project != null) {
       // Always restore to active projects
       final restoredProject = Project(
@@ -222,7 +249,69 @@ class ProjectDatabaseService {
 
   // Permanently delete project
   Future<void> permanentlyDelete(String projectId) async {
-    final deletedBox = await _deletedBox;
+    final deletedBox = getDeletedBox();
     await deletedBox.delete(projectId);
+  }
+
+  // Clear all data
+  Future<void> clearAllData() async {
+    final box = getBox();
+    final deletedBox = getDeletedBox();
+
+    print('Before clearing:');
+    print('Projects in main box: ${box.length}');
+    print('Projects in deleted box: ${deletedBox.length}');
+
+    await box.clear();
+    await deletedBox.clear();
+
+    print('After clearing:');
+    print('Projects in main box: ${box.length}');
+    print('Projects in deleted box: ${deletedBox.length}');
+  }
+
+  // Add sample projects for testing
+  Future<void> addSampleProjects() async {
+    final box = getBox();
+
+    final projects = [
+      Project(
+        id: const Uuid().v4(),
+        name: 'Math Assignment',
+        description: 'Complete calculus homework',
+        startDate: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 7)),
+        priority: 'High',
+        status: 'In Progress',
+        category: 'Homework',
+      ),
+      Project(
+        id: const Uuid().v4(),
+        name: 'Physics Project',
+        description: 'Research paper on quantum mechanics',
+        startDate: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 14)),
+        priority: 'Medium',
+        status: 'Not Started',
+        category: 'Research',
+      ),
+      Project(
+        id: const Uuid().v4(),
+        name: 'History Essay',
+        description: 'Write about World War II',
+        startDate: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 5)),
+        priority: 'High',
+        status: 'In Progress',
+        category: 'Essay',
+      ),
+    ];
+
+    for (final project in projects) {
+      await box.put(project.id, project);
+    }
+
+    print('Added ${projects.length} sample projects');
+    print('Total projects in box: ${box.length}');
   }
 }

@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/project.dart';
 import '../screens/projects_screen.dart';
+import '../screens/project_detail_screen.dart';
 
 class ProjectListItem extends StatelessWidget {
   final Project project;
@@ -26,220 +27,260 @@ class ProjectListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isHovered
-            ? Theme.of(context).hoverColor
-            : Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: 1,
-        ),
-        boxShadow: [
-          if (isHovered)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        print('=== Project Tap Debug ===');
+        print('Tapping project: ${project.name}');
+        print('Project data: ${project.toMap()}');
+        print('Project status: ${project.status}');
+        print('Project priority: ${project.priority}');
+
+        try {
+          project.validate();
+          print('Project validation passed');
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                print('Building ProjectDetailScreen for ${project.name}');
+                return ProjectDetailScreen(project: project);
+              },
             ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: ProjectListLayout.rowHorizontalPadding,
-          vertical: ProjectListLayout.rowVerticalPadding,
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: ProjectListLayout.checkboxWidth,
-              child: Checkbox(
-                value: isChecked,
-                onChanged: onCheckChanged,
+          ).then((_) {
+            print('Returned from ProjectDetailScreen');
+          });
+        } catch (e, stackTrace) {
+          print('Error during navigation: $e');
+          print('Stack trace: $stackTrace');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isHovered
+              ? Theme.of(context).hoverColor
+              : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+          boxShadow: [
+            if (isHovered)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
-            SizedBox(width: ProjectListLayout.iconSpacing),
-            Expanded(
-              flex: ProjectListLayout.nameColumnFlex,
-              child: Row(
-                children: [
-                  _buildCategoryIcon(context, project.category),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project.name,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    decoration: onRestore != null
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (project.archivedDate != null) ...[
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ProjectListLayout.rowHorizontalPadding,
+            vertical: ProjectListLayout.rowVerticalPadding,
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: ProjectListLayout.checkboxWidth,
+                child: Checkbox(
+                  value: isChecked,
+                  onChanged: onCheckChanged,
+                ),
+              ),
+              const SizedBox(width: ProjectListLayout.iconSpacing),
+              Expanded(
+                flex: ProjectListLayout.nameColumnFlex,
+                child: Row(
+                  children: [
+                    _buildCategoryIcon(context, project.category),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Archived on ${_formatDate(project.archivedDate!)}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.orange.shade400,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                            project.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  decoration: onRestore != null
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                ),
                           ),
                           const SizedBox(height: 4),
-                        ],
-                        Text(
-                          project.description ?? '',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).hintColor,
-                                    decoration: onRestore != null
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
-                                  ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              flex: ProjectListLayout.dateColumnFlex,
-              child: _buildDateInfo(
-                context,
-                'Start',
-                project.startDate,
-                PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
-                isStart: true,
-              ),
-            ),
-            Expanded(
-              flex: ProjectListLayout.dateColumnFlex,
-              child: _buildDateInfo(
-                context,
-                'Due',
-                project.dueDate,
-                PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
-                isStart: false,
-              ),
-            ),
-            SizedBox(
-              width: ProjectListLayout.tasksWidth,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Tooltip(
-                    message:
-                        '${project.completedTasks} of ${project.tasks} tasks completed',
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          CircularProgressIndicator(
-                            value: project.completedTasks / project.tasks,
-                            backgroundColor:
-                                Theme.of(context).dividerColor.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.accent.withOpacity(0.9),
-                            ),
-                            strokeWidth: 4,
-                          ),
-                          Center(
-                            child: Text(
-                              '${project.completedTasks}/${project.tasks}',
+                          if (project.archivedDate != null) ...[
+                            Text(
+                              'Archived on ${_formatDate(project.archivedDate!)}',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
+                                    color: Colors.orange.shade400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                             ),
+                            const SizedBox(height: 4),
+                          ],
+                          Text(
+                            project.description ?? '',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).hintColor,
+                                      decoration: onRestore != null
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                    ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            SizedBox(
-              width: ProjectListLayout.priorityWidth,
-              child: _buildPriorityBadge(context, project.priority),
-            ),
-            SizedBox(
-              width: ProjectListLayout.statusWidth,
-              child: _buildStatusBadge(context, project.status),
-            ),
-            SizedBox(
-              width: ProjectListLayout.actionsWidth,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (onRestore != null) ...[
-                    IconButton(
-                      onPressed: onRestore,
-                      icon: Icon(
-                        PhosphorIcons.arrowCounterClockwise(
-                            PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: AppColors.accent,
+              Expanded(
+                flex: ProjectListLayout.dateColumnFlex,
+                child: _buildDateInfo(
+                  context,
+                  'Start',
+                  project.startDate,
+                  PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
+                  isStart: true,
+                ),
+              ),
+              Expanded(
+                flex: ProjectListLayout.dateColumnFlex,
+                child: _buildDateInfo(
+                  context,
+                  'Due',
+                  project.dueDate,
+                  PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
+                  isStart: false,
+                ),
+              ),
+              SizedBox(
+                width: ProjectListLayout.tasksWidth,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Tooltip(
+                      message:
+                          '${project.completedTasks} of ${project.tasks} tasks completed',
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                            width: 1,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            CircularProgressIndicator(
+                              value: project.completedTasks / project.tasks,
+                              backgroundColor: Theme.of(context)
+                                  .dividerColor
+                                  .withOpacity(0.2),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.accent.withOpacity(0.9),
+                              ),
+                              strokeWidth: 4,
+                            ),
+                            Center(
+                              child: Text(
+                                '${project.completedTasks}/${project.tasks}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      tooltip: 'Restore',
-                    ),
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Icon(
-                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      tooltip: project.status == 'completed'
-                          ? 'Move to Recycle Bin'
-                          : 'Delete Permanently',
-                    ),
-                  ] else ...[
-                    IconButton(
-                      onPressed: onEdit,
-                      icon: Icon(
-                        PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Theme.of(context).hintColor,
-                      ),
-                      tooltip: 'Edit',
-                    ),
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Icon(
-                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      tooltip: 'Delete',
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              SizedBox(
+                width: ProjectListLayout.priorityWidth,
+                child: _buildPriorityBadge(context, project.priority),
+              ),
+              SizedBox(
+                width: ProjectListLayout.statusWidth,
+                child: _buildStatusBadge(context, project.status),
+              ),
+              SizedBox(
+                width: ProjectListLayout.actionsWidth,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (onRestore != null) ...[
+                      IconButton(
+                        onPressed: onRestore,
+                        icon: Icon(
+                          PhosphorIcons.arrowCounterClockwise(
+                              PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: AppColors.accent,
+                        ),
+                        tooltip: 'Restore',
+                      ),
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        tooltip: project.status == 'completed'
+                            ? 'Move to Recycle Bin'
+                            : 'Delete Permanently',
+                      ),
+                    ] else ...[
+                      IconButton(
+                        onPressed: onEdit,
+                        icon: Icon(
+                          PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Theme.of(context).hintColor,
+                        ),
+                        tooltip: 'Edit',
+                      ),
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Delete',
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
