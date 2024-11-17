@@ -1,11 +1,26 @@
+import 'package:hive/hive.dart';
 import '../../../core/base/base_item.dart';
 
+part 'project.g.dart';
+
+@HiveType(typeId: 2)
 class Project extends BaseItem {
-  final int tasks;
-  final int completedTasks;
+  @HiveField(40)
+  final String? color;
+
+  @HiveField(41)
+  final List<String>? tasks;
+
+  @HiveField(42)
+  final DateTime? startDate;
+
+  @HiveField(43)
+  final DateTime? endDate;
+
+  @HiveField(44)
   final String? category;
-  final String? originalStatus;
-  final DateTime? archivedDate;
+
+  int _completedTasksCount = 0;
 
   Project({
     String? id,
@@ -17,22 +32,25 @@ class Project extends BaseItem {
     bool? isPinned,
     DateTime? deletedAt,
     DateTime? lastRestoredDate,
-    required this.tasks,
-    required this.completedTasks,
+    this.color,
+    List<dynamic>? tasks,
+    this.startDate,
+    this.endDate,
     this.category,
-    this.originalStatus,
-    this.archivedDate,
-  }) : super(
-          id: id,
+  })  : this.tasks = tasks?.cast<String>(),
+        super(
+          id: id ?? '${DateTime.now().millisecondsSinceEpoch}_${name.hashCode}',
           name: name,
           description: description,
           dueDate: dueDate,
           priority: priority,
           status: status,
-          isPinned: isPinned,
+          isPinned: isPinned ?? false,
           deletedAt: deletedAt,
           lastRestoredDate: lastRestoredDate,
-        );
+        ) {
+    _completedTasksCount = 0;
+  }
 
   @override
   Project copyWith({
@@ -45,11 +63,11 @@ class Project extends BaseItem {
     bool? isPinned,
     DateTime? deletedAt,
     DateTime? lastRestoredDate,
-    int? tasks,
-    int? completedTasks,
+    String? color,
+    List<String>? tasks,
+    DateTime? startDate,
+    DateTime? endDate,
     String? category,
-    String? originalStatus,
-    DateTime? archivedDate,
   }) {
     return Project(
       id: id ?? this.id,
@@ -61,31 +79,23 @@ class Project extends BaseItem {
       isPinned: isPinned ?? this.isPinned,
       deletedAt: deletedAt ?? this.deletedAt,
       lastRestoredDate: lastRestoredDate ?? this.lastRestoredDate,
+      color: color ?? this.color,
       tasks: tasks ?? this.tasks,
-      completedTasks: completedTasks ?? this.completedTasks,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       category: category ?? this.category,
-      originalStatus: originalStatus ?? this.originalStatus,
-      archivedDate: archivedDate ?? this.archivedDate,
     );
   }
 
   @override
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'dueDate': dueDate.toIso8601String(),
-      'priority': priority,
-      'status': status,
-      'isPinned': isPinned,
-      'deletedAt': deletedAt?.toIso8601String(),
-      'lastRestoredDate': lastRestoredDate?.toIso8601String(),
+      ...super.toMap(),
+      'color': color,
       'tasks': tasks,
-      'completedTasks': completedTasks,
+      'startDate': startDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
       'category': category,
-      'originalStatus': originalStatus,
-      'archivedDate': archivedDate?.toIso8601String(),
     };
   }
 
@@ -103,16 +113,59 @@ class Project extends BaseItem {
       lastRestoredDate: map['lastRestoredDate'] != null
           ? DateTime.parse(map['lastRestoredDate'])
           : null,
-      tasks: map['tasks'],
-      completedTasks: map['completedTasks'],
+      color: map['color'],
+      tasks: map['tasks'] != null ? List<String>.from(map['tasks']) : null,
+      startDate:
+          map['startDate'] != null ? DateTime.parse(map['startDate']) : null,
+      endDate: map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
       category: map['category'],
-      originalStatus: map['originalStatus'],
-      archivedDate: map['archivedDate'] != null
-          ? DateTime.parse(map['archivedDate'])
-          : null,
     );
   }
 
-  double get progress => tasks > 0 ? completedTasks / tasks : 0.0;
-  bool get isCompleted => completedTasks == tasks;
+  double get progress {
+    if (tasks == null || tasks!.isEmpty) return 0.0;
+    return _completedTasksCount / tasks!.length;
+  }
+
+  bool get isCompleted =>
+      tasks != null &&
+      tasks!.isNotEmpty &&
+      _completedTasksCount == tasks!.length;
+
+  void updateCompletedTasksCount(int count) {
+    _completedTasksCount = count;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Project &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          description == other.description &&
+          dueDate == other.dueDate &&
+          priority == other.priority &&
+          status == other.status &&
+          isPinned == other.isPinned &&
+          color == other.color &&
+          tasks == other.tasks &&
+          startDate == other.startDate &&
+          endDate == other.endDate &&
+          category == other.category;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      description.hashCode ^
+      dueDate.hashCode ^
+      priority.hashCode ^
+      status.hashCode ^
+      isPinned.hashCode ^
+      color.hashCode ^
+      tasks.hashCode ^
+      startDate.hashCode ^
+      endDate.hashCode ^
+      category.hashCode;
 }

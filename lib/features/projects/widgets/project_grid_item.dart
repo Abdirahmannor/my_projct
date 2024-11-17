@@ -119,7 +119,7 @@ class ProjectGridItem extends BaseGridItem<Project> {
     return Column(
       children: [
         // Progress Row
-        if (item.tasks > 0) ...[
+        if (item.tasks?.isNotEmpty ?? false) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -139,7 +139,7 @@ class ProjectGridItem extends BaseGridItem<Project> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${item.completedTasks}/${item.tasks}',
+                '${item.tasks?.length ?? 0} tasks',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

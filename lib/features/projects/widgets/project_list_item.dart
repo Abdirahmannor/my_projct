@@ -121,7 +121,7 @@ class ProjectListItem extends BaseListItem<Project> {
                   ],
 
                   // Progress
-                  if (item.tasks > 0) ...[
+                  if (item.tasks?.isNotEmpty ?? false) ...[
                     SizedBox(
                       width: 24,
                       height: 24,
@@ -138,7 +138,7 @@ class ProjectListItem extends BaseListItem<Project> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${item.completedTasks}/${item.tasks}',
+                      '${item.tasks?.length ?? 0} tasks',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

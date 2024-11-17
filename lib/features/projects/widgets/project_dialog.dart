@@ -176,8 +176,10 @@ class ProjectDialogState extends BaseDialogState<ProjectDialog> {
       status: status,
       category: category?.trim(),
       isPinned: isPinned,
-      tasks: widget.project?.tasks ?? 0,
-      completedTasks: widget.project?.completedTasks ?? 0,
+      tasks: widget.project?.tasks,
+      startDate: widget.project?.startDate,
+      endDate: widget.project?.endDate,
+      color: widget.project?.color,
     );
 
     Navigator.pop(context, project);

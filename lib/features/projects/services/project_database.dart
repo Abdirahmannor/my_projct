@@ -1,57 +1,113 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/base/base_database.dart';
 import '../models/project.dart';
 
 class ProjectDatabase extends BaseDatabase<Project> {
+  // Add ValueNotifier for projects
+  final ValueNotifier<List<Project>> projectsNotifier =
+      ValueNotifier<List<Project>>([]);
+
   ProjectDatabase()
-      : super(boxName: 'projects', deletedBoxName: 'deleted_projects');
+      : super(boxName: 'projects', deletedBoxName: 'deleted_projects') {
+    // Initialize the notifier with existing projects
+    _initializeProjects();
+  }
+
+  Future<void> _initializeProjects() async {
+    final projects = await getAll();
+    projectsNotifier.value = projects;
+  }
 
   @override
   Future<void> add(Project project) async {
-    final projectBox = await box;
-    await projectBox.put(project.id, project);
+    try {
+      final projectBox = await box;
+
+      // Ensure we have a valid ID
+      final id = project.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+      final newProject = project.copyWith(id: id);
+
+      // Add to box
+      await projectBox.put(id, newProject);
+
+      // Update the notifier with a fresh list
+      final updatedProjects = await getAll();
+      projectsNotifier.value = updatedProjects;
+
+      print('Project added successfully with ID: $id');
+    } catch (e) {
+      print('Error adding project: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> update(Project project) async {
-    final projectBox = await box;
-    await projectBox.put(project.id, project);
+    try {
+      final projectBox = await box;
+      if (project.id == null) {
+        throw Exception('Project ID cannot be null for update operation');
+      }
+      await projectBox.put(project.id, project);
+
+      // Update the notifier
+      final currentProjects = List<Project>.from(projectsNotifier.value);
+      final index = currentProjects.indexWhere((p) => p.id == project.id);
+      if (index != -1) {
+        currentProjects[index] = project;
+        projectsNotifier.value = currentProjects;
+      }
+
+      print('Project updated successfully: ${project.id}');
+    } catch (e) {
+      print('Error updating project: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> delete(String id) async {
-    final projectBox = await box;
-    await projectBox.delete(id);
-  }
+    try {
+      final projectBox = await box;
+      await projectBox.delete(id);
 
-  @override
-  Future<Project?> get(String id) async {
-    final projectBox = await box;
-    return projectBox.get(id);
+      // Update the notifier
+      final currentProjects = List<Project>.from(projectsNotifier.value);
+      currentProjects.removeWhere((p) => p.id == id);
+      projectsNotifier.value = currentProjects;
+    } catch (e) {
+      print('Error deleting project: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<List<Project>> getAll() async {
-    final projectBox = await box;
-    return projectBox.values.toList();
-  }
+    try {
+      final projectBox = await box;
+      final projects = projectBox.values.toList();
 
-  @override
-  Future<List<Project>> getDeleted() async {
-    final box = await deletedBox;
-    return box.values.toList();
+      // Sort projects by creation date or another criteria
+      projects.sort((a, b) => b.dueDate.compareTo(a.dueDate));
+
+      return projects;
+    } catch (e) {
+      print('Error getting all projects: $e');
+      return [];
+    }
   }
 
   @override
   Future<void> moveToRecycleBin(Project project) async {
     final projectBox = await box;
-    final box = await deletedBox;
+    final deletedBox = await this.deletedBox;
 
     await projectBox.delete(project.id);
-    await box.put(
+    await deletedBox.put(
       project.id,
       project.copyWith(
         deletedAt: DateTime.now(),
-        originalStatus: project.status,
+        status: 'deleted',
       ),
     );
   }
@@ -59,20 +115,19 @@ class ProjectDatabase extends BaseDatabase<Project> {
   @override
   Future<void> restoreFromRecycleBin(String id) async {
     final projectBox = await box;
-    final box = await deletedBox;
+    final deletedBox = await this.deletedBox;
 
-    final project = await box.get(id);
+    final project = await deletedBox.get(id);
     if (project != null) {
       await projectBox.put(
         id,
         project.copyWith(
           deletedAt: null,
-          status: project.originalStatus ?? project.status,
-          originalStatus: null,
+          status: 'active',
           lastRestoredDate: DateTime.now(),
         ),
       );
-      await box.delete(id);
+      await deletedBox.delete(id);
     }
   }
 
@@ -99,16 +154,15 @@ class ProjectDatabase extends BaseDatabase<Project> {
   }
 
   // Project-specific methods
-  Future<void> updateTaskCount(String id,
-      {required int totalTasks, required int completedTasks}) async {
+  Future<void> updateTaskCount(String id, List<String> taskIds) async {
     final project = await get(id);
     if (project != null) {
       await update(
         project.copyWith(
-          tasks: totalTasks,
-          completedTasks: completedTasks,
+          tasks: taskIds,
         ),
       );
+      project.updateCompletedTasksCount(taskIds.length);
     }
   }
 
@@ -117,8 +171,6 @@ class ProjectDatabase extends BaseDatabase<Project> {
     await projectBox.put(
       project.id,
       project.copyWith(
-        archivedDate: DateTime.now(),
-        originalStatus: project.status,
         status: 'archived',
       ),
     );
@@ -129,11 +181,36 @@ class ProjectDatabase extends BaseDatabase<Project> {
     if (project != null) {
       await update(
         project.copyWith(
-          archivedDate: null,
-          status: project.originalStatus ?? project.status,
-          originalStatus: null,
+          status: 'active',
         ),
       );
     }
+  }
+
+  @override
+  Future<Project?> get(String id) async {
+    try {
+      final projectBox = await box;
+      return projectBox.get(id);
+    } catch (e) {
+      print('Error getting project: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<List<Project>> getDeleted() async {
+    try {
+      final box = await deletedBox;
+      return box.values.toList();
+    } catch (e) {
+      print('Error getting deleted projects: $e');
+      return [];
+    }
+  }
+
+  // Dispose method to clean up
+  void dispose() {
+    projectsNotifier.dispose();
   }
 }
