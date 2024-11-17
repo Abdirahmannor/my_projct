@@ -9,15 +9,8 @@ class ScheduleView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).cardColor,
       child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Theme.of(context).dividerColor,
-          ),
-        ),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -26,25 +19,19 @@ class ScheduleView extends StatelessWidget {
               children: [
                 Text(
                   'Schedule',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 16,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 Row(
                   children: [
                     _buildFilterChip(context, 'School', true),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 8),
                     _buildFilterChip(context, 'Work', true),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: SingleChildScrollView(
-                child: _buildWeekView(context),
-              ),
-            ),
+            const SizedBox(height: 20),
+            _buildWeekView(context),
           ],
         ),
       ),
@@ -52,23 +39,17 @@ class ScheduleView extends StatelessWidget {
   }
 
   Widget _buildFilterChip(BuildContext context, String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color:
-            isActive ? AppColors.accent.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isActive ? AppColors.accent : Theme.of(context).dividerColor,
-          width: 1,
-        ),
+    return FilterChip(
+      selected: isActive,
+      label: Text(label),
+      onSelected: (bool value) {},
+      backgroundColor: Colors.transparent,
+      selectedColor: AppColors.accent.withOpacity(0.1),
+      labelStyle: TextStyle(
+        color: isActive ? AppColors.accent : Colors.grey,
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          color: isActive ? AppColors.accent : Theme.of(context).hintColor,
-        ),
+      side: BorderSide(
+        color: isActive ? AppColors.accent : Colors.grey,
       ),
     );
   }
@@ -76,48 +57,28 @@ class ScheduleView extends StatelessWidget {
   Widget _buildWeekView(BuildContext context) {
     return Column(
       children: [
-        Row(
+        const Row(
           children: [
-            const SizedBox(width: 40),
+            SizedBox(width: 60),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text('Mon',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 12)),
-                  Text('Tue',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 12)),
-                  Text('Wed',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 12)),
-                  Text('Thu',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 12)),
-                  Text('Fri',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 12)),
+                  Text('Mon'),
+                  Text('Tue'),
+                  Text('Wed'),
+                  Text('Thu'),
+                  Text('Fri'),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 200,
+          height: 400,
           child: ListView.builder(
-            itemCount: 12,
+            itemCount: 12, // 8:00 - 20:00
             itemBuilder: (context, index) {
               final hour = index + 8;
               return _buildTimeSlot(context, hour);
@@ -132,21 +93,19 @@ class ScheduleView extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 40,
+          width: 60,
           child: Text(
             '$hour:00',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 11,
-                ),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
         Expanded(
           child: Container(
-            height: 40,
+            height: 60,
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: Theme.of(context).dividerColor.withOpacity(0.2),
+                  color: Colors.grey.withOpacity(0.2),
                 ),
               ),
             ),
@@ -158,8 +117,7 @@ class ScheduleView extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border(
                         left: BorderSide(
-                          color:
-                              Theme.of(context).dividerColor.withOpacity(0.2),
+                          color: Colors.grey.withOpacity(0.2),
                         ),
                       ),
                     ),

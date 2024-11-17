@@ -9,8 +9,8 @@ class SettingsScreen extends StatelessWidget {
       body: Column(
         children: [
           ListTile(
-            leading: Icon(Icons.dark_mode),
-            title: Text('Dark Mode'),
+            leading: const Icon(Icons.dark_mode),
+            title: const Text('Dark Mode'),
             trailing: Switch(
               value: true, // Connect to your theme provider
               onChanged: (value) {

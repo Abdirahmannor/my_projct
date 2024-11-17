@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../shared/widgets/sidebar/collapsible_sidebar.dart';
-import '../../shared/widgets/custom_window_bar.dart';
 import '../dashboard/screens/dashboard_screen.dart';
-import '../school/screens/school_screen.dart';
 import '../projects/screens/projects_screen.dart';
-import '../tasks/screens/tasks_screen.dart';
-import '../calendar/screens/calendar_screen.dart';
-import '../resources/screens/resources_screen.dart';
-import '../settings/screens/settings_screen.dart';
+import '../../shared/widgets/sidebar/collapsible_sidebar.dart';
+import '../../shared/widgets/window/window_title_bar.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -17,17 +12,17 @@ class ShellScreen extends StatefulWidget {
 }
 
 class _ShellScreenState extends State<ShellScreen> {
-  bool _isCollapsed = false;
   int _selectedIndex = 0;
+  bool _isSidebarCollapsed = false;
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const SchoolScreen(),
+    const Center(child: Text('School/Work')),
     const ProjectsScreen(),
-    const TasksScreen(),
-    const CalendarScreen(),
-    const ResourcesScreen(),
-    const SettingsScreen(),
+    const Center(child: Text('Tasks')),
+    const Center(child: Text('Calendar')),
+    const Center(child: Text('Resources')),
+    const Center(child: Text('Settings')),
   ];
 
   @override
@@ -35,15 +30,15 @@ class _ShellScreenState extends State<ShellScreen> {
     return Scaffold(
       body: Column(
         children: [
-          const CustomWindowBar(),
+          const WindowTitleBar(),
           Expanded(
             child: Row(
               children: [
                 CollapsibleSidebar(
-                  isCollapsed: _isCollapsed,
+                  isCollapsed: _isSidebarCollapsed,
                   onToggle: (isCollapsed) {
                     setState(() {
-                      _isCollapsed = isCollapsed;
+                      _isSidebarCollapsed = isCollapsed;
                     });
                   },
                   selectedIndex: _selectedIndex,
@@ -53,24 +48,8 @@ class _ShellScreenState extends State<ShellScreen> {
                     });
                   },
                 ),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(
-                      top: 8,
-                      right: 8,
-                      bottom: 8,
-                      left: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _screens[_selectedIndex],
-                    ),
-                  ),
+                  child: _screens[_selectedIndex],
                 ),
               ],
             ),

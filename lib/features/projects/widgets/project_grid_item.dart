@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/project.dart';
-import '../../../core/utils/string_extensions.dart';
 
 class ProjectGridItem extends StatelessWidget {
   final Project project;
-  final bool isChecked;
   final bool isHovered;
-  final Function(bool?) onCheckChanged;
+  final bool isChecked;
+  final Function(bool?)? onCheckChanged;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback? onRestore;
@@ -16,9 +15,9 @@ class ProjectGridItem extends StatelessWidget {
   const ProjectGridItem({
     super.key,
     required this.project,
-    required this.isChecked,
     required this.isHovered,
-    required this.onCheckChanged,
+    this.isChecked = false,
+    this.onCheckChanged,
     required this.onEdit,
     required this.onDelete,
     this.onRestore,
@@ -48,158 +47,27 @@ class ProjectGridItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with checkbox and actions
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: isChecked,
-                        onChanged: onCheckChanged,
-                      ),
+          _buildHeader(context),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (onCheckChanged != null)
+                    Checkbox(
+                      value: isChecked,
+                      onChanged: onCheckChanged,
                     ),
-                    const SizedBox(width: 8),
-                    _buildPriorityBadge(context, project.priority),
-                  ],
-                ),
-                Row(
-                  children: [
-                    if (onRestore != null) ...[
-                      IconButton(
-                        onPressed: onRestore,
-                        icon: Icon(
-                          PhosphorIcons.arrowCounterClockwise(
-                              PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: AppColors.accent,
-                        ),
-                        tooltip: 'Restore',
-                      ),
-                      IconButton(
-                        onPressed: onDelete,
-                        icon: Icon(
-                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: Colors.red,
-                        ),
-                        tooltip: project.status == 'completed'
-                            ? 'Move to Recycle Bin'
-                            : 'Delete Permanently',
-                      ),
-                    ] else ...[
-                      IconButton(
-                        onPressed: onEdit,
-                        icon: Icon(
-                          PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: Theme.of(context).hintColor,
-                        ),
-                        tooltip: 'Edit',
-                      ),
-                      IconButton(
-                        onPressed: onDelete,
-                        icon: Icon(
-                          PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                          size: 18,
-                          color: Colors.red,
-                        ),
-                        tooltip: 'Delete',
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Project info
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (project.isPinned ?? false)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: Icon(
-                          PhosphorIcons.pushPin(PhosphorIconsStyle.fill),
-                          size: 14,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                    Expanded(
-                      child: Text(
-                        project.name,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  project.description ?? '',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).hintColor,
-                        decoration: onRestore != null
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Progress indicators
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildProgressSection(
-                  context,
-                  'Tasks Progress',
-                  project.completedTasks,
-                  project.tasks,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDateInfo(
-                        context,
-                        'Start',
-                        project.startDate,
-                        PhosphorIcons.calendarBlank(PhosphorIconsStyle.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDateInfo(
-                        context,
-                        'Due',
-                        project.dueDate,
-                        PhosphorIcons.calendarCheck(PhosphorIconsStyle.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildStatusBadge(context, project.status),
-              ],
+                  _buildTitle(context),
+                  const SizedBox(height: 8),
+                  _buildDescription(context),
+                  const SizedBox(height: 16),
+                  _buildProgress(context),
+                  const Spacer(),
+                  _buildFooter(context),
+                ],
+              ),
             ),
           ),
         ],
@@ -207,259 +75,232 @@ class ProjectGridItem extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection(
-      BuildContext context, String title, int completed, int total) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
         ),
-        const SizedBox(height: 8),
-        Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: completed / total,
-                backgroundColor:
-                    Theme.of(context).dividerColor.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
-                minHeight: 8,
-              ),
-            ),
-            Positioned(
-              right: 0,
-              top: -4,
-              child: Text(
-                '$completed/$total',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildCategoryBadge(context),
+          if (isHovered)
+            Row(
+              children: [
+                if (onRestore != null)
+                  IconButton(
+                    onPressed: onRestore,
+                    icon: Icon(
+                      PhosphorIcons.arrowCounterClockwise(
+                          PhosphorIconsStyle.bold),
+                      size: 18,
+                      color: AppColors.accent,
                     ),
-              ),
+                    tooltip: 'Restore',
+                  )
+                else ...[
+                  IconButton(
+                    onPressed: onEdit,
+                    icon: Icon(
+                      PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold),
+                      size: 18,
+                      color: Theme.of(context).hintColor,
+                    ),
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: Icon(
+                      PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                      size: 18,
+                      color: Colors.red,
+                    ),
+                    tooltip: 'Delete',
+                  ),
+                ],
+              ],
             ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryBadge(BuildContext context) {
+    final categoryInfo = {
+      'school': (
+        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
+        AppColors.accent
+      ),
+      'personal': (PhosphorIcons.user(PhosphorIconsStyle.fill), Colors.purple),
+      'work': (PhosphorIcons.briefcase(PhosphorIconsStyle.fill), Colors.blue),
+      'other': (PhosphorIcons.folder(PhosphorIconsStyle.fill), Colors.grey),
+    };
+
+    final (icon, color) =
+        categoryInfo[project.category?.toLowerCase()] ?? categoryInfo['other']!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            project.category?.toUpperCase() ?? 'OTHER',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    return Row(
+      children: [
+        if (project.isPinned ?? false)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Icon(
+              PhosphorIcons.pushPin(PhosphorIconsStyle.fill),
+              size: 14,
+              color: AppColors.accent,
+            ),
+          ),
+        Expanded(
+          child: Text(
+            project.name,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDateInfo(
-      BuildContext context, String label, DateTime date, IconData icon) {
-    final DateTime now = DateTime.now();
-    final int daysRemaining = date.difference(now).inDays;
+  Widget _buildDescription(BuildContext context) {
+    return Text(
+      project.description ?? '',
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).hintColor,
+          ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
-    final bool isOverdue = label == 'Due' && daysRemaining < 0;
-    final bool isUpcoming = label == 'Start' && daysRemaining > 0;
-
-    final Color dateColor = isOverdue
-        ? Colors.red.shade400
-        : isUpcoming
-            ? Colors.green.shade400
-            : Theme.of(context).hintColor;
-
+  Widget _buildProgress(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: dateColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                icon,
-                size: 14,
-                color: dateColor,
-              ),
+            Text(
+              'Progress',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).hintColor,
-                        ),
+            Text(
+              '${(project.completedTasks / project.tasks * 100).toInt()}%',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatDate(date),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
             ),
           ],
         ),
-        if (label == 'Due') ...[
-          const SizedBox(height: 4),
-          Text(
-            isOverdue
-                ? '${daysRemaining.abs()} days overdue'
-                : daysRemaining == 0
-                    ? 'Due today'
-                    : '$daysRemaining days remaining',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: dateColor,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ],
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: project.completedTasks / project.tasks,
+          backgroundColor: Theme.of(context).dividerColor,
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+        ),
       ],
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${date.day} ${months[date.month - 1]}, ${date.year}';
+  Widget _buildFooter(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildDateInfo(context),
+        _buildPriorityBadge(context),
+      ],
+    );
   }
 
-  Widget _buildPriorityBadge(BuildContext context, String priority) {
-    final colors = {
+  Widget _buildDateInfo(BuildContext context) {
+    final DateTime now = DateTime.now();
+    final int daysRemaining = project.dueDate.difference(now).inDays;
+    final bool isOverdue = daysRemaining < 0;
+
+    final Color dateColor = isOverdue
+        ? Colors.red.shade400
+        : daysRemaining <= 2
+            ? Colors.orange.shade400
+            : Theme.of(context).hintColor;
+
+    return Row(
+      children: [
+        Icon(
+          PhosphorIcons.clock(PhosphorIconsStyle.bold),
+          size: 14,
+          color: dateColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          isOverdue
+              ? '${daysRemaining.abs()}d overdue'
+              : daysRemaining == 0
+                  ? 'Due today'
+                  : '${daysRemaining}d remaining',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: dateColor,
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriorityBadge(BuildContext context) {
+    final priorityColors = {
       'high': Colors.red.shade400,
       'medium': Colors.orange.shade400,
       'low': Colors.green.shade400,
     };
 
+    final color = priorityColors[project.priority] ?? Colors.grey;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: colors[priority]?.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colors[priority]?.withOpacity(0.3) ?? Colors.transparent,
-        ),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        priority.capitalize(),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colors[priority],
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(BuildContext context, String status) {
-    final colors = {
-      'not started': Colors.grey.shade400,
-      'in progress': Colors.blue.shade400,
-      'on hold': Colors.orange.shade400,
-      'completed': Colors.green.shade400,
-    };
-
-    IconData getStatusIcon() {
-      switch (status) {
-        case 'not started':
-          return PhosphorIcons.pause(PhosphorIconsStyle.fill);
-        case 'in progress':
-          return PhosphorIcons.play(PhosphorIconsStyle.fill);
-        case 'on hold':
-          return PhosphorIcons.clock(PhosphorIconsStyle.fill);
-        case 'completed':
-          return PhosphorIcons.check(PhosphorIconsStyle.fill);
-        default:
-          return PhosphorIcons.circle(PhosphorIconsStyle.fill);
-      }
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: colors[status]?.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: colors[status]?.withOpacity(0.3) ?? Colors.transparent,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            getStatusIcon(),
-            size: 14,
-            color: colors[status],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            status.capitalize(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors[status],
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryIcon(BuildContext context, String category) {
-    final categoryInfo = {
-      'school': (
-        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
-        AppColors.accent,
-        'School Project'
-      ),
-      'personal': (
-        PhosphorIcons.user(PhosphorIconsStyle.fill),
-        Colors.purple.shade400,
-        'Personal Project'
-      ),
-      'work': (
-        PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
-        Colors.blue.shade400,
-        'Work Project'
-      ),
-      'online work': (
-        PhosphorIcons.globe(PhosphorIconsStyle.fill),
-        Colors.green.shade400,
-        'Online Work Project'
-      ),
-      'other': (
-        PhosphorIcons.folder(PhosphorIconsStyle.fill),
-        Colors.grey.shade400,
-        'Other Project'
-      ),
-    };
-
-    final (icon, color, tooltip) =
-        categoryInfo[category] ?? categoryInfo['other']!;
-
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
+        project.priority.toUpperCase(),
+        style: TextStyle(
           color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

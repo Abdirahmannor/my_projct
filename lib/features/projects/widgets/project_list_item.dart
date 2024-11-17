@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/project.dart';
-import '../screens/projects_screen.dart';
+import '../constants/project_list_layout.dart';
 
 class ProjectListItem extends StatelessWidget {
   final Project project;
@@ -130,64 +130,6 @@ class ProjectListItem extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: ProjectListLayout.tasksWidth,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Tooltip(
-                    message:
-                        '${project.completedTasks} of ${project.tasks} tasks completed',
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          CircularProgressIndicator(
-                            value: project.completedTasks / project.tasks,
-                            backgroundColor:
-                                Theme.of(context).dividerColor.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.accent.withOpacity(0.9),
-                            ),
-                            strokeWidth: 4,
-                          ),
-                          Center(
-                            child: Text(
-                              '${project.completedTasks}/${project.tasks}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: ProjectListLayout.priorityWidth,
-              child: _buildPriorityBadge(context, project.priority),
-            ),
-            SizedBox(
-              width: ProjectListLayout.statusWidth,
-              child: _buildStatusBadge(context, project.status),
-            ),
-            SizedBox(
               width: ProjectListLayout.actionsWidth,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -202,17 +144,6 @@ class ProjectListItem extends StatelessWidget {
                         color: AppColors.accent,
                       ),
                       tooltip: 'Restore',
-                    ),
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Icon(
-                        PhosphorIcons.trash(PhosphorIconsStyle.bold),
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      tooltip: project.status == 'completed'
-                          ? 'Move to Recycle Bin'
-                          : 'Delete Permanently',
                     ),
                   ] else ...[
                     IconButton(
@@ -243,147 +174,31 @@ class ProjectListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildPriorityBadge(BuildContext context, String priority) {
-    final colors = {
-      'high': Colors.red.shade400,
-      'medium': Colors.orange.shade400,
-      'low': Colors.green.shade400,
+  Widget _buildCategoryIcon(BuildContext context, String category) {
+    final categoryInfo = {
+      'school': (
+        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
+        AppColors.accent
+      ),
+      'personal': (PhosphorIcons.user(PhosphorIconsStyle.fill), Colors.purple),
+      'work': (PhosphorIcons.briefcase(PhosphorIconsStyle.fill), Colors.blue),
+      'other': (PhosphorIcons.folder(PhosphorIconsStyle.fill), Colors.grey),
     };
 
-    final priorityMessages = {
-      'high': 'High Priority - Urgent attention needed',
-      'medium': 'Medium Priority - Important but not urgent',
-      'low': 'Low Priority - Can be handled later',
-    };
+    final (icon, color) =
+        categoryInfo[category.toLowerCase()] ?? categoryInfo['other']!;
 
-    final priorityValues = {
-      'high': 1.0,
-      'medium': 0.66,
-      'low': 0.33,
-    };
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Tooltip(
-          message: priorityMessages[priority] ?? 'Unknown priority',
-          child: Container(
-            width: 40,
-            height: 40,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colors[priority]?.withOpacity(0.3) ??
-                    Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Stack(
-              children: [
-                CircularProgressIndicator(
-                  value: priorityValues[priority] ?? 0,
-                  backgroundColor: colors[priority]?.withOpacity(0.1) ??
-                      Colors.grey.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colors[priority] ?? Colors.grey,
-                  ),
-                  strokeWidth: 4,
-                ),
-                Center(
-                  child: Icon(
-                    PhosphorIcons.warning(PhosphorIconsStyle.fill),
-                    size: 16,
-                    color: colors[priority]?.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusBadge(BuildContext context, String status) {
-    final colors = {
-      'not started': Colors.grey.shade400,
-      'in progress': Colors.blue.shade400,
-      'on hold': Colors.orange.shade400,
-      'completed': Colors.green.shade400,
-    };
-
-    final statusMessages = {
-      'not started': 'Project has not been started yet',
-      'in progress': 'Project is currently being worked on',
-      'on hold': 'Project is temporarily paused',
-      'completed': 'Project has been completed',
-    };
-
-    final statusValues = {
-      'not started': 0.0,
-      'in progress': 0.5,
-      'on hold': 0.75,
-      'completed': 1.0,
-    };
-
-    IconData getStatusIcon() {
-      switch (status) {
-        case 'not started':
-          return PhosphorIcons.pause(PhosphorIconsStyle.fill);
-        case 'in progress':
-          return PhosphorIcons.play(PhosphorIconsStyle.fill);
-        case 'on hold':
-          return PhosphorIcons.clock(PhosphorIconsStyle.fill);
-        case 'completed':
-          return PhosphorIcons.check(PhosphorIconsStyle.fill);
-        default:
-          return PhosphorIcons.circle(PhosphorIconsStyle.fill);
-      }
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Tooltip(
-          message: statusMessages[status] ?? 'Unknown status',
-          child: Container(
-            width: 40,
-            height: 40,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colors[status]?.withOpacity(0.3) ??
-                    Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Stack(
-              children: [
-                CircularProgressIndicator(
-                  value: statusValues[status] ?? 0,
-                  backgroundColor: colors[status]?.withOpacity(0.1) ??
-                      Colors.grey.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colors[status] ?? Colors.grey,
-                  ),
-                  strokeWidth: 4,
-                ),
-                Center(
-                  child: Icon(
-                    getStatusIcon(),
-                    size: 16,
-                    color: colors[status]?.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Icon(
+        icon,
+        size: 16,
+        color: color,
+      ),
     );
   }
 
@@ -394,57 +209,35 @@ class ProjectListItem extends StatelessWidget {
     IconData icon, {
     required bool isStart,
   }) {
-    final DateTime now = DateTime.now();
-    final int daysRemaining = date.difference(now).inDays;
-
-    final bool isOverdue = !isStart && daysRemaining < 0;
-    final bool isUpcoming = isStart && daysRemaining > 0;
-
-    final Color dateColor = isOverdue
-        ? Colors.red.shade400
-        : isUpcoming
-            ? Colors.green.shade400
-            : Theme.of(context).hintColor;
-
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: dateColor.withOpacity(0.1),
+            color: AppColors.accent.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 16,
-            color: dateColor,
+            color: AppColors.accent,
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _formatDate(date),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              if (!isStart) ...[
-                const SizedBox(height: 2),
-                Text(
-                  isOverdue
-                      ? '${daysRemaining.abs()} days overdue'
-                      : daysRemaining == 0
-                          ? 'Due today'
-                          : '$daysRemaining days remaining',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: dateColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-              ],
-            ],
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _formatDate(date),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
+            ),
+          ],
         ),
       ],
     );
@@ -466,54 +259,5 @@ class ProjectListItem extends StatelessWidget {
       'Dec'
     ];
     return '${date.day} ${months[date.month - 1]}, ${date.year}';
-  }
-
-  Widget _buildCategoryIcon(BuildContext context, String category) {
-    final categoryInfo = {
-      'school': (
-        PhosphorIcons.graduationCap(PhosphorIconsStyle.fill),
-        AppColors.accent,
-        'School Project'
-      ),
-      'personal': (
-        PhosphorIcons.user(PhosphorIconsStyle.fill),
-        Colors.purple.shade400,
-        'Personal Project'
-      ),
-      'work': (
-        PhosphorIcons.briefcase(PhosphorIconsStyle.fill),
-        Colors.blue.shade400,
-        'Work Project'
-      ),
-      'online work': (
-        PhosphorIcons.globe(PhosphorIconsStyle.fill),
-        Colors.green.shade400,
-        'Online Work Project'
-      ),
-      'other': (
-        PhosphorIcons.folder(PhosphorIconsStyle.fill),
-        Colors.grey.shade400,
-        'Other Project'
-      ),
-    };
-
-    final (icon, color, tooltip) =
-        categoryInfo[category] ?? categoryInfo['other']!;
-
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: color,
-        ),
-      ),
-    );
   }
 }

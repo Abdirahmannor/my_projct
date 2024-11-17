@@ -1,278 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../core/constants/app_colors.dart';
+import '../widgets/dashboard_header.dart';
 import '../widgets/stat_card.dart';
-import '../widgets/weekly_activity_chart.dart';
+import '../widgets/activity_chart.dart';
+import '../widgets/recent_activities.dart';
+import '../widgets/calendar_overview.dart';
+import '../../../shared/widgets/animations/animated_entry.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome Back!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Here\'s your overview for today',
-              style: Theme.of(context).textTheme.bodyMedium,
+            const AnimatedEntry(
+              child: DashboardHeader(),
             ),
             const SizedBox(height: 24),
-            // Stats Row
-            Row(
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
               children: [
-                Expanded(
-                  child: Card(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Tasks Due Today',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Icon(
-                                PhosphorIcons.checkSquare(
-                                    PhosphorIconsStyle.bold),
-                                color: AppColors.accent,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '5',
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                        ],
-                      ),
-                    ),
+                AnimatedEntry(
+                  delay: 1,
+                  child: StatCard(
+                    title: 'Tasks Due Today',
+                    value: '5',
+                    icon: PhosphorIcons.checkSquare(PhosphorIconsStyle.bold),
+                    iconColor: Colors.blue,
+                    backgroundColor: Colors.blue.withOpacity(0.1),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Upcoming Exams',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Icon(
-                                PhosphorIcons.graduationCap(
-                                    PhosphorIconsStyle.bold),
-                                color: AppColors.warning,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '2',
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                        ],
-                      ),
-                    ),
+                AnimatedEntry(
+                  delay: 2,
+                  child: StatCard(
+                    title: 'Upcoming Exams',
+                    value: '2',
+                    icon: PhosphorIcons.graduationCap(PhosphorIconsStyle.bold),
+                    iconColor: Colors.orange,
+                    backgroundColor: Colors.orange.withOpacity(0.1),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Active Projects',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Icon(
-                                PhosphorIcons.briefcase(
-                                    PhosphorIconsStyle.bold),
-                                color: AppColors.success,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '3',
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                        ],
-                      ),
-                    ),
+                AnimatedEntry(
+                  delay: 3,
+                  child: StatCard(
+                    title: 'Active Projects',
+                    value: '3',
+                    icon: PhosphorIcons.briefcase(PhosphorIconsStyle.bold),
+                    iconColor: Colors.green,
+                    backgroundColor: Colors.green.withOpacity(0.1),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Study Hours',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Icon(
-                                PhosphorIcons.clock(PhosphorIconsStyle.bold),
-                                color: AppColors.info,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '12.5',
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                        ],
-                      ),
-                    ),
+                AnimatedEntry(
+                  delay: 4,
+                  child: StatCard(
+                    title: 'Study Hours',
+                    value: '12.5',
+                    icon: PhosphorIcons.clock(PhosphorIconsStyle.bold),
+                    iconColor: Colors.purple,
+                    backgroundColor: Colors.purple.withOpacity(0.1),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            // Activity and Events Row
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Card(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        child: const WeeklyActivityChart(),
-                      ),
-                    ),
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: AnimatedEntry(
+                    delay: 5,
+                    child: ActivityChart(),
                   ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Upcoming Events',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 20),
-                            _EventItem(
-                              title: 'Math Exam',
-                              time: 'Tomorrow, 9:00 AM',
-                              color: AppColors.error,
-                              icon: PhosphorIcons.exam(PhosphorIconsStyle.bold),
-                            ),
-                            const SizedBox(height: 16),
-                            _EventItem(
-                              title: 'Project Meeting',
-                              time: 'Thursday, 2:30 PM',
-                              color: AppColors.accent,
-                              icon:
-                                  PhosphorIcons.users(PhosphorIconsStyle.bold),
-                            ),
-                            const SizedBox(height: 16),
-                            _EventItem(
-                              title: 'Physics Lab',
-                              time: 'Friday, 11:00 AM',
-                              color: AppColors.warning,
-                              icon: PhosphorIcons.atom(PhosphorIconsStyle.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                ),
+                SizedBox(width: 24),
+                Expanded(
+                  child: AnimatedEntry(
+                    delay: 6,
+                    child: CalendarOverview(),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const AnimatedEntry(
+              delay: 7,
+              child: RecentActivities(),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _EventItem extends StatelessWidget {
-  final String title;
-  final String time;
-  final Color color;
-  final IconData icon;
-
-  const _EventItem({
-    required this.title,
-    required this.time,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              Text(
-                time,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-        ),
-        Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
-      ],
     );
   }
 }
