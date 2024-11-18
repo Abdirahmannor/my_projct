@@ -15,9 +15,10 @@ void main() async {
 
   await Hive.initFlutter();
 
-  if (!Hive.isAdapterRegistered(0)) {
-    Hive.registerAdapter(ProjectAdapter());
-  }
+  // Clear existing data due to schema change
+  await Hive.deleteBoxFromDisk('projects');
+
+  Hive.registerAdapter(ProjectAdapter());
 
   await Hive.openBox<Project>('projects');
   await Hive.openBox<Project>('deleted_projects');
